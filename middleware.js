@@ -1,33 +1,44 @@
-import { NextResponse } from 'next/server'
+import { NextResponse } from "next/server"
 
 const rules = [
   {
-    routes: ['/login', '/register', '/forgot-password'], // route public
+    routes: ["/login", "/register", "/forgot-password", "/auth/callback"], // public
     requireAuth: false,
-    redirectIfAuth: '/', // if there is a token then push it to home
+    redirectIfAuth: "/", // nếu đã login thì chuyển về home
   },
   {
-    routes: ['/dashboard', '/profile', '/settings'], // route private
+    routes: ["/dashboard", "/profile", "/settings"], // private
     requireAuth: true,
-    redirectIfNoAuth: '/login', // if not logged in then push to login
+    redirectIfNoAuth: "/login", // nếu chưa login thì về login
   },
 ]
 
 export function middleware(request) {
-  const token = request.cookies.get('access_token')?.value
   const { pathname } = request.nextUrl
+
+  // ✅ Cho phép api routes đi qua để refresh
+  if (pathname.startsWith("/api")) {
+    return NextResponse.next()
+  }
+
+  const access = request.cookies.get("access_token")?.value
+  const refresh = request.cookies.get("refresh_token")?.value
 
   for (const rule of rules) {
     for (const route of rule.routes) {
-      // just check startsWith
       if (pathname.startsWith(route)) {
-        // Private route without login
-        if (rule.requireAuth && !token) {
-          return NextResponse.redirect(new URL(rule.redirectIfNoAuth, request.url))
+        // 🔒 Private route → cần login
+        if (rule.requireAuth && !access && !refresh) {
+          return NextResponse.redirect(
+            new URL(rule.redirectIfNoAuth, request.url)
+          )
         }
-        // Public route that is logged in
-        if (!rule.requireAuth && token && rule.redirectIfAuth) {
-          return NextResponse.redirect(new URL(rule.redirectIfAuth, request.url))
+
+        // 🌐 Public route → nếu login rồi thì redirect
+        if (!rule.requireAuth && access && rule.redirectIfAuth) {
+          return NextResponse.redirect(
+            new URL(rule.redirectIfAuth, request.url)
+          )
         }
       }
     }
@@ -36,7 +47,7 @@ export function middleware(request) {
   return NextResponse.next()
 }
 
-// run middleware for all routes, filter in rules
+// Áp dụng cho toàn bộ route
 export const config = {
-  matcher: ['/:path*'],
+  matcher: ["/:path*"],
 }

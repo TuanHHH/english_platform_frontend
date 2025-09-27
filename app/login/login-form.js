@@ -3,35 +3,44 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Lock, Mail, Eye, EyeOff } from "lucide-react"
-import { loginAction } from "./actions"
 import FullPageLoader from "@/components/common/full-page-loader"
+import { login } from "@/lib/api/auth"
+import { loginSchema } from "@/schema/login"
 
 export default function LoginForm() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  const [identifier, setIdentifier] = useState("")
-  const [password, setPassword] = useState("")
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+    mode: "onBlur",
+  })
 
-  async function handleSubmit(e) {
-    e.preventDefault()
+  async function onSubmit(values) {
     setLoading(true)
-
     try {
-      const res = await loginAction(new FormData(e.currentTarget))
+      const res = await login(values.identifier, values.password)
       if (res?.error) {
         toast.error(res.error)
       } else {
         toast.success("Đăng nhập thành công!")
         router.push("/")
+        router.refresh()
       }
-    } catch (err) {
+    } catch {
       toast.error("Có lỗi kết nối server")
     } finally {
       setLoading(false)
@@ -41,22 +50,22 @@ export default function LoginForm() {
   return (
     <>
       {loading && <FullPageLoader />}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Email */}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        {/* Identifier */}
         <div>
           <Label htmlFor="identifier">Email</Label>
           <div className="relative mt-1">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               id="identifier"
-              name="identifier"
               placeholder="Nhập email của bạn"
               className="pl-10"
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
-              required
+              {...register("identifier")}
             />
           </div>
+          {errors.identifier && (
+            <p className="text-sm text-red-600 mt-1">{errors.identifier.message}</p>
+          )}
         </div>
 
         {/* Password */}
@@ -66,13 +75,10 @@ export default function LoginForm() {
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               id="password"
-              name="password"
               type={showPassword ? "text" : "password"}
               placeholder="Nhập mật khẩu"
               className="pl-10 pr-10"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
+              {...register("password")}
             />
             <Button
               type="button"
@@ -88,6 +94,9 @@ export default function LoginForm() {
               )}
             </Button>
           </div>
+          {errors.password && (
+            <p className="text-sm text-red-600 mt-1">{errors.password.message}</p>
+          )}
         </div>
 
         {/* Forgot password */}

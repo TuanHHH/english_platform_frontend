@@ -17,13 +17,13 @@ export default function RootLayout({ children }) {
         <link rel="icon" type="image/png" href="/logo.ico" />
       </head>
       <body className="min-h-screen bg-gray-50 flex flex-col">
-          <TooltipProvider>
-            <Toaster />
-            <Header />
-            <LabanDictFrame />
-            <main className="flex-grow">{children}</main>
-            <Footer />
-          </TooltipProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Header />
+          <LabanDictFrame />
+          <main className="flex-grow">{children}</main>
+          <Footer />
+        </TooltipProvider>
       </body>
     </html>
   )

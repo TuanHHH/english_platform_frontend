@@ -1,13 +1,32 @@
 "use client"
 
 import Link from "next/link"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Mail, ArrowLeft } from "lucide-react"
+import { ValidationPattern } from "@/lib/constants"
+
 
 export default function EmailStep({ email, setEmail, onSubmit }) {
+  const [error, setError] = useState("")
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    if (!email) {
+      setError("Email không được để trống")
+      return
+    }
+    if (!ValidationPattern.EMAIL_PATTERN.test(email)) {
+      setError("Email không hợp lệ: chỉ được chứa ký tự chữ, số, ., _, -")
+      return
+    }
+    setError("")
+    onSubmit(e)
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -17,7 +36,7 @@ export default function EmailStep({ email, setEmail, onSubmit }) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={onSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <Label>Email</Label>
             <div className="relative mt-2">
@@ -29,10 +48,16 @@ export default function EmailStep({ email, setEmail, onSubmit }) {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="pl-10"
+                aria-invalid={!!error}
               />
             </div>
+            {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
           </div>
-          <Button type="submit" className="w-full bg-blue-600 text-white hover:bg-blue-500" disabled={!email}>
+          <Button
+            type="submit"
+            className="w-full bg-blue-600 text-white hover:bg-blue-500"
+            disabled={!email}
+          >
             Gửi mã xác thực
           </Button>
         </form>

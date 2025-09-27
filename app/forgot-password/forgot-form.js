@@ -4,8 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import FullPageLoader from "@/components/common/full-page-loader"
-
-import { actionForgotPassword, actionVerifyOtp, actionResetPassword } from "./actions"
+import { forgotPassword, verifyOtp, resetPassword } from "@/lib/api/auth"
 
 import EmailStep from "./steps/email-step"
 import OtpStep from "./steps/otp-step"
@@ -23,7 +22,7 @@ export default function ForgotForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [formData, setFormData] = useState({ newPassword: "", confirmPassword: "" })
 
-  // resend timer
+  // resend timer countdown
   useEffect(() => {
     if (resendTimer > 0) {
       const t = setInterval(() => setResendTimer((s) => s - 1), 1000)
@@ -31,67 +30,83 @@ export default function ForgotForm() {
     }
   }, [resendTimer])
 
-  const handleEmailSubmit = async (e) => {
-    e.preventDefault()
+  const handleResend = async () => {
+    if (resendTimer > 0) return
     setLoading(true)
     try {
-      await actionForgotPassword(email)
-      toast.success("Mã xác thực đã gửi về email.")
-      setStep("otp")
-    } catch (err) {
-      toast.error(err.message || "Lỗi khi gửi email.")
+      const res = await forgotPassword(email)
+      if (res?.success) {
+        setResendTimer(60)
+        toast.success("OTP mới đã được gửi")
+      } else {
+        toast.error(res.error || "Không thể gửi lại OTP.")
+      }
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleEmailSubmit = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    const res = await forgotPassword(email)
+    if (res.error) {
+      toast.error(res.error)
+    } else {
+      toast.success("Mã xác thực đã gửi về email.")
+      setStep("otp")
+    }
+    setLoading(false)
   }
 
   const handleOtpSubmit = async (e) => {
     e.preventDefault()
     if (otp.length !== 6) return
     setLoading(true)
-    try {
-      const res = await actionVerifyOtp(email, otp)
-      setIdentifyCode(res.data?.identifyCode)
+    const res = await verifyOtp(email, otp)
+    if (res.error) {
+      toast.error(res.error)
+    } else {
+      // backend trả identifyCode
+      setIdentifyCode(res.data?.data?.identifyCode)
       toast.success("Xác thực thành công.")
       setStep("reset")
-    } catch (err) {
-      toast.error(err.message || "OTP không hợp lệ.")
-    } finally {
-      setLoading(false)
     }
-  }
-
-  const handleResend = async () => {
-    if (resendTimer > 0) return
-    try {
-      await actionForgotPassword(email)
-      setResendTimer(60)
-      toast.success("OTP mới đã được gửi")
-    } catch {
-      toast.error("Không thể gửi lại OTP.")
-    }
+    setLoading(false)
   }
 
   const handleResetSubmit = async (e) => {
     e.preventDefault()
+    if (formData.newPassword !== formData.confirmPassword) {
+      toast.error("Mật khẩu xác nhận không khớp.")
+      return
+    }
     setLoading(true)
-    try {
-      await actionResetPassword(email, formData.newPassword, formData.confirmPassword, identifyCode)
+    const res = await resetPassword(
+      email,
+      formData.newPassword,
+      formData.confirmPassword,
+      identifyCode
+    )
+    if (res.error) {
+      toast.error(res.error)
+    } else {
       toast.success("Đặt lại mật khẩu thành công.")
       router.push("/login")
-    } catch (err) {
-      toast.error(err.message || "Không thể đặt lại mật khẩu.")
-    } finally {
-      setLoading(false)
     }
+    setLoading(false)
   }
-
+  
   return (
     <>
       {loading && <FullPageLoader />}
       <div className="w-full max-w-xl space-y-8">
         {step === "email" && (
-          <EmailStep email={email} setEmail={setEmail} onSubmit={handleEmailSubmit} />
+          <EmailStep
+            email={email}
+            setEmail={setEmail}
+            onSubmit={handleEmailSubmit}
+          />
         )}
         {step === "otp" && (
           <OtpStep
