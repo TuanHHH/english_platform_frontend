@@ -16,19 +16,24 @@ import {
 // import Notification from "@/components/common/notification";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { logout } from "@/lib/api/auth";
+import { useAuthStore } from "@/store/auth-store"; 
 
 const UserDropdown = ({ user }) => {
   const router = useRouter();
+  const logoutUser = useAuthStore((s) => s.logoutUser); 
 
   if (!user) return null;
 
   const handleLogout = async () => {
     try {
-      await logout();
-      toast.success("Bạn đã đăng xuất.");
-      router.push("/");
-      router.refresh(); // Làm mới trang để cập nhật trạng thái đăng nhập
+      const result = await logoutUser();
+      if (result?.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("Bạn đã đăng xuất.");
+        router.push("/");
+        router.refresh(); 
+      }
     } catch (err) {
       console.error("Logout error:", err);
       toast.error("Đăng xuất thất bại, vui lòng thử lại.");

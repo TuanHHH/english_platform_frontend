@@ -6,11 +6,8 @@ import { navItems } from "@/lib/constants"
 import SearchContainer from "@/components/common/search/search-container"
 import AuthSection from "@/components/common/auth-section/auth-section"
 import AuthSectionMobile from "@/components/common/auth-section/auth-section-mobile"
-import { getUser } from "@/lib/api/user"
 
-export default async function Header() {
-  const user = await getUser()
-
+export default function Header() {
   return (
     <header className="bg-white shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -37,7 +34,7 @@ export default async function Header() {
           </div>
 
           <div className="hidden md:flex items-center space-x-3">
-            <AuthSection user={user} />
+            <AuthSection />
           </div>
 
           <Sheet>
@@ -58,7 +55,7 @@ export default async function Header() {
                   </Link>
                 ))}
                 <div className="pt-4 border-t">
-                  <AuthSectionMobile user={user} />
+                  <AuthSectionMobile />
                 </div>
               </nav>
             </SheetContent>

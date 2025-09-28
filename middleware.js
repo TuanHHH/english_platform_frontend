@@ -16,7 +16,7 @@ const rules = [
 export function middleware(request) {
   const { pathname } = request.nextUrl
 
-  // ✅ Cho phép api routes đi qua để refresh
+  // Cho phép api routes đi qua
   if (pathname.startsWith("/api")) {
     return NextResponse.next()
   }
@@ -27,14 +27,14 @@ export function middleware(request) {
   for (const rule of rules) {
     for (const route of rule.routes) {
       if (pathname.startsWith(route)) {
-        // 🔒 Private route → cần login
+        // Private route → cần login
         if (rule.requireAuth && !access && !refresh) {
           return NextResponse.redirect(
             new URL(rule.redirectIfNoAuth, request.url)
           )
         }
 
-        // 🌐 Public route → nếu login rồi thì redirect
+        // Public route → nếu login rồi thì redirect
         if (!rule.requireAuth && access && rule.redirectIfAuth) {
           return NextResponse.redirect(
             new URL(rule.redirectIfAuth, request.url)

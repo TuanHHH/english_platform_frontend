@@ -12,13 +12,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Lock, Mail, Eye, EyeOff } from "lucide-react"
 import FullPageLoader from "@/components/common/full-page-loader"
-import { login } from "@/lib/api/auth"
 import { loginSchema } from "@/schema/login"
+import { useAuthStore } from "@/store/auth-store"
 
 export default function LoginForm() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  const loginUser = useAuthStore((s) => s.loginUser)
 
   const {
     register,
@@ -32,13 +34,12 @@ export default function LoginForm() {
   async function onSubmit(values) {
     setLoading(true)
     try {
-      const res = await login(values.identifier, values.password)
+      const res = await loginUser(values.identifier, values.password)
       if (res?.error) {
         toast.error(res.error)
       } else {
         toast.success("Đăng nhập thành công!")
         router.push("/")
-        router.refresh()
       }
     } catch {
       toast.error("Có lỗi kết nối server")
