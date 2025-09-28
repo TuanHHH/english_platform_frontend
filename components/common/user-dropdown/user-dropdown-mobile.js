@@ -7,12 +7,12 @@ import {
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { logout } from "@/lib/api/auth";
+import { useAuthStore } from "@/store/auth-store"; 
 // import Notification from "@/components/common/notification";
 
 const UserDropdownMobile = ({ user }) => {
     const router = useRouter();
-
+    const logout = useAuthStore((s) => s.logoutUser);
     if (!user) return null;
 
     const handleLogout = async () => {

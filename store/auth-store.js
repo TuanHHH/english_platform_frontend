@@ -5,37 +5,37 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import { getUser } from '@/lib/api/user'
 import { login as apiLogin, logout, logoutAll } from '@/lib/api/auth'
 
-export const useAuthStore = create(
+// Ignore this flag after first bootstrap
+// (to avoid multiple re-fetches in dev mode with React StrictMode)
+let didBootstrap = false
+
+export const useAuthStore = create()(
   persist(
     (set, get) => ({
+      // persisted
       user: null,
-      hasHydrated: false,    
-      hasInitialized: false, 
+      isLoggedIn: false,
+
+      // runtime-only
+      hasHydrated: false,
       isFetchingUser: false,
 
+      // setters
       setHasHydrated: (v) => set({ hasHydrated: v }),
-      setHasInitialized: (v) => set({ hasInitialized: v }),
+      setIsLoggedIn: (v) => set({ isLoggedIn: v }),
 
-      initializeAuth: async () => {
+      fetchUser: async (force = false) => {
         const s = get()
-        if (s.hasInitialized) return
-        set({ hasInitialized: true })
-        if (s.user) return
-        if (s.isFetchingUser) return
-        try {
-          await s.fetchUser()
-        } catch (e) {
-        }
-      },
+        if (!s.isLoggedIn) return
+        if (!force && s.isFetchingUser) return
 
-      fetchUser: async () => {
         set({ isFetchingUser: true })
         try {
           const data = await getUser()
           set({ user: data })
         } catch (err) {
           console.error('fetchUser error:', err)
-          set({ user: null })
+          set({ user: null, isLoggedIn: false })
         } finally {
           set({ isFetchingUser: false })
         }
@@ -47,7 +47,8 @@ export const useAuthStore = create(
           if (result?.error) return { error: result.error }
 
           if (result?.success) {
-            await get().fetchUser()
+            set({ isLoggedIn: true })
+            await get().fetchUser(true) 
             return { success: true }
           }
           return { error: 'Đăng nhập thất bại. Vui lòng thử lại.' }
@@ -60,10 +61,10 @@ export const useAuthStore = create(
       logoutUser: async () => {
         try {
           const result = await logout()
-          if (result?.success) set({ user: null })
-          return result
+          set({ user: null, isLoggedIn: false })
+          return result?.success ? { success: true } : { error: 'Đăng xuất thất bại.' }
         } catch {
-          set({ user: null })
+          set({ user: null, isLoggedIn: false })
           return { error: 'Đăng xuất thất bại.' }
         }
       },
@@ -71,23 +72,39 @@ export const useAuthStore = create(
       logoutAllUser: async () => {
         try {
           const result = await logoutAll()
-          if (result?.success) set({ user: null })
-          return result
+          set({ user: null, isLoggedIn: false })
+          return result?.success ? { success: true } : { error: 'Đăng xuất tất cả thất bại.' }
         } catch {
-          set({ user: null })
+          set({ user: null, isLoggedIn: false })
           return { error: 'Đăng xuất tất cả thất bại.' }
         }
+      },
+
+      oauthLogin: async () => {
+        set({ isLoggedIn: true })
+        await get().fetchUser(true)
       },
     }),
     {
       name: 'engpro-auth-storage',
       storage: createJSONStorage(() => localStorage),
+
+      // Only persist when needed
+      partialize: (state) => ({
+        user: state.user,
+        isLoggedIn: state.isLoggedIn,
+      }),
+
+      // After rehydrate: if logged in, always refetch (to update) user data
       onRehydrateStorage: () => (state, error) => {
         if (!state) return
         state.setHasHydrated(true)
-        state.initializeAuth()
+
+        if (!didBootstrap && state.isLoggedIn) {
+          didBootstrap = true
+          state.fetchUser(true)
+        }
       },
-      
     }
   )
 )

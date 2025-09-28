@@ -2,12 +2,12 @@ import { NextResponse } from "next/server"
 
 const rules = [
   {
-    routes: ["/login", "/register", "/forgot-password", "/auth/callback"], // public
+    routes: ["/login", "/register", "/forgot-password", "/auth/callback/error"], // public
     requireAuth: false,
     redirectIfAuth: "/", // nếu đã login thì chuyển về home
   },
   {
-    routes: ["/dashboard", "/profile", "/settings"], // private
+    routes: ["/dashboard", "/profile", "/settings", "/auth/callback/success"], // private
     requireAuth: true,
     redirectIfNoAuth: "/login", // nếu chưa login thì về login
   },
