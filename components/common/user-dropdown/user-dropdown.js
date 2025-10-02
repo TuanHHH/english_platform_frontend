@@ -1,8 +1,9 @@
 "use client";
 
 import {
-  User, LayoutDashboard, LogOut
-  // , MessageCircle
+  LayoutDashboard,
+  LogOut,
+  User as UserIcon, // vẫn dùng cho menu item
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,16 +12,16 @@ import {
   DropdownMenuContent,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuItem
+  DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-// import Notification from "@/components/common/notification";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useAuthStore } from "@/store/auth-store"; 
+import { useAuthStore } from "@/store/auth-store";
 
 const UserDropdown = ({ user }) => {
   const router = useRouter();
-  const logoutUser = useAuthStore((s) => s.logoutUser); 
+  const logoutUser = useAuthStore((s) => s.logoutUser);
 
   if (!user) return null;
 
@@ -32,7 +33,7 @@ const UserDropdown = ({ user }) => {
       } else {
         toast.success("Bạn đã đăng xuất.");
         router.push("/");
-        router.refresh(); 
+        router.refresh();
       }
     } catch (err) {
       console.error("Logout error:", err);
@@ -41,46 +42,52 @@ const UserDropdown = ({ user }) => {
   };
 
   return (
-    <>
-      {/* <Notification /> */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="flex items-center gap-2">
-            <User className="h-4 w-4" />
-            <span className="hidden lg:inline text-sm">{user.fullName}</span>
-          </Button>
-        </DropdownMenuTrigger>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="flex items-center gap-2 px-2"
+        >
+          <Avatar className="h-6 w-6">
+            <AvatarImage
+              src={user?.avatarUrl || "/default-avatar.png"}
+              alt={user.fullName}
+            />
+            <AvatarFallback>
+              {user?.fullName?.charAt(0).toUpperCase() || "U"}
+            </AvatarFallback>
+          </Avatar>
+          <span className="hidden lg:inline text-sm">{user.fullName}</span>
+        </Button>
+      </DropdownMenuTrigger>
 
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel className="text-gray-700">
-            Xin chào, {user.fullName}
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel className="text-gray-700">
+          Xin chào, {user.fullName}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
 
-          {user?.roles?.includes("ADMIN") && (
-            <DropdownMenuItem onClick={() => router.push("/admin")}>
-              <LayoutDashboard className="w-4 h-4 mr-2" />
-              Trang quản trị
-            </DropdownMenuItem>
-          )}
-
-          <DropdownMenuItem onClick={() => router.push("/account")}>
-            <User className="w-4 h-4 mr-2" />
-            Tài khoản
+        {user?.roles?.includes("ADMIN") && (
+          <DropdownMenuItem onClick={() => router.push("/admin")}>
+            <LayoutDashboard className="w-4 h-4 mr-2" />
+            Trang quản trị
           </DropdownMenuItem>
-          {/* <DropdownMenuItem onClick={() => router.push("/feedback")}>
-            <MessageCircle className="w-4 h-4 mr-2" />
-            Góp ý
-          </DropdownMenuItem> */}
-          <DropdownMenuSeparator />
+        )}
 
-          <DropdownMenuItem onClick={handleLogout}>
-            <LogOut className="w-4 h-4 mr-2" />
-            Đăng xuất
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </>
+        <DropdownMenuItem onClick={() => router.push("/account")}>
+          <UserIcon className="w-4 h-4 mr-2" />
+          Tài khoản
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem onClick={handleLogout}>
+          <LogOut className="w-4 h-4 mr-2" />
+          Đăng xuất
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 

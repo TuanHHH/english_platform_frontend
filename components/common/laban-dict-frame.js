@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 import { BookOpen } from "lucide-react"
 import { useUIStore } from "@/store/ui"
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 
 export default function LabanDictFrame() {
   const { openWidget, setOpenWidget } = useUIStore()
@@ -52,12 +53,19 @@ export default function LabanDictFrame() {
 
   return (
     <>
-      <button
-        onClick={() => setOpenWidget(isOpen ? null : "dict")}
-        className="fixed bottom-24 right-6 bg-blue-600 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg z-[10] hover:bg-blue-700 transition"
-      >
-        <BookOpen className="w-6 h-6" />
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={() => setOpenWidget(isOpen ? null : "dict")}
+            className="fixed bottom-24 right-6 bg-blue-600 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg z-[10] hover:bg-blue-700 transition"
+          >
+            <BookOpen className="w-6 h-6" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="left" className="bg-gray-900 text-white px-2 py-1 text-xs rounded">
+          {isOpen ? "Đóng" : "Từ điển"}
+        </TooltipContent>
+      </Tooltip>
 
       {isOpen && (
         <div className="fixed bottom-40 right-6 w-[350px] h-[420px] bg-white border rounded-lg shadow-xl p-2 z-[10]">

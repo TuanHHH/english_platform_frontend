@@ -1,75 +1,79 @@
-"use client";
+"use client"
 
 import {
-    User, LayoutDashboard, LogOut
-    // , MessageCircle
-} from "lucide-react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { useAuthStore } from "@/store/auth-store"; 
-// import Notification from "@/components/common/notification";
+  User as UserIcon,
+  LayoutDashboard,
+  LogOut,
+} from "lucide-react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
+import { useAuthStore } from "@/store/auth-store"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 const UserDropdownMobile = ({ user }) => {
-    const router = useRouter();
-    const logout = useAuthStore((s) => s.logoutUser);
-    if (!user) return null;
+  const router = useRouter()
+  const logout = useAuthStore((s) => s.logoutUser)
 
-    const handleLogout = async () => {
-        try {
-            await logout()
-            toast.success("Bạn đã đăng xuất");
-            router.push("/");
-        } catch (err) {
-            toast.error("Đăng xuất thất bại");
-        }
-    };
+  if (!user) return null
 
-    return (
-        <div className="flex flex-col gap-2 pt-4">
-            {/* <Notification /> */}
-            <p className="text-sm text-gray-600">
-                Xin chào, <strong>{user.fullName}</strong>
-            </p>
+  const handleLogout = async () => {
+    try {
+      await logout()
+      toast.success("Bạn đã đăng xuất")
+      router.push("/")
+    } catch (err) {
+      toast.error("Đăng xuất thất bại")
+    }
+  }
 
-            {user?.roles?.includes("ADMIN") && (
-                <Button
-                    variant="ghost"
-                    className="justify-start w-full"
-                    onClick={() => router.push("/admin")}
-                >
-                    <LayoutDashboard className="w-4 h-4 mr-2" />
-                    Trang quản trị
-                </Button>
-            )}
-            <Button
-                variant="ghost"
-                className="justify-start w-full"
-                onClick={() => router.push("/account")}
-            >
-                <User className="w-4 h-4 mr-2" />
-                Tài khoản
-            </Button>
+  return (
+    <div className="flex flex-col gap-2 pt-4">
+      <div className="flex items-center gap-3">
+        <Avatar className="h-10 w-10">
+          <AvatarImage
+            src={user?.avatarUrl || "/default-avatar.png"}
+            alt={user.fullName}
+          />
+          <AvatarFallback>
+            {user?.fullName?.charAt(0).toUpperCase() || "U"}
+          </AvatarFallback>
+        </Avatar>
+        <p className="text-sm text-gray-600">
+          Xin chào, <strong>{user.fullName}</strong>
+        </p>
+      </div>
 
-            {/* <Button
-                variant="ghost"
-                className="justify-start w-full"
-                onClick={() => router.push("/feedback")}
-            >
-                <MessageCircle className="w-4 h-4 mr-2" />
-                Góp ý
-            </Button> */}
+      {user?.roles?.includes("ADMIN") && (
+        <Button
+          variant="ghost"
+          className="justify-start w-full"
+          onClick={() => router.push("/admin")}
+        >
+          <LayoutDashboard className="w-4 h-4 mr-2" />
+          Trang quản trị
+        </Button>
+      )}
 
-            <Button
-                variant="ghost"
-                className="justify-start w-full text-red-600"
-                onClick={handleLogout}
-            >
-                <LogOut className="w-4 h-4 mr-2" />
-                Đăng xuất
-            </Button>
-        </div>
-    );
-};
+      <Button
+        variant="ghost"
+        className="justify-start w-full"
+        onClick={() => router.push("/account")}
+      >
+        <UserIcon className="w-4 h-4 mr-2" />
+        Tài khoản
+      </Button>
 
-export default UserDropdownMobile;
+      <Button
+        variant="ghost"
+        className="justify-start w-full text-red-600"
+        onClick={handleLogout}
+      >
+        <LogOut className="w-4 h-4 mr-2" />
+        Đăng xuất
+      </Button>
+    </div>
+  )
+}
+
+export default UserDropdownMobile
