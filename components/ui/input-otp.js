@@ -1,8 +1,13 @@
 "use client"
+
 import * as React from "react"
 import { OTPInput, OTPInputContext } from "input-otp"
 import { Dot } from "lucide-react"
+
 import { cn } from "@/lib/utils"
+
+// Export the regex pattern for alphanumeric characters
+export const REGEXP_ONLY_DIGITS_AND_CHARS = /^[A-Za-z0-9]+$/
 
 const InputOTP = React.forwardRef(({ className, containerClassName, ...props }, ref) => (
   <OTPInput
@@ -21,27 +26,33 @@ InputOTPGroup.displayName = "InputOTPGroup"
 
 const InputOTPSlot = React.forwardRef(({ index, className, ...props }, ref) => {
   const inputOTPContext = React.useContext(OTPInputContext)
-  const char = inputOTPContext.slots[index]
-  const isActive = inputOTPContext.activeIndex === index
+  const { char, hasFakeCaret, isActive } = inputOTPContext.slots[index]
 
   return (
     <div
       ref={ref}
       className={cn(
-        "relative flex h-10 w-10 items-center justify-center rounded-md border border-input text-sm transition-all",
+        "relative flex h-10 w-10 items-center justify-center border-y border-r border-input text-sm transition-all first:rounded-l-md first:border-l last:rounded-r-md",
         isActive && "z-10 ring-2 ring-ring ring-offset-background",
         className
       )}
       {...props}
     >
-      {char ? <div className="animate-in fade-in-0 zoom-in-95">{char}</div> : <Dot className="h-4 w-4 text-muted-foreground" />}
+      {char}
+      {hasFakeCaret && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div className="h-4 w-px animate-caret-blink bg-foreground duration-1000" />
+        </div>
+      )}
     </div>
   )
 })
 InputOTPSlot.displayName = "InputOTPSlot"
 
-const InputOTPSeparator = React.forwardRef(({ ...props }, ref) => (
-  <div ref={ref} role="separator" aria-orientation="vertical" className="mx-2 h-4 w-px bg-border" {...props} />
+const InputOTPSeparator = React.forwardRef((props, ref) => (
+  <div ref={ref} role="separator" {...props}>
+    <Dot />
+  </div>
 ))
 InputOTPSeparator.displayName = "InputOTPSeparator"
 
