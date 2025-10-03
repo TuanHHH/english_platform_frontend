@@ -1,204 +1,266 @@
-"use client";
-import React from "react";
-import { Search, UserPlus, Edit, Ban, Mail } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import AdminSidebar from "@/components/common/AdminSidebar";
+'use client'
 
-const UserManagement = () => {
-  const users = [
-    {
-      id: 1,
-      name: "Nguyễn Văn An",
-      email: "nguyenvanan@email.com",
-      role: "Học viên",
-      joinDate: "15/03/2024",
-      lastActive: "Hôm nay",
-      testsCompleted: 45,
-      avgScore: 78.5,
-      status: "Hoạt động"
-    },
-    {
-      id: 2,
-      name: "Trần Thị Bình",
-      email: "tranthibinh@email.com", 
-      role: "Học viên",
-      joinDate: "08/03/2024",
-      lastActive: "2 giờ trước",
-      testsCompleted: 23,
-      avgScore: 85.2,
-      status: "Hoạt động"
-    },
-    {
-      id: 3,
-      name: "Lê Hoàng Nam",
-      email: "lehoangnam@email.com",
-      role: "Giảng viên",
-      joinDate: "01/01/2024",
-      lastActive: "1 ngày trước",
-      testsCompleted: 0,
-      avgScore: 0,
-      status: "Hoạt động"
-    },
-    {
-      id: 4,
-      name: "Phạm Thị Hoa",
-      email: "phamthihoa@email.com",
-      role: "Học viên",
-      joinDate: "20/02/2024",
-      lastActive: "3 ngày trước",
-      testsCompleted: 67,
-      avgScore: 92.1,
-      status: "Tạm khóa"
-    }
-  ];
+import { useEffect, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { User } from 'lucide-react'
+import { changePassword, getUser, updateUser } from '@/lib/api/user'
+import { toast } from 'sonner'
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "Hoạt động":
-        return "bg-accent/10 text-accent";
-      case "Tạm khóa":
-        return "bg-destructive/10 text-destructive";
-      default:
-        return "bg-muted text-muted-foreground";
-    }
-  };
+const ProfileCard = () => {
+  const [hasChanges, setHasChanges] = useState(false)
+  const [avatarPreview, setAvatarPreview] = useState(null)
 
-  const getRoleColor = (role) => {
-    switch (role) {
-      case "Giảng viên":
-        return "bg-primary/10 text-primary";
-      case "Học viên":
-        return "bg-accent/10 text-accent";
-      default:
-        return "bg-muted text-muted-foreground";
+  // State user info
+  const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
+  const [avatarFile, setAvatarFile] = useState(null)
+
+  // State đổi mật khẩu
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [updatingProfile, setUpdatingProfile] = useState(false)
+
+  // 🔸 Lấy thông tin user khi load trang
+  useEffect(() => {
+    async function fetchUser() {
+      const res = await getUser()
+      if (res?.success) {
+        const user = res.data
+        setFullName(user.fullName || '')
+        setEmail(user.email || '')
+        setAvatarPreview(user.avatarUrl || null)
+      } else {
+        toast.error('Không lấy được thông tin người dùng')
+      }
     }
-  };
+
+    fetchUser()
+  }, [])
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setAvatarFile(file)
+      const url = URL.createObjectURL(file)
+      setAvatarPreview(url)
+      setHasChanges(true)
+    }
+  }
+
+  const handleAvatarRemove = () => {
+    setAvatarPreview(null)
+    setAvatarFile(null)
+    setHasChanges(true)
+  }
+
+  // 🟦 Gửi form cập nhật hồ sơ
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault()
+    setUpdatingProfile(true)
+
+    try {
+      // Nếu bạn có upload avatar thực tế, ở đây có thể cần upload file lên S3 hoặc backend trước
+      let avatarUrl = avatarPreview
+
+      const res = await updateUser({
+        fullName,
+        email,
+        avatarUrl,
+      })
+
+      if (res.success) {
+        toast.success('Hồ sơ được cập nhật thành công')
+        setHasChanges(false)
+      } else {
+        toast.error(res.error || 'Cập nhật thất bại')
+      }
+    } catch (error) {
+      toast.error('Đã xảy ra lỗi khi cập nhật')
+    } finally {
+      setUpdatingProfile(false)
+    }
+  }
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault()
+    if (newPassword !== confirmPassword) {
+      toast.error('Mật khẩu xác nhận không khớp')
+      return
+    }
+    if (newPassword === currentPassword) {
+      toast.error('Mật khẩu mới phải khác mật khẩu hiện tại')
+      return
+    }
+    setLoading(true)
+    const res = await changePassword(currentPassword, newPassword, confirmPassword)
+    setLoading(false)
+
+    if (res.success) {
+      toast.success('Đổi mật khẩu thành công')
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+    } else {
+      toast.error(res.error)
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-background flex">
-      <AdminSidebar />
-      
-      <div className="flex-1 p-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-4">Quản lí người dùng</h1>
-            <p className="text-xl text-muted-foreground">
-              Quản lý tài khoản và quyền hạn người dùng
-            </p>
-          </div>
-          <Button size="lg">
-            <UserPlus className="w-4 h-4 mr-2" />
-            Thêm người dùng
-          </Button>
-        </div>
-
-        {/* Search & Filter */}
-        <div className="flex items-center space-x-4 mb-8">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <Input
-              placeholder="Tìm kiếm theo tên hoặc email..."
-              className="pl-10"
-            />
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Tổng người dùng</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">12,543</div>
-              <p className="text-xs text-accent font-medium">+234 tháng này</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Học viên</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">11,890</div>
-              <p className="text-xs text-primary font-medium">94.8% tổng số</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Giảng viên</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">653</div>
-              <p className="text-xs text-accent font-medium">5.2% tổng số</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Hoạt động hôm nay</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">2,341</div>
-              <p className="text-xs text-primary font-medium">18.7% tổng số</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Users Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Danh sách người dùng</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {users.map((user) => (
-                <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg hover:shadow-soft transition-smooth">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center text-white font-semibold">
-                      {user.name.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="flex items-center space-x-3 mb-1">
-                        <h3 className="font-semibold">{user.name}</h3>
-                        <span className={`px-2 py-1 rounded-full text-xs ${getRoleColor(user.role)}`}>
-                          {user.role}
-                        </span>
-                        <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(user.status)}`}>
-                          {user.status}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{user.email}</p>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-muted-foreground mt-2">
-                        <span>Tham gia: {user.joinDate}</span>
-                        <span>Hoạt động: {user.lastActive}</span>
-                        <span>Đề thi: {user.testsCompleted}</span>
-                        <span>Điểm TB: {user.avgScore > 0 ? user.avgScore : 'N/A'}</span>
-                      </div>
-                    </div>
+    <div className="grid md:grid-cols-2 gap-6">
+      {/* Hồ sơ cá nhân */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="h-5 w-5" />
+            Hồ sơ cá nhân
+          </CardTitle>
+          <CardDescription>Thông tin cá nhân</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleUpdateProfile} className="space-y-6">
+            {/* Avatar */}
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 border">
+                {avatarPreview ? (
+                  <img
+                    src={avatarPreview}
+                    alt="Avatar preview"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center w-full h-full text-gray-400 text-xs text-center px-2">
+                    No Avatar
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Button variant="ghost" size="sm">
-                      <Mail className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                      <Ban className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                )}
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label
+                  htmlFor="avatar"
+                  className="cursor-pointer bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-500 text-sm text-center"
+                >
+                  Upload Avatar
+                </Label>
+                <Input
+                  id="avatar"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarChange}
+                />
+                {avatarPreview && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAvatarRemove}
+                  >
+                    Xóa avatar
+                  </Button>
+                )}
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-};
 
-export default UserManagement;
+            <div>
+              <Label className="mb-2" htmlFor="fullName">
+                Tên
+              </Label>
+              <Input
+                id="fullName"
+                value={fullName}
+                onChange={(e) => {
+                  setFullName(e.target.value)
+                  setHasChanges(true)
+                }}
+              />
+            </div>
+
+            <div>
+              <Label className="mb-2" htmlFor="email">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                disabled
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  setHasChanges(true)
+                }}
+              />
+            </div>
+
+            {hasChanges && (
+              <Button
+                type="submit"
+                className="w-full bg-blue-600 text-white hover:bg-blue-500"
+                disabled={updatingProfile}
+              >
+                {updatingProfile ? 'Đang cập nhật...' : 'Cập nhật hồ sơ'}
+              </Button>
+            )}
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Đổi mật khẩu */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Đổi mật khẩu</CardTitle>
+          <CardDescription>Tăng bảo mật tài khoản của bạn</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleChangePassword} className="space-y-4">
+            <div>
+              <Label className="mb-2">Mật khẩu hiện tại</Label>
+              <Input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <Label className="mb-2">Mật khẩu mới</Label>
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <Label className="mb-2">Xác nhận mật khẩu</Label>
+              <Input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full bg-blue-600 text-white hover:bg-blue-500"
+              disabled={loading}
+            >
+              {loading ? 'Đang đổi...' : 'Xác nhận đổi mật khẩu'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+export default ProfileCard

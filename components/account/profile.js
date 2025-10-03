@@ -12,13 +12,39 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { User } from 'lucide-react'
+import { changePassword, getUser, updateUser } from '@/lib/api/user'
+import { toast } from 'sonner'
 
 const ProfileCard = () => {
   const [hasChanges, setHasChanges] = useState(false)
   const [avatarPreview, setAvatarPreview] = useState(null)
 
+  // State user info
+  const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
+
+  // State đổi mật khẩu
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [updatingProfile, setUpdatingProfile] = useState(false)
+
+  // 🔸 Lấy thông tin user khi load trang
   useEffect(() => {
-    setHasChanges(true) // fake trạng thái để hiện nút submit
+    async function fetchUser() {
+      const res = await getUser()
+      if (res?.success) {
+        const user = res.data
+        setFullName(user.fullName || '')
+        setEmail(user.email || '')
+        setAvatarPreview(user.avatarUrl || null)
+      } else {
+        toast.error('Không lấy được thông tin người dùng')
+      }
+    }
+
+    fetchUser()
   }, [])
 
   const handleAvatarChange = (e) => {
@@ -26,15 +52,70 @@ const ProfileCard = () => {
     if (file) {
       const url = URL.createObjectURL(file)
       setAvatarPreview(url)
+      setHasChanges(true)
+    }
+  }
+
+  // 🟦 Gửi form cập nhật hồ sơ
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault()
+    setUpdatingProfile(true)
+
+    try {
+      // Nếu bạn có upload avatar thực tế, ở đây có thể cần upload file lên S3 hoặc backend trước
+      let avatarUrl = avatarPreview
+
+      const res = await updateUser({
+        fullName,
+        email,
+        avatarUrl,
+      })
+
+      if (res.success) {
+        toast.success('Hồ sơ được cập nhật thành công')
+        setHasChanges(false)
+      } else {
+        toast.error(res.error || 'Cập nhật thất bại')
+      }
+    } catch (error) {
+      toast.error('Đã xảy ra lỗi khi cập nhật')
+    } finally {
+      setUpdatingProfile(false)
     }
   }
 
   const handleAvatarRemove = () => {
     setAvatarPreview(null)
+    setHasChanges(true)
+  }
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault()
+    if (newPassword !== confirmPassword) {
+      toast.error('Mật khẩu xác nhận không khớp')
+      return
+    }
+    if (newPassword === currentPassword) {
+      toast.error('Mật khẩu mới phải khác mật khẩu hiện tại')
+      return
+    }
+    setLoading(true)
+    const res = await changePassword(currentPassword, newPassword, confirmPassword)
+    setLoading(false)
+
+    if (res.success) {
+      toast.success('Đổi mật khẩu thành công')
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+    } else {
+      toast.error(res.error)
+    }
   }
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
+      {/* Hồ sơ cá nhân */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -44,7 +125,8 @@ const ProfileCard = () => {
           <CardDescription>Thông tin cá nhân</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
+          {/* <form onSubmit={(e) => e.preventDefault()} className="space-y-6"> */}
+          <form onSubmit={handleUpdateProfile} className="space-y-6">
             {/* Avatar */}
             <div className="flex items-center gap-4">
               <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 border">
@@ -91,14 +173,30 @@ const ProfileCard = () => {
               <Label className="mb-2" htmlFor="fullName">
                 Tên
               </Label>
-              <Input id="fullName" />
+              <Input
+                id="fullName"
+                value={fullName}
+                onChange={(e) => {
+                  setFullName(e.target.value)
+                  setHasChanges(true)
+                }}
+              />
             </div>
 
             <div>
               <Label className="mb-2" htmlFor="email">
                 Email
               </Label>
-              <Input id="email" type="email" />
+              <Input
+                id="email"
+                type="email"
+                disabled
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  setHasChanges(true)
+                }}
+              />
             </div>
 
             {hasChanges && (
@@ -113,30 +211,47 @@ const ProfileCard = () => {
         </CardContent>
       </Card>
 
+      {/* Đổi mật khẩu */}
       <Card>
         <CardHeader>
           <CardTitle>Đổi mật khẩu</CardTitle>
           <CardDescription>Tăng bảo mật tài khoản của bạn</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
+          <form onSubmit={handleChangePassword} className="space-y-4">
             <div>
               <Label className="mb-2">Mật khẩu hiện tại</Label>
-              <Input type="password" />
+              <Input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                required
+              />
             </div>
             <div>
               <Label className="mb-2">Mật khẩu mới</Label>
-              <Input type="password" />
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+              />
             </div>
             <div>
               <Label className="mb-2">Xác nhận mật khẩu</Label>
-              <Input type="password" />
+              <Input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
             </div>
             <Button
               type="submit"
               className="w-full bg-blue-600 text-white hover:bg-blue-500"
+              disabled={loading}
             >
-              Xác nhận đổi mật khẩu
+              {loading ? 'Đang đổi...' : 'Xác nhận đổi mật khẩu'}
             </Button>
           </form>
         </CardContent>
