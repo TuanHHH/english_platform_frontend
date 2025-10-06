@@ -13,7 +13,7 @@ export default function CallbackSuccess() {
   useEffect(() => {
     const run = async () => {
       try {
-        await oauthLogin()   
+        await oauthLogin()
         toast.success("Đăng nhập thành công!")
       } catch (e) {
         console.error("oauthLogin error:", e)

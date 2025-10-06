@@ -2,7 +2,7 @@
 
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import { getUser } from '@/lib/api/user'
+import { getUser, updateUser } from '@/lib/api/user'
 import { login as apiLogin, logout, logoutAll } from '@/lib/api/auth'
 
 // Ignore this flag after first bootstrap
@@ -41,6 +41,34 @@ export const useAuthStore = create()(
         }
       },
 
+      updateUser: async ({ fullName, email, avatarFile }) => {
+        try {
+          const res = await updateUser({ fullName, email, avatarFile });
+
+          if (!res.success) {
+            throw new Error(res.error || "Cập nhật người dùng thất bại");
+          }
+
+          const updatedData = res.data?.data;
+          const currentUser = get().user;
+          if (!currentUser) return;
+
+          const newUser = {
+            ...currentUser,
+            ...updatedData,
+          };
+
+          set({ user: newUser });
+          return { success: true, data: newUser };
+        } catch (error) {
+          console.error("Update user error:", error);
+          return {
+            success: false,
+            error: "Cập nhật thất bại",
+          };
+        }
+      },
+
       loginUser: async (identifier, password) => {
         try {
           const result = await apiLogin(identifier, password)
@@ -48,7 +76,7 @@ export const useAuthStore = create()(
 
           if (result?.success) {
             set({ isLoggedIn: true })
-            await get().fetchUser(true) 
+            await get().fetchUser(true)
             return { success: true }
           }
           return { error: 'Đăng nhập thất bại. Vui lòng thử lại.' }

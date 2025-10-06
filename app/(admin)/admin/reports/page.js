@@ -3,7 +3,7 @@ import React from "react";
 import { Flag, User, MessageSquare, CheckCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import AdminSidebar from "@/components/common/AdminSidebar";
+import AdminSidebar from "@/components/common/admin-sidebar";
 
 const ReportManagement = () => {
   const reports = [
@@ -21,7 +21,7 @@ const ReportManagement = () => {
     {
       id: 2,
       reportedBy: "Lê Thị C",
-      reportedUser: "Phạm Văn D", 
+      reportedUser: "Phạm Văn D",
       postTitle: "Chia sẻ tài liệu luyện thi",
       reason: "Nội dung không phù hợp",
       description: "Sử dụng ngôn từ không lịch sự trong bình luận",
@@ -81,8 +81,6 @@ const ReportManagement = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
-      <AdminSidebar />
-
       <div className="flex-1 p-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-4">Quản lí report forum</h1>

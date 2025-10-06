@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { CalendarIcon, Clock, ExternalLink } from 'lucide-react'
 // import { getMyAttemptHistory } from '@/lib/api/attempts'
 // import type { AttemptHistoryRow, ExamHistory, PaginationMeta } from '@/types/attempts'
-import { Pagination } from '@/components/common/pagination'
+import { Pagination } from '@/components/ui/pagination'
 
 /* Helpers */
 function fmtDate(iso) {
@@ -46,35 +46,35 @@ export default function AttemptHistory() {
 
   useEffect(() => {
     let mounted = true
-    ;(async () => {
-      setLoading(true)
-      try {
-        // const res = await getMyAttemptHistory(page, size)
-        const res = {
-          result: [
-            {
-              examId: 1,
-              examName: 'Mock Exam 1',
-              attempt: {
-                attemptId: 'a1',
-                startTime: new Date().toISOString(),
-                durationSeconds: 3600,
-                fullTest: true,
-                correct: 150,
-                total: 200,
+      ; (async () => {
+        setLoading(true)
+        try {
+          // const res = await getMyAttemptHistory(page, size)
+          const res = {
+            result: [
+              {
+                examId: 1,
+                examName: 'Mock Exam 1',
+                attempt: {
+                  attemptId: 'a1',
+                  startTime: new Date().toISOString(),
+                  durationSeconds: 3600,
+                  fullTest: true,
+                  correct: 150,
+                  total: 200,
+                },
               },
-            },
-          ],
-          meta: { page, pages: 2 },
-        }
+            ],
+            meta: { page, pages: 2 },
+          }
 
-        if (!mounted) return
-        setRows(res.result || [])
-        setMeta(res.meta || null)
-      } finally {
-        if (mounted) setLoading(false)
-      }
-    })()
+          if (!mounted) return
+          setRows(res.result || [])
+          setMeta(res.meta || null)
+        } finally {
+          if (mounted) setLoading(false)
+        }
+      })()
     return () => {
       mounted = false
     }

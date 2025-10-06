@@ -3,7 +3,7 @@ import React from "react";
 import { Plus, Edit, Trash2, Eye, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import AdminSidebar from "@/components/common/AdminSidebar";
+import AdminSidebar from "@/components/common/admin-sidebar";
 
 const ExamManagement = () => {
   const exams = [
@@ -24,7 +24,7 @@ const ExamManagement = () => {
       questions: 100,
       duration: 45,
       difficulty: "Dễ",
-      status: "Đã xuất bản", 
+      status: "Đã xuất bản",
       attempts: 856
     },
     {
@@ -62,8 +62,6 @@ const ExamManagement = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
-      <AdminSidebar />
-      
       <div className="flex-1 p-8">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -90,7 +88,7 @@ const ExamManagement = () => {
               <p className="text-xs text-accent font-medium">+15 tuần này</p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Đã xuất bản</CardTitle>
