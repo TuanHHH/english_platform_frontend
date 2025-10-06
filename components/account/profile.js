@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,20 +12,25 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { User } from "lucide-react";
-import { changePassword, updateUser } from "@/lib/api/user"; // ❗ chỉ giữ changePassword & updateUser
+import { changePassword, updateUser } from "@/lib/api/user";
 import { toast } from "sonner";
-import { useAuthStore } from "@/store/auth-store"; // ❗ dùng zustand store
+import { useAuthStore } from "@/store/auth-store";
 
 const ProfileCard = () => {
-  const { user, isLoggedIn, hasHydrated, fetchUser } = useAuthStore();
+  const { user, isLoggedIn, hasHydrated } = useAuthStore();
 
   const [hasChanges, setHasChanges] = useState(false);
+
+  // Preview đang hiển thị ở UI (có thể là link https từ backend hoặc blob: khi vừa chọn file)
   const [avatarPreview, setAvatarPreview] = useState(null);
+  // Data URL chỉ tồn tại khi người dùng vừa chọn ảnh mới mà CHƯA lưu
+  const [avatarDataUrl, setAvatarDataUrl] = useState(null);
+  // Có đang có ảnh mới chờ lưu hay không (để quyết định hiển thị nút hủy)
+  const [avatarPending, setAvatarPending] = useState(false);
 
   // Form state
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [avatarFile, setAvatarFile] = useState(null);
 
   // Đổi mật khẩu
   const [currentPassword, setCurrentPassword] = useState("");
@@ -34,66 +39,150 @@ const ProfileCard = () => {
   const [loading, setLoading] = useState(false);
   const [updatingProfile, setUpdatingProfile] = useState(false);
 
-  // Khi store hydrate + login: nếu chưa có user thì fetch
+  // Tham chiếu tới input file để có thể reset value
+  const fileInputRef = useRef(null);
+
+  // Không tự fetch khi hydrate (tuân thủ yêu cầu)
   useEffect(() => {
     if (!hasHydrated) return;
-    if (isLoggedIn && !user) {
-      fetchUser(true);
-    }
-  }, [hasHydrated, isLoggedIn, user, fetchUser]);
+  }, [hasHydrated]);
 
-  // Đồng bộ form từ store.user
+  // Khi đổi user -> đồng bộ form và preview từ backend, và reset trạng thái pending
   useEffect(() => {
     if (!user) return;
     setFullName(user.fullName || "");
     setEmail(user.email || "");
     setAvatarPreview(user.avatarUrl || null);
+    setAvatarDataUrl(null);
+    setAvatarPending(false);
     setHasChanges(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }, [user]);
 
-  const handleAvatarChange = (e) => {
+  // Giải phóng object URL cũ nếu là blob:
+  useEffect(() => {
+    return () => {
+      // cleanup khi unmount
+      if (avatarPreview && avatarPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+    };
+  }, []); // chỉ cần khi unmount
+
+  // Mỗi lần avatarPreview thay đổi sang blob mới -> revoke blob cũ
+  const setPreviewSafely = (nextUrl) => {
+    setAvatarPreview((prev) => {
+      if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+      return nextUrl;
+    });
+  };
+
+  const fileToDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result); // data URL
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+  // Tính lại hasChanges dựa vào form + trạng thái avatarPending
+  const recomputeHasChanges = (next = {}) => {
+    const nextFullName = next.fullName !== undefined ? next.fullName : fullName;
+    const nextEmail = next.email !== undefined ? next.email : email;
+    const nextAvatarPending =
+      next.avatarPending !== undefined ? next.avatarPending : avatarPending;
+
+    setHasChanges(
+      (nextFullName || "") !== (user?.fullName || "") ||
+        (nextEmail || "") !== (user?.email || "") ||
+        nextAvatarPending // chỉ cần đang pending avatar là coi như có thay đổi
+    );
+  };
+
+  const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setAvatarFile(file);
-      const url = URL.createObjectURL(file);
-      setAvatarPreview(url);
-      setHasChanges(true);
+    if (!file) return;
+
+    // Preview cho UI
+    const url = URL.createObjectURL(file);
+    setPreviewSafely(url);
+
+    try {
+      // Convert sang base64 để gửi JSON avatarUrl (nếu backend chấp nhận)
+      const dataUrl = await fileToDataUrl(file);
+      setAvatarDataUrl(dataUrl);
+      setAvatarPending(true);
+      recomputeHasChanges({ avatarPending: true });
+    } catch (err) {
+      console.error("Avatar to DataURL error:", err);
+      toast.error("Không đọc được ảnh. Vui lòng thử ảnh khác.");
+      // quay lại ảnh ban đầu
+      setPreviewSafely(user?.avatarUrl || null);
+      setAvatarDataUrl(null);
+      setAvatarPending(false);
+      recomputeHasChanges({ avatarPending: false });
     }
   };
 
-  const handleAvatarRemove = () => {
-    setAvatarPreview(null);
-    setAvatarFile(null);
-    setHasChanges(true);
+  // Hủy ảnh vừa chọn (chưa lưu) -> quay về avatar cũ, ẩn nút hủy
+  const handleAvatarCancel = () => {
+    // Xoá preview blob nếu có
+    if (avatarPreview && avatarPreview.startsWith("blob:")) {
+      URL.revokeObjectURL(avatarPreview);
+    }
+    setAvatarDataUrl(null);
+    setAvatarPending(false);
+    setPreviewSafely(user?.avatarUrl || null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    recomputeHasChanges({ avatarPending: false });
   };
 
-  // Cập nhật hồ sơ -> gọi API -> refetch store; fallback: patch store local nếu refetch lỗi
+  // Cập nhật hồ sơ
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setUpdatingProfile(true);
 
     try {
-      // Nếu có flow upload thực, xử lý upload ở đây để lấy avatarUrl chuẩn từ server
       const payload = {
         fullName,
-        email, // hiện tại input đang disabled; vẫn gửi để server làm chuẩn nếu cần
-        avatarUrl: avatarPreview || null,
+        email, // đang disabled ở UI nhưng vẫn gửi để backend quyết định
+        // Nếu không pending avatar -> giữ nguyên URL từ backend
+        avatarUrl:
+          avatarPending && avatarDataUrl
+            ? avatarDataUrl
+            : user?.avatarUrl || null,
       };
 
       const res = await updateUser(payload);
 
       if (res?.success) {
-        // Ưu tiên đồng bộ từ server
-        const refetch = await fetchUser(true);
-        if (refetch?.error) {
-          // Fallback: patch local (nhanh gọn, lần sau sẽ được server sửa lại)
-          useAuthStore.setState((s) => ({
-            user: s.user ? { ...s.user, ...payload } : { ...payload },
-          }));
-        }
+        // Cập nhật store lạc quan
+        useAuthStore.setState((s) => ({
+          user: s.user
+            ? {
+                ...s.user,
+                fullName,
+                email,
+                avatarUrl:
+                  (res.data && res.data.avatarUrl) ??
+                  payload.avatarUrl ??
+                  s.user.avatarUrl,
+              }
+            : { fullName, email, avatarUrl: payload.avatarUrl || null },
+        }));
 
+        // Sau khi lưu xong -> không còn pending
+        setAvatarDataUrl(null);
+        setAvatarPending(false);
+        setPreviewSafely(
+          (res?.data && res.data.avatarUrl) ||
+            payload.avatarUrl ||
+            user?.avatarUrl ||
+            null
+        );
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        recomputeHasChanges({ avatarPending: false });
         toast.success("Hồ sơ được cập nhật thành công");
-        setHasChanges(false);
       } else {
         toast.error(res?.error || "Cập nhật thất bại");
       }
@@ -174,19 +263,20 @@ const ProfileCard = () => {
                 </Label>
                 <Input
                   id="avatar"
+                  ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   className="hidden"
                   onChange={handleAvatarChange}
                 />
-                {avatarPreview && (
+                {avatarPending && (
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={handleAvatarRemove}
+                    onClick={handleAvatarCancel}
                   >
-                    Xóa avatar
+                    Hủy ảnh vừa chọn
                   </Button>
                 )}
               </div>
@@ -200,8 +290,9 @@ const ProfileCard = () => {
                 id="fullName"
                 value={fullName}
                 onChange={(e) => {
-                  setFullName(e.target.value);
-                  setHasChanges(true);
+                  const v = e.target.value;
+                  setFullName(v);
+                  recomputeHasChanges({ fullName: v });
                 }}
               />
             </div>
@@ -216,8 +307,9 @@ const ProfileCard = () => {
                 disabled
                 value={email}
                 onChange={(e) => {
-                  setEmail(e.target.value);
-                  setHasChanges(true);
+                  const v = e.target.value;
+                  setEmail(v);
+                  recomputeHasChanges({ email: v });
                 }}
               />
             </div>
