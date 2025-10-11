@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Menu, X } from "lucide-react";
-import AdminSidebar from "@/components/common/admin-sidebar";
+import AdminSidebar from "@/components/admin/admin-sidebar";
 import { Button } from "@/components/ui/button";
 
 export default function AdminLayout({ children }) {

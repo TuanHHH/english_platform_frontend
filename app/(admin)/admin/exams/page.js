@@ -3,7 +3,7 @@ import React from "react";
 import { Plus, Edit, Trash2, Eye, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import AdminSidebar from "@/components/common/admin-sidebar";
+import AdminSidebar from "@/components/admin/admin-sidebar";
 
 const ExamManagement = () => {
   const exams = [

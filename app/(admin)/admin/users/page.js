@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import AdminSidebar from "@/components/common/admin-sidebar";
+import AdminSidebar from "@/components/admin/admin-sidebar";
 import { getUsers, toggleUserStatus } from "@/lib/api/user";
 import { Pagination } from "@/components/ui/pagination";
-import ConfirmModal from "@/components/admin/user/confirm-modal";
-import UserList from "@/components/admin/user/user-list";
+import ConfirmModal from "@/components/admin/users/confirm-modal";
+import UserList from "@/components/admin/users/user-list";
 import { toast } from "sonner";
 
 const UserManagement = () => {

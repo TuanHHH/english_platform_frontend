@@ -19,6 +19,7 @@ const AdminSidebar = () => {
     { title: "Quản lí đề thi", path: "/admin/exams", icon: FileText },
     { title: "Quản lí người dùng", path: "/admin/users", icon: Users },
     { title: "Quản lí blog", path: "/admin/blogs", icon: MessageSquare },
+    { title: "Quản lí khóa học", path: "/admin/courses", icon: BookOpen },
     { title: "Quản lí report forum", path: "/admin/reports", icon: Flag }
   ];
 
