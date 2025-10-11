@@ -3,7 +3,7 @@ import React from "react";
 import { Flag, User, MessageSquare, CheckCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import AdminSidebar from "@/components/common/admin-sidebar";
+import AdminSidebar from "@/components/admin/admin-sidebar";
 
 const ReportManagement = () => {
   const reports = [
