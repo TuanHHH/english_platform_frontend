@@ -178,3 +178,21 @@
     .transition-smooth { transition: var(--transition-smooth); }
   }
 }
+
+.chat-header {
+  background-color: #2563EB !important;
+  color: white !important;
+  padding: 8px 16px !important;
+}
+
+.chat-header .chat-heading h1 {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  margin: 0 !important;
+}
+
+.chat-header p {
+  font-size: 12px !important;
+  opacity: 0.9;
+  margin-top: 4px !important;
+}
