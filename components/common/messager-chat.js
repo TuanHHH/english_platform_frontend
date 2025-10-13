@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { MessageCircle, X, LogIn, Bot } from "lucide-react";
 import { useAuthStore } from "@/store/auth-store";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useUIStore } from "@/store/ui";
 
 export default function MessengerChat() {
@@ -20,7 +20,6 @@ export default function MessengerChat() {
   const hasHydrated = useAuthStore((s) => s.hasHydrated);
   const isFetchingUser = useAuthStore((s) => s.isFetchingUser);
   const isAuthenticated = !!user;
-  const router = useRouter();
 
   // --- Mount N8N chat widget ---
   useEffect(() => {
@@ -121,12 +120,11 @@ export default function MessengerChat() {
             <p className="text-gray-700 mb-4">
               Vui lòng đăng nhập để sử dụng Chatbot.
             </p>
-            <Button
-              onClick={() => router.push("/login")}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              <LogIn className="h-4 w-4 mr-2" /> Đăng nhập
-            </Button>
+            <Link href="/login" className="w-full">
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                <LogIn className="h-4 w-4 mr-2" /> Đăng nhập
+              </Button>
+            </Link>
           </div>
         ) : (
           <div className="flex-1 min-h-0 bg-gray-50 overflow-hidden">

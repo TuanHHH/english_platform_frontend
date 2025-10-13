@@ -12,26 +12,19 @@ import {
     DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
 
-const statusConfig = {
-    published: { label: "Đã Xuất Bản", color: "bg-success" },
-    draft: { label: "Đang Soạn", color: "bg-muted" },
-    pending: { label: "Chờ Duyệt", color: "bg-warning" },
-}
-
 export default function CourseCard({ course, onEdit, onDelete }) {
     return (
-        <Card className="overflow-hidden shadow-elegant hover:shadow-glow transition-shadow">
+        <Card className="overflow-hidden shadow-elegant hover:shadow-glow transition-shadow py-0 gap-0">
             <div className="aspect-video relative overflow-hidden">
                 <img
-                    src={course.thumbnail}
+                    src={course.thumbnail || "/course-placeholder.jpeg"}
                     alt={course.title}
                     className="w-full h-full object-cover"
                 />
                 <Badge
-                    className={`absolute top-2 right-2 ${statusConfig[course.status].color
-                        }`}
+                    className={`absolute top-2 right-2 ${course.published ? "bg-green-400" : "bg-gray-400"}`}
                 >
-                    {statusConfig[course.status].label}
+                    {course.published ? "Đã xuất bản" : "Chưa xuất bản"}
                 </Badge>
             </div>
             <CardContent className="p-4 space-y-3">
@@ -74,9 +67,9 @@ export default function CourseCard({ course, onEdit, onDelete }) {
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <span>{course.students} học viên</span>
                     <span>•</span>
-                    <span>{course.modules} modules</span>
+                    <span>{course.moduleCount} modules</span>
                     <span>•</span>
-                    <span>{course.lessons} bài học</span>
+                    <span>{course.lessonCount} bài học</span>
                 </div>
             </CardContent>
         </Card>

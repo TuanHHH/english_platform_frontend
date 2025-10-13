@@ -13,27 +13,27 @@ export default function CourseCreateDialog({ open, onOpenChange }) {
       <DialogTrigger asChild>
         <Button className="bg-gradient-primary shadow-glow">
           <Plus className="h-4 w-4 mr-2" />
-          Tạo Khóa Học Mới
+          Tạo khóa học mới
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Tạo Khóa Học Mới</DialogTitle>
+          <DialogTitle>Tạo khóa học mới</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <Label htmlFor="courseTitle">Tiêu Đề Khóa Học</Label>
+            <Label className="mb-1" htmlFor="courseTitle">Tiêu đề khóa học</Label>
             <Input id="courseTitle" placeholder="VD: English for Beginners" />
           </div>
           <div>
-            <Label htmlFor="courseDescription">Mô Tả</Label>
+            <Label className="mb-1" htmlFor="courseDescription">Mô tả</Label>
             <Textarea id="courseDescription" placeholder="Mô tả ngắn..." rows={4} />
           </div>
           <div>
-            <Label htmlFor="thumbnail">URL Ảnh Thumbnail</Label>
+            <Label className="mb-1" htmlFor="thumbnail">Ảnh Thumbnail</Label>
             <Input id="thumbnail" placeholder="https://..." />
           </div>
-          <Button className="w-full bg-gradient-primary">Tạo Khóa Học</Button>
+          <Button className="w-full bg-gradient-primary">Tạo khóa học</Button>
         </div>
       </DialogContent>
     </Dialog>

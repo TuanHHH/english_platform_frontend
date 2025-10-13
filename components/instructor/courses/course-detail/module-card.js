@@ -16,11 +16,9 @@ export default function ModuleCard({ module, courseId, onEdit, onDelete }) {
             </div>
             <div className="flex-1">
               <CardTitle className="text-xl mb-1">{module.title}</CardTitle>
-              <p className="text-sm text-muted-foreground">{module.description}</p>
+              {/* <p className="text-sm text-muted-foreground">{module.description}</p> */}
               <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                 <span>{module.lessons} bài học</span>
-                <span>•</span>
-                <span>{module.duration}</span>
               </div>
             </div>
           </div>
