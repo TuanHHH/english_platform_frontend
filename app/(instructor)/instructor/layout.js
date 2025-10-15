@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, LayoutDashboard, Menu, X } from "lucide-react";
+import { BookOpen, Home, LayoutDashboard, Menu, X } from "lucide-react";
 
 const menuItems = [
+  { title: "Trang Chủ", url: "/", icon: Home, end: true },
   { title: "Dashboard", url: "/instructor", icon: LayoutDashboard, end: true },
   { title: "Khóa Học", url: "/instructor/courses", icon: BookOpen },
 ];
@@ -36,9 +37,9 @@ export default function InstructorLayout({ children }) {
       {/* --- SIDEBAR --- */}
       <aside
         className={`${isMobile
-            ? `fixed top-0 left-0 h-full z-40 transform transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "-translate-x-full"
-            } w-64`
-            : `w-64 static`
+          ? `fixed top-0 left-0 h-full z-40 transform transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "-translate-x-full"
+          } w-64`
+          : `w-64 static`
           } bg-[#0f172a] text-white border-r border-slate-800 flex flex-col`}
       >
         {/* Header */}
@@ -69,8 +70,8 @@ export default function InstructorLayout({ children }) {
                 key={item.title}
                 href={item.url}
                 className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${isActive
-                    ? "bg-slate-700 text-white"
-                    : "text-gray-300 hover:bg-slate-700 hover:text-white"
+                  ? "bg-slate-700 text-white"
+                  : "text-gray-300 hover:bg-slate-700 hover:text-white"
                   }`}
               >
                 <item.icon className="h-5 w-5 shrink-0" />
