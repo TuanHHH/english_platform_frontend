@@ -33,15 +33,12 @@ export default function LessonTabs({ lesson, onEditContent }) {
       defaultValue={kind === "video" ? "video" : kind === "quiz" ? "quiz" : "content"}
       className="w-full"
     >
-      <TabsList className="grid w-full grid-cols-3">
+      <TabsList className="grid w-full grid-cols-2">
         <TabsTrigger value="video" disabled={kind !== "video"} className="gap-2">
           <Video className="h-4 w-4" /> Video
         </TabsTrigger>
         <TabsTrigger value="content" disabled={kind === "quiz"} className="gap-2">
           <FileText className="h-4 w-4" /> Nội dung
-        </TabsTrigger>
-        <TabsTrigger value="quiz" disabled={kind !== "quiz"} className="gap-2">
-          <HelpCircle className="h-4 w-4" /> Quiz
         </TabsTrigger>
       </TabsList>
 

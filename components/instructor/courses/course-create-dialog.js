@@ -8,10 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Plus, X } from "lucide-react"
+import { Plus, X, Upload, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { courseSchema } from "@/schema/course"
-import { createCourse } from "@/lib/api/course"
+import { createCourse, uploadMedia } from "@/lib/api/course"
 
 const SKILL_OPTIONS = ["Listening", "Reading", "Writing", "Speaking", "Grammar", "Vocabulary"]
 
@@ -23,6 +23,12 @@ export default function CourseCreateDialog({ open, onOpenChange, onSuccess }) {
   // input tạm cho custom
   const [customInput, setCustomInput] = useState("")
   const customInputRef = useRef(null)
+
+  // Image upload states
+  const [thumbnailFile, setThumbnailFile] = useState(null)
+  const [thumbnailPreview, setThumbnailPreview] = useState("")
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef(null)
 
   const form = useForm({
     resolver: zodResolver(courseSchema),
@@ -98,6 +104,67 @@ export default function CourseCreateDialog({ open, onOpenChange, onSuccess }) {
     }
   }
 
+  // Handle file selection
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Vui lòng chọn file ảnh")
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Kích thước ảnh không được vượt quá 5MB")
+      return
+    }
+
+    setThumbnailFile(file)
+
+    // Create preview
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setThumbnailPreview(reader.result)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  // Handle remove image
+  const handleRemoveImage = () => {
+    setThumbnailFile(null)
+    setThumbnailPreview("")
+    setValue("thumbnail", "")
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
+
+  // Handle upload image
+  const handleUploadImage = async () => {
+    if (!thumbnailFile) return
+
+    setUploading(true)
+    try {
+      const res = await uploadMedia(thumbnailFile, "course_thumbnail")
+      if (res.success && res.data?.url) {
+        setValue("thumbnail", res.data.url)
+        toast.success("Tải ảnh lên thành công!")
+        return res.data.url
+      } else {
+        toast.error(res.error || "Không thể tải ảnh lên")
+        return null
+      }
+    } catch (err) {
+      console.error("Upload error:", err)
+      toast.error("Đã xảy ra lỗi khi tải ảnh")
+      return null
+    } finally {
+      setUploading(false)
+    }
+  }
+
   // Đồng bộ skillFocus (mảng) vào RHF để schema có thể validate
   useEffect(() => {
     setValue("skillFocus", allSkills, { shouldValidate: false })
@@ -119,9 +186,22 @@ export default function CourseCreateDialog({ open, onOpenChange, onSuccess }) {
         return
       }
 
+      // Upload image if file is selected
+      let thumbnailUrl = data.thumbnail
+      if (thumbnailFile && !uploading) {
+        const uploadedUrl = await handleUploadImage()
+        if (uploadedUrl) {
+          thumbnailUrl = uploadedUrl
+        } else {
+          toast.error("Vui lòng thử tải ảnh lên lại")
+          return
+        }
+      }
+
       const payload = {
         ...data,
-        skillFocus: allSkills, 
+        thumbnail: thumbnailUrl,
+        skillFocus: allSkills,
         priceCents: Number(data.priceCents || 0),
         currency: (data.currency || "VND").toUpperCase(),
       }
@@ -134,6 +214,7 @@ export default function CourseCreateDialog({ open, onOpenChange, onSuccess }) {
       setSelectedSkills([])
       setCustomSkills([])
       setCustomInput("")
+      handleRemoveImage()
       onOpenChange(false)
       toast.success("Đã tạo khóa học mới!")
 
@@ -153,7 +234,7 @@ export default function CourseCreateDialog({ open, onOpenChange, onSuccess }) {
         </Button>
       </DialogTrigger>
 
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Tạo khóa học mới</DialogTitle>
         </DialogHeader>
@@ -184,7 +265,61 @@ export default function CourseCreateDialog({ open, onOpenChange, onSuccess }) {
           {/* Thumbnail */}
           <div>
             <Label htmlFor="thumbnail" className="mb-2">Ảnh Thumbnail</Label>
-            <Input id="thumbnail" placeholder="https://..." {...register("thumbnail")} />
+
+            {/* Image preview */}
+            {thumbnailPreview && (
+              <div className="relative w-full h-48 mb-3 rounded-lg overflow-hidden border-2 border-muted">
+                <img
+                  src={thumbnailPreview}
+                  alt="Thumbnail preview"
+                  className="w-full h-full object-cover"
+                />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="absolute top-2 right-2"
+                  onClick={handleRemoveImage}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
+            {/* File input */}
+            <div className="flex gap-2">
+              <Input
+                ref={fileInputRef}
+                id="thumbnail"
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="flex-1"
+                disabled={uploading}
+              />
+              {thumbnailFile && !uploading && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleUploadImage}
+                  disabled={uploading}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Tải lên
+                </Button>
+              )}
+              {uploading && (
+                <Button type="button" variant="secondary" disabled>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Đang tải...
+                </Button>
+              )}
+            </div>
+
+            <p className="text-xs text-muted-foreground mt-1">
+              Chọn ảnh và nhấn "Tải lên" để upload. Tối đa 5MB
+            </p>
+
             {errors.thumbnail && <p className="text-red-500 text-sm mt-1">{errors.thumbnail.message}</p>}
           </div>
 

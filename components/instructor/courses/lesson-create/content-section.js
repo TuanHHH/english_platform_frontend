@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Editor from "@/components/common/editor"
 
-export default function ContentSection({ introText, setIntroText, onContentChange, errors }) {
+export default function ContentSection({ introText, setIntroText, onContentChange, initialContent = "", errors }) {
     return (
         <div className="space-y-4">
             <div className="space-y-2">
@@ -26,7 +26,8 @@ export default function ContentSection({ introText, setIntroText, onContentChang
                 </Label>
                 <div className="min-h-[400px]">
                     <Editor
-                        initialContent=""
+                        key={initialContent ? 'editor-with-content' : 'editor-empty'}
+                        initialContent={initialContent}
                         onContentChange={onContentChange}
                     />
                 </div>

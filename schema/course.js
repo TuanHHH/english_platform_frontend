@@ -9,20 +9,7 @@ export const courseSchema = z.object({
 
   language: z.string().min(1, "Ngôn ngữ là bắt buộc").max(10, "Mã ngôn ngữ quá dài"),
 
-  thumbnail: z
-    .string()
-    .trim()
-    .url("Ảnh thumbnail phải là URL hợp lệ")
-    .refine((val) => {
-      try {
-        if (!val) return true
-        const { pathname } = new URL(val)
-        return IMAGE_EXT.test(pathname)
-      } catch {
-        return false
-      }
-    }, "Chỉ chấp nhận URL ảnh (jpg, jpeg, png, gif, webp, avif, svg)")
-    .optional(),
+  thumbnail: z.string().optional(),
 
   skillFocus: z
     .array(z.string().min(1, "Kỹ năng không được rỗng"))

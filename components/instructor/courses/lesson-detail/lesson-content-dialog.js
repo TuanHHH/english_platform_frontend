@@ -1,38 +1,48 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useRef, useState, useEffect } from "react"
+import { useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import Editor from "@/components/common/editor"
+import { updateLesson } from "@/lib/api/course"
 
-export default function LessonContentDialog({ open, onOpenChange, lesson }) {
-  console.log(lesson)
+export default function LessonContentDialog({ open, onOpenChange, lesson, onUpdated }) {
+  const { moduleId, lessonId } = useParams()
+  const [loading, setLoading] = useState(false)
+  const [title, setTitle] = useState("")
+  const [intro, setIntro] = useState("")
+  const [initialContent, setInitialContent] = useState("")
+  const contentRef = useRef("")
 
-  // Extract HTML content from lesson structure (without title)
+  // Extract HTML content from sections only (not intro)
   const getInitialContent = () => {
-    if (lesson?.content?.body) {
-      // Combine intro and sections HTML
+    if (lesson?.content?.body?.sections) {
       let htmlContent = ""
-      if (lesson.content.body.intro) {
-        htmlContent += `<p>${lesson.content.body.intro}</p>`
-      }
-      if (lesson.content.body.sections) {
-        lesson.content.body.sections.forEach(section => {
-          if (section.html) {
-            htmlContent += section.html
-          }
-        })
-      }
+      lesson.content.body.sections.forEach(section => {
+        if (section.html) {
+          htmlContent += section.html
+        }
+      })
       return htmlContent
     }
-    return lesson?.content || lesson?.textContent || ""
+    return ""
   }
 
-  const [title, setTitle] = useState(lesson?.title || "")
-  const contentRef = useRef(getInitialContent())
+  // Initialize state when dialog opens or lesson changes
+  useEffect(() => {
+    if (open && lesson) {
+      setTitle(lesson.title || "")
+      setIntro(lesson.content?.body?.intro || "")
+      const content = getInitialContent()
+      setInitialContent(content)
+      contentRef.current = content
+    }
+  }, [open, lesson])
 
   if (!lesson) return null
 
@@ -40,12 +50,41 @@ export default function LessonContentDialog({ open, onOpenChange, lesson }) {
     contentRef.current = newContent
   }
 
-  const handleUpdate = () => {
-    // TODO: Save content to backend along with contentRef.current and title
-    console.log("Updated title:", title)
-    console.log("Updated content:", contentRef.current)
-    toast.success("Nội dung bài học đã được cập nhật")
-    onOpenChange(false)
+  const handleUpdate = async () => {
+    setLoading(true)
+    try {
+      const payload = {
+        title: title.trim(),
+        kind: lesson.kind,
+        estimatedMin: lesson.estimatedMin,
+        position: lesson.position,
+        isFree: lesson.isFree,
+        content: {
+          type: "html",
+          body: {
+            intro: intro.trim() || undefined,
+            sections: contentRef.current ? [{ html: contentRef.current }] : []
+          }
+        },
+        mediaId: lesson.primaryMediaId || null,
+      }
+
+      console.log("Update payload:", payload)
+
+      const res = await updateLesson(moduleId, lessonId, payload)
+      if (res.success) {
+        toast.success("Nội dung bài học đã được cập nhật")
+        onUpdated(res.data)
+        onOpenChange(false)
+      } else {
+        toast.error(res.error || "Không thể cập nhật nội dung")
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error("Đã xảy ra lỗi khi cập nhật nội dung")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -54,9 +93,9 @@ export default function LessonContentDialog({ open, onOpenChange, lesson }) {
         <DialogHeader className="flex-shrink-0">
           <DialogTitle>Chỉnh sửa nội dung</DialogTitle>
         </DialogHeader>
-        <div className="flex-1 flex flex-col gap-4 min-h-0">
+        <div className="flex-1 flex flex-col gap-4 min-h-0 overflow-y-auto">
           <div className="flex-shrink-0">
-            <Label htmlFor="lessonTitle">Tiêu Đề</Label>
+            <Label htmlFor="lessonTitle">Tiêu đề bài học</Label>
             <Input
               id="lessonTitle"
               value={title}
@@ -65,19 +104,37 @@ export default function LessonContentDialog({ open, onOpenChange, lesson }) {
               className="mt-1"
             />
           </div>
+          <div className="flex-shrink-0">
+            <Label htmlFor="lessonIntro">Giới thiệu</Label>
+            <Textarea
+              id="lessonIntro"
+              value={intro}
+              onChange={(e) => setIntro(e.target.value)}
+              placeholder="Nhập giới thiệu ngắn cho bài học"
+              className="mt-1"
+              rows={3}
+            />
+          </div>
           <div className="flex-1 flex flex-col min-h-0">
-            <Label className="flex-shrink-0 mb-2">Nội Dung</Label>
+            <Label className="flex-shrink-0 mb-2">Nội dung chi tiết</Label>
             <div className="flex-1 overflow-auto min-h-0">
-              <Editor
-                initialContent={getInitialContent()}
-                onContentChange={handleContentChange}
-              />
+              {open && (
+                <Editor
+                  key={lesson?.id || 'editor'}
+                  initialContent={initialContent}
+                  onContentChange={handleContentChange}
+                />
+              )}
             </div>
           </div>
         </div>
         <div className="flex-shrink-0 pt-4">
-          <Button className="w-full bg-gradient-primary" onClick={handleUpdate}>
-            Cập nhật
+          <Button
+            className="w-full bg-gradient-primary"
+            onClick={handleUpdate}
+            disabled={loading}
+          >
+            {loading ? "Đang cập nhật..." : "Cập nhật"}
           </Button>
         </div>
       </DialogContent>

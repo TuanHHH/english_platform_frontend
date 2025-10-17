@@ -4,7 +4,7 @@ import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Edit, Trash2, ChevronRight, Video, FileText, HelpCircle } from "lucide-react"
+import { ChevronRight, Video, FileText, HelpCircle } from "lucide-react"
 
 const kindConfig = {
   VIDEO: {
@@ -25,7 +25,7 @@ const kindConfig = {
 }
 
 
-export default function LessonCard({ lesson, courseId, moduleId, onEdit, onDelete }) {
+export default function LessonCard({ lesson, courseId, moduleId }) {
   if (!lesson) return null
   const config = kindConfig[lesson.kind] || kindConfig.TEXT
   const Icon = config.icon
@@ -45,7 +45,12 @@ export default function LessonCard({ lesson, courseId, moduleId, onEdit, onDelet
 
         {/* Nội dung cơ bản */}
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-foreground truncate">{lesson.title}</h3>
+          <Link
+            href={`/instructor/courses/${courseId}/modules/${moduleId}/lessons/${lesson.id}`}
+            className="hover:underline"
+          >
+            <h3 className="font-semibold text-foreground truncate">{lesson.title}</h3>
+          </Link>
 
           <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
             <Badge variant="outline" className="text-xs">
@@ -59,22 +64,14 @@ export default function LessonCard({ lesson, courseId, moduleId, onEdit, onDelet
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" onClick={() => onEdit?.(lesson)}>
-            <Edit className="h-4 w-4" />
+        <Link
+          href={`/instructor/courses/${courseId}/modules/${moduleId}/lessons/${lesson.id}`}
+          className="flex"
+        >
+          <Button variant="ghost" size="icon">
+            <ChevronRight className="h-5 w-5" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => onDelete?.(lesson)}>
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
-          <Link
-            href={`/instructor/courses/${courseId}/modules/${moduleId}/lessons/${lesson.id}`}
-            className="flex"
-          >
-            <Button variant="ghost" size="icon">
-              <ChevronRight className="h-5 w-5" />
-            </Button>
-          </Link>
-        </div>
+        </Link>
       </CardContent>
     </Card>
   )

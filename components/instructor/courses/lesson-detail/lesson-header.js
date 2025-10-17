@@ -1,5 +1,7 @@
 "use client"
 
+import Link from "next/link"
+import { useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -20,7 +22,9 @@ function getKindLabel(kind) {
   }
 }
 
-export default function LessonHeader({ lesson, onEdit }) {
+export default function LessonHeader({ lesson }) {
+  const params = useParams()
+  const { courseId, moduleId, lessonId } = params
   const kindLabel = getKindLabel(lesson.kind)
 
   return (
@@ -44,16 +48,11 @@ export default function LessonHeader({ lesson, onEdit }) {
                   : "Bản nháp"}
               </Badge>
 
-              {/* ✅ Hiển thị miễn phí hay không */}
-              <Badge
-                className={
-                  lesson.isFree
-                    ? "bg-emerald-600 text-white"
-                    : "bg-muted text-foreground"
-                }
-              >
-                {lesson.isFree ? "Miễn phí" : "Cần khóa học"}
-              </Badge>
+              {lesson.isFree && (
+                <Badge className="bg-emerald-600 text-white">
+                  Miễn phí
+                </Badge>
+              )}
             </div>
 
             {/* Tiêu đề */}
@@ -72,10 +71,12 @@ export default function LessonHeader({ lesson, onEdit }) {
           </div>
 
           {/* Nút chỉnh sửa */}
-          <Button variant="outline" onClick={onEdit}>
-            <Edit className="h-4 w-4 mr-2" />
-            Chỉnh sửa Lesson
-          </Button>
+          <Link href={`/instructor/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/edit`}>
+            <Button variant="outline">
+              <Edit className="h-4 w-4 mr-2" />
+              Chỉnh sửa Lesson
+            </Button>
+          </Link>
         </div>
       </CardHeader>
     </Card>
