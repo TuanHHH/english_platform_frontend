@@ -1,59 +1,69 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { updateCourseModule } from "@/lib/api/course"
+import { moduleSchema } from "@/schema/course"
 
 export default function ModuleEditDialog({ open, onOpenChange, module, courseId, onUpdateSuccess }) {
-  const [title, setTitle] = useState("")
-  const [position, setPosition] = useState("")
-  const [loading, setLoading] = useState(false)
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(moduleSchema),
+    defaultValues: {
+      title: "",
+      position: "",
+    },
+  })
 
-  // Reset field khi mở dialog
+  // Khi mở dialog, reset dữ liệu cũ
   useEffect(() => {
     if (module) {
-      setTitle(module.title || "")
-      setPosition(module.order?.toString() || "")
+      reset({
+        title: module.title || "",
+        position: module.order?.toString() || "",
+      })
     }
-  }, [module])
+  }, [module, reset])
 
   if (!module) return null
 
-  const handleUpdate = async () => {
-    if (!title.trim()) {
-      toast.error("Vui lòng nhập tiêu đề module")
-      return
-    }
-
-    setLoading(true)
+  const onSubmit = async (values) => {
     try {
       const payload = {
         id: module.id,
-        title: title.trim(),
-        position: position ? Number(position) : module.order,
+        title: values.title.trim(),
+        position: values.position,
       }
+
       const res = await updateCourseModule(courseId, payload)
       if (res.success) {
+        toast.success("Đã cập nhật module")
+
         // Optimistic update
         onUpdateSuccess?.({
           ...module,
-          title: res.data?.title ?? title,
-          position: res.data?.position ?? payload.position,
+          title: res.data?.title ?? values.title,
+          position: res.data?.position ?? values.position,
           lessonCount: module.lessonCount ?? 0,
         })
+
         onOpenChange(false)
       } else {
         toast.error(res.error || "Không thể cập nhật module")
       }
     } catch (err) {
-      console.error(err)
+      console.error("Lỗi cập nhật module:", err)
       toast.error("Lỗi khi cập nhật module")
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -64,40 +74,42 @@ export default function ModuleEditDialog({ open, onOpenChange, module, courseId,
           <DialogTitle>Chỉnh sửa module</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* Title */}
           <div>
             <Label htmlFor="editTitle" className="mb-1">
-              Tiêu đề module
+              Tiêu đề module *
             </Label>
             <Input
               id="editTitle"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              disabled={loading}
+              placeholder="VD: Grammar Basics"
+              disabled={isSubmitting}
+              {...register("title")}
             />
+            {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title.message}</p>}
           </div>
 
+          {/* Position */}
           <div>
             <Label htmlFor="editPosition" className="mb-1">
-              Số thứ tự
+              Số thứ tự *
             </Label>
             <Input
               id="editPosition"
               type="number"
-              value={position}
-              onChange={(e) => setPosition(e.target.value)}
-              disabled={loading}
+              placeholder="VD: 1"
+              disabled={isSubmitting}
+              {...register("position")}
             />
+            {errors.position && (
+              <p className="text-red-500 text-sm mt-1">{errors.position.message}</p>
+            )}
           </div>
 
-          <Button
-            className="w-full bg-gradient-primary"
-            onClick={handleUpdate}
-            disabled={loading}
-          >
-            {loading ? "Đang lưu..." : "Cập nhật module"}
+          <Button type="submit" className="w-full bg-gradient-primary" disabled={isSubmitting}>
+            {isSubmitting ? "Đang lưu..." : "Cập nhật module"}
           </Button>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   )

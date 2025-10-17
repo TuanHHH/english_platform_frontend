@@ -196,3 +196,552 @@
   opacity: 0.9;
   margin-top: 4px !important;
 }
+
+/* Nội dung từ Editor khi render ra site */
+.ql-content img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0.5rem 0;
+}
+
+/* Nội dung render từ Quill */
+.ql-content img {
+  max-width: 100%;
+  height: auto;
+  margin: 0.5rem 0;
+}
+
+/* Class align do Quill sinh ra */
+.ql-align-center {
+  text-align: center;
+}
+.ql-align-right {
+  text-align: right;
+}
+.ql-align-justify {
+  text-align: justify;
+}
+
+/* Ghi đè khi dùng Tailwind Typography (.prose) – đảm bảo ảnh được căn theo cha */
+.prose .ql-align-center img,
+.ql-content .ql-align-center img {
+  display: block; /* Typography thường set block, ta giữ block */
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.prose .ql-align-right img,
+.ql-content .ql-align-right img {
+  display: block;
+  margin-left: auto !important;
+  margin-right: 0 !important;
+}
+
+.prose .ql-align-left img,
+.ql-content .ql-align-left img {
+  display: block;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+/* hfuew */
+
+.editor-container {
+  min-height: 400px;
+}
+
+.ql-container {
+  min-height: 400px;
+  font-size: 14pt;
+  border: 1px solid #d1d5db !important;
+  border-top: none !important;
+}
+
+.ql-editor {
+  min-height: 400px;
+  font-size: 14pt;
+}
+
+.ql-toolbar {
+  background: #f3f4f6;
+  border-radius: 8px 8px 0 0;
+  border: 1px solid #d1d5db !important;
+  padding: 16px !important;
+  line-height: 1.8 !important;
+}
+
+.ql-toolbar button {
+  width: 32px !important;
+  height: 32px !important;
+  padding: 6px !important;
+  margin: 2px !important;
+  border-radius: 6px !important;
+}
+
+.ql-toolbar .ql-picker {
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  line-height: 32px !important;
+  height: 32px !important;
+}
+
+.ql-toolbar .ql-picker-label {
+  padding: 6px 12px !important;
+  border-radius: 6px !important;
+  height: 32px !important;
+  line-height: 20px !important;
+}
+
+.ql-toolbar button svg,
+.ql-toolbar .ql-picker-label svg {
+  width: 18px !important;
+  height: 18px !important;
+  stroke-width: 2.5 !important;
+}
+
+.ql-editor.ql-blank::before {
+  color: #9ca3af;
+  font-style: normal;
+}
+
+.ql-toolbar button.ql-active,
+.ql-toolbar .ql-picker-label.ql-active,
+.ql-toolbar .ql-picker-item.ql-selected {
+  background-color: #dbeafe !important;
+  border: 2px solid #3b82f6 !important;
+  border-radius: 6px !important;
+}
+
+.ql-toolbar button:hover,
+.ql-toolbar .ql-picker-label:hover {
+  background-color: #e5e7eb !important;
+  border-radius: 6px !important;
+  border: 1px solid #9ca3af !important;
+}
+
+.ql-toolbar button svg,
+.ql-toolbar .ql-picker-label svg {
+  stroke: #374151 !important;
+}
+
+.ql-toolbar button.ql-active svg,
+.ql-toolbar .ql-picker-label.ql-active svg {
+  stroke: #2563eb !important;
+}
+
+.ql-toolbar .ql-picker-options {
+  background-color: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  font-size: 15px !important;
+}
+
+.ql-toolbar .ql-picker-item {
+  padding: 8px 12px !important;
+}
+
+.ql-toolbar .ql-picker-item:hover {
+  background-color: #f3f4f6;
+}
+
+.ql-snow .ql-picker.ql-header .ql-picker-label[data-value="1"]::before,
+.ql-snow .ql-picker.ql-header .ql-picker-item[data-value="1"]::before {
+  content: "Heading 1" !important;
+}
+
+.ql-snow .ql-picker.ql-header .ql-picker-label[data-value="2"]::before,
+.ql-snow .ql-picker.ql-header .ql-picker-item[data-value="2"]::before {
+  content: "Heading 2" !important;
+}
+
+.ql-snow .ql-picker.ql-header .ql-picker-label[data-value="3"]::before,
+.ql-snow .ql-picker.ql-header .ql-picker-item[data-value="3"]::before {
+  content: "Heading 3" !important;
+}
+
+.ql-snow .ql-picker.ql-header .ql-picker-label[data-value="4"]::before,
+.ql-snow .ql-picker.ql-header .ql-picker-item[data-value="4"]::before {
+  content: "Heading 4" !important;
+}
+
+.ql-snow .ql-picker.ql-header .ql-picker-label[data-value="5"]::before,
+.ql-snow .ql-picker.ql-header .ql-picker-item[data-value="5"]::before {
+  content: "Heading 5" !important;
+}
+
+.ql-snow .ql-picker.ql-header .ql-picker-label[data-value="6"]::before,
+.ql-snow .ql-picker.ql-header .ql-picker-item[data-value="6"]::before {
+  content: "Heading 6" !important;
+}
+
+.ql-snow .ql-picker.ql-header .ql-picker-label::before,
+.ql-snow .ql-picker.ql-header .ql-picker-item::before {
+  content: "Normal" !important;
+}
+
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="8pt"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="8pt"]::before {
+  content: "8pt" !important;
+}
+
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="10pt"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="10pt"]::before {
+  content: "10pt" !important;
+}
+
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="12pt"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="12pt"]::before {
+  content: "12pt" !important;
+}
+
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="14pt"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="14pt"]::before {
+  content: "14pt" !important;
+}
+
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="16pt"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="16pt"]::before {
+  content: "16pt" !important;
+}
+
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="18pt"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="18pt"]::before {
+  content: "18pt" !important;
+}
+
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="20pt"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="20pt"]::before {
+  content: "20pt" !important;
+}
+
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="24pt"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="24pt"]::before {
+  content: "24pt" !important;
+}
+
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="32pt"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="32pt"]::before {
+  content: "32pt" !important;
+}
+
+.ql-snow .ql-picker.ql-size .ql-picker-label::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item::before {
+  content: "14pt" !important;
+}
+
+.ql-editor .ql-size-8pt {
+  font-size: 8pt !important;
+}
+
+.ql-editor .ql-size-10pt {
+  font-size: 10pt !important;
+}
+
+.ql-editor .ql-size-12pt {
+  font-size: 12pt !important;
+}
+
+.ql-editor .ql-size-14pt {
+  font-size: 14pt !important;
+}
+
+.ql-editor .ql-size-16pt {
+  font-size: 16pt !important;
+}
+
+.ql-editor .ql-size-18pt {
+  font-size: 18pt !important;
+}
+
+.ql-editor .ql-size-20pt {
+  font-size: 20pt !important;
+}
+
+.ql-editor .ql-size-24pt {
+  font-size: 24pt !important;
+}
+
+.ql-editor .ql-size-32pt {
+  font-size: 32pt !important;
+}
+
+/* CRITICAL: Image styles - KHÔNG override width! */
+.ql-editor img {
+  cursor: pointer;
+  height: auto !important;
+  display: inline-block;
+  vertical-align: baseline;
+}
+
+/* Chỉ set max-width khi KHÔNG có width attribute */
+.ql-editor img:not([width]) {
+  max-width: 100%;
+}
+
+/* Khi có width attribute, respect nó */
+.ql-editor img[width] {
+  max-width: none;
+}
+
+.ql-align-center {
+  text-align: center !important;
+}
+
+.ql-align-left {
+  text-align: left !important;
+}
+
+.ql-align-right {
+  text-align: right !important;
+}
+
+.ql-align-justify {
+  text-align: justify !important;
+}
+
+.ql-editor p.ql-align-center {
+  text-align: center !important;
+  display: block;
+}
+
+.ql-editor p.ql-align-center img {
+  display: inline-block !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.ql-editor p.ql-align-left img {
+  display: inline-block !important;
+  margin-right: 10px !important;
+}
+
+.ql-editor p.ql-align-right img {
+  display: inline-block !important;
+  margin-left: 10px !important;
+  float: right !important;
+}
+
+.ql-editor::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.image-selected {
+  outline: 3px solid #3b82f6 !important;
+  outline-offset: 2px;
+}
+
+.image-resize-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.image-resize-modal {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+  max-width: 500px;
+  width: 90%;
+}
+
+.image-resize-preview {
+  text-align: center;
+  margin: 20px 0;
+}
+
+.image-resize-preview img {
+  max-width: 100%;
+  height: auto;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.image-resize-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.image-resize-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.image-resize-buttons button {
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.image-resize-buttons button:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.image-resize-buttons button.active {
+  background: #dbeafe;
+  border-color: #3b82f6;
+  color: #2563eb;
+}
+
+.image-resize-input {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.image-resize-input input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.image-resize-input input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  ring: 2px;
+  ring-color: #dbeafe;
+}
+
+.image-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.image-actions button {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.image-actions button.cancel {
+  background: white;
+  border: 1px solid #d1d5db;
+  color: #374151;
+}
+
+.image-actions button.cancel:hover {
+  background: #f3f4f6;
+}
+
+.image-actions button.apply {
+  background: #3b82f6;
+  border: 1px solid #3b82f6;
+  color: white;
+}
+
+.image-actions button.apply:hover {
+  background: #2563eb;
+}
+
+.image-alignment-toolbar {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  display: flex;
+  gap: 8px;
+  z-index: 10000;
+}
+
+.image-alignment-toolbar button {
+  padding: 10px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s;
+  min-width: 50px;
+}
+
+.image-alignment-toolbar button:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.image-alignment-toolbar button.active {
+  background: #dbeafe;
+  border-color: #3b82f6;
+  color: #2563eb;
+}
+
+/* CRITICAL: Image width attributes hoạt động */
+.ql-editor img[width] {
+  max-width: none !important;
+}
+
+.ql-editor img:not([width]) {
+  max-width: 100%;
+}
+
+.ql-editor img {
+  height: auto !important;
+  display: block;
+}
+
+/* Sticky không còn gap với mép trên viewport */
+.editor-sticky-toolbar {
+  position: sticky;
+  top: 0;               /* = sát mép trên trình duyệt */
+  z-index: 50;
+  margin: 0;
+  border-radius: 0;
+  background: var(--background, #fff);
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  /* polish nhẹ */
+  box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+}
+
+
+/* Làm toolbar "đẹp hơn" (snow mặc định nhưng gọn hơn) */
+.editor-sticky-toolbar.ql-toolbar.ql-snow {
+  padding: 8px 12px;
+}
+.editor-sticky-toolbar .ql-picker,
+.editor-sticky-toolbar .ql-formats button {
+  color: hsl(222 47% 11%);
+}
+.editor-sticky-toolbar .ql-picker-label,
+.editor-sticky-toolbar .ql-picker-item {
+  padding-left: 8px;
+  padding-right: 28px;
+}
+
+/* Nội dung editor */
+.editor-container .ql-editor {
+  min-height: 300px;
+  font-size: 14px;
+}
+
+/* Ảnh căn giữa khi parent có ql-align-center */
+.ql-editor img { max-width: 100%; height: auto; }
+.ql-editor p.ql-align-center img { display: block; margin-left: auto; margin-right: auto; }

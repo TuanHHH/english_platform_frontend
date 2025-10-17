@@ -1,107 +1,141 @@
 "use client"
 
-import { Video, FileText, HelpCircle, Trash2 } from "lucide-react"
+import { Video, FileText, HelpCircle } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
-export default function LessonTabs({ lesson, onEditContent, onDeleteQuestion }) {
+export default function LessonTabs({ lesson, onEditContent }) {
+  const kind = lesson.kind?.toLowerCase()
+  const content = lesson.content || {}
+
+  // Nếu là bài viết / nội dung HTML
+  const body = content.body || {}
+  const intro = body.intro || ""
+  const sections = body.sections || []
+
+  // Nếu là quiz
+  const quizItems = content.quizItems || []
+
+  // Nếu là video
+  const videoUrl = lesson.primaryMedia?.url || null
+
+  // Hàm render HTML an toàn (vì content đến từ backend của bạn)
+  const renderHtml = (html) => (
+    <div
+      className="prose max-w-none"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  )
+
   return (
-    <Tabs defaultValue="video" className="w-full">
+    <Tabs
+      defaultValue={kind === "video" ? "video" : kind === "quiz" ? "quiz" : "content"}
+      className="w-full"
+    >
       <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="video" className="gap-2">
+        <TabsTrigger value="video" disabled={kind !== "video"} className="gap-2">
           <Video className="h-4 w-4" /> Video
         </TabsTrigger>
-        <TabsTrigger value="text" className="gap-2">
-          <FileText className="h-4 w-4" /> Nội Dung
+        <TabsTrigger value="content" disabled={kind === "quiz"} className="gap-2">
+          <FileText className="h-4 w-4" /> Nội dung
         </TabsTrigger>
-        <TabsTrigger value="quiz" className="gap-2">
+        <TabsTrigger value="quiz" disabled={kind !== "quiz"} className="gap-2">
           <HelpCircle className="h-4 w-4" /> Quiz
         </TabsTrigger>
       </TabsList>
 
-      {/* VIDEO TAB */}
-      <TabsContent value="video" className="mt-6">
-        <div className="space-y-4">
-          <div className="aspect-video rounded-lg overflow-hidden bg-muted">
-            <img
-              src={lesson.videoUrl}
-              alt="Lesson video"
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={onEditContent}
-          >
-            Thay Đổi Video
-          </Button>
-        </div>
-      </TabsContent>
+      {/* VIDEO */}
+      {kind === "video" && (
+        <TabsContent value="video" className="mt-6">
+          <div className="space-y-4">
+            <div className="aspect-video bg-muted rounded-lg overflow-hidden">
+              {videoUrl ? (
+                <video
+                  src={videoUrl}
+                  controls
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-muted-foreground">
+                  Không có video chính
+                </div>
+              )}
+            </div>
 
-      {/* TEXT TAB */}
-      <TabsContent value="text" className="mt-6">
-        <div className="space-y-4">
-          <div className="prose max-w-none p-4 rounded-lg bg-muted/30">
-            <p className="text-foreground">{lesson.textContent}</p>
+            <Button variant="outline" className="w-full" onClick={onEditContent}>
+              Thay đổi Video
+            </Button>
           </div>
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={onEditContent}
-          >
-            Chỉnh Sửa Nội Dung
-          </Button>
-        </div>
-      </TabsContent>
+        </TabsContent>
+      )}
 
-      {/* QUIZ TAB */}
-      <TabsContent value="quiz" className="mt-6">
-        <div className="space-y-4">
-          {lesson.quiz.map((q, index) => (
-            <Card key={q.id}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <CardTitle className="text-base flex-1">
+      {/* ARTICLE / HTML */}
+      {kind !== "quiz" && (
+        <TabsContent value="content" className="mt-6">
+          <div className="space-y-6">
+            {intro && (
+              <div className="bg-muted/30 p-4 rounded-lg">
+                <p className="text-foreground">{intro}</p>
+              </div>
+            )}
+            {sections.map((section, idx) => (
+              <div key={idx} className="space-y-2">
+                {section.title && (
+                  <h3 className="font-semibold text-lg">{section.title}</h3>
+                )}
+                {section.html && renderHtml(section.html)}
+              </div>
+            ))}
+            <Button variant="outline" className="w-full" onClick={onEditContent}>
+              Chỉnh sửa nội dung
+            </Button>
+          </div>
+        </TabsContent>
+      )}
+
+      {/* QUIZ */}
+      {kind === "quiz" && (
+        <TabsContent value="quiz" className="mt-6">
+          <div className="space-y-4">
+            {quizItems.length > 0 ? (
+              quizItems.map((q, index) => (
+                <div
+                  key={index}
+                  className="border rounded-lg p-4 hover:bg-muted/40 transition"
+                >
+                  <p className="font-medium mb-2">
                     Câu {index + 1}: {q.question}
-                  </CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onDeleteQuestion(q)}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                  </p>
+                  <ul className="space-y-1">
+                    {q.options.map((opt, i) => (
+                      <li
+                        key={i}
+                        className={`p-2 rounded border ${
+                          i === q.correctAnswer
+                            ? "border-green-500 bg-green-100 text-green-700 font-semibold"
+                            : "border-border"
+                        }`}
+                      >
+                        {opt}
+                        {i === q.correctAnswer && (
+                          <Badge className="ml-2 bg-green-600 text-white">Đúng</Badge>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {q.options.map((option, i) => (
-                    <div
-                      key={i}
-                      className={`p-3 rounded-lg border ${
-                        i === q.correctAnswer
-                          ? "border-success bg-success/10"
-                          : "border-border"
-                      }`}
-                    >
-                      {option}
-                      {i === q.correctAnswer && (
-                        <Badge className="ml-2 bg-success">Đúng</Badge>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-          <Button variant="outline" className="w-full">
-            Thêm Câu Hỏi Mới
-          </Button>
-        </div>
-      </TabsContent>
+              ))
+            ) : (
+              <p className="text-muted-foreground">Chưa có câu hỏi nào</p>
+            )}
+
+            <Button variant="outline" className="w-full" onClick={onEditContent}>
+              Chỉnh sửa Quiz
+            </Button>
+          </div>
+        </TabsContent>
+      )}
     </Tabs>
   )
 }
