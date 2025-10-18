@@ -14,7 +14,7 @@ import LessonTabs from "@/components/instructor/courses/lesson-detail/lesson-tab
 import LessonContentDialog from "@/components/instructor/courses/lesson-detail/lesson-content-dialog"
 import QuizEditDialog from "@/components/instructor/courses/lesson-detail/quiz-edit-dialog"
 
-import { getLessonDetail } from "@/lib/api/course"
+import { getLessonDetail, updateLesson } from "@/lib/api/course"
 
 export default function LessonDetailPage() {
   const params = useParams()
@@ -56,6 +56,38 @@ export default function LessonDetailPage() {
 
   const isQuizLesson = equalsIgnoreCase(lesson.kind, "quiz")
 
+  const handleVideoUploaded = async (mediaId) => {
+    try {
+      // Build full lesson payload with existing data
+      const payload = {
+        title: lesson.title,
+        kind: lesson.kind,
+        estimatedMin: lesson.estimatedMin,
+        position: lesson.position,
+        isFree: lesson.isFree,
+        content: lesson.content,
+        mediaId: mediaId,
+      }
+
+      const updateResult = await updateLesson(moduleId, lessonId, payload)
+
+      if (!updateResult.success) {
+        toast.error(updateResult.error || "Không thể cập nhật video cho bài học")
+        return
+      }
+
+      // Refresh lesson data
+      const res = await getLessonDetail(moduleId, lessonId)
+      if (res.success) {
+        setLesson(res.data)
+        toast.success("Video đã được cập nhật cho bài học")
+      }
+    } catch (err) {
+      console.error("Error updating lesson with media:", err)
+      toast.error("Đã xảy ra lỗi khi cập nhật bài học")
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center">
@@ -75,6 +107,7 @@ export default function LessonDetailPage() {
             <LessonTabs
               lesson={lesson}
               onEditContent={() => setEditContentDialogOpen(true)}
+              onVideoUploaded={handleVideoUploaded}
             />
           ) : (
             <div className="space-y-4">
