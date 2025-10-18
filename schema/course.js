@@ -1,11 +1,11 @@
 import { z } from "zod"
 
-const IMAGE_EXT = /\.(png|jpe?g|gif|webp|avif|svg)(\?.*)?$/i
-
 export const courseSchema = z.object({
   title: z.string().min(1, "Tiêu đề là bắt buộc").max(255, "Tiêu đề không quá 255 ký tự"),
 
-  description: z.string().max(2000, "Mô tả không quá 2000 ký tự").optional(),
+  description: z.string().max(255, "Mô tả không quá 255 ký tự").optional(),
+
+  detailedDescription: z.string().optional(),
 
   language: z.string().min(1, "Ngôn ngữ là bắt buộc").max(10, "Mã ngôn ngữ quá dài"),
 

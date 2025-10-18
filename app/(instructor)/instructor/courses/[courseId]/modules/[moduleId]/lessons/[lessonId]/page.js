@@ -8,23 +8,13 @@ import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { FullPageLoader } from "@/components/ui/full-page-loader"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 
 import LessonHeader from "@/components/instructor/courses/lesson-detail/lesson-header"
 import LessonTabs from "@/components/instructor/courses/lesson-detail/lesson-tabs"
 import LessonContentDialog from "@/components/instructor/courses/lesson-detail/lesson-content-dialog"
 import QuizEditDialog from "@/components/instructor/courses/lesson-detail/quiz-edit-dialog"
 
-import { getLessonDetail, deleteLesson } from "@/lib/api/course"
+import { getLessonDetail } from "@/lib/api/course"
 
 export default function LessonDetailPage() {
   const params = useParams()
@@ -33,8 +23,6 @@ export default function LessonDetailPage() {
 
   const [lesson, setLesson] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [deleting, setDeleting] = useState(false)
 
   const [editContentDialogOpen, setEditContentDialogOpen] = useState(false)
   const [quizDialogOpen, setQuizDialogOpen] = useState(false)
@@ -45,25 +33,6 @@ export default function LessonDetailPage() {
       typeof b === "string" &&
       a.localeCompare(b, undefined, { sensitivity: "accent" }) === 0
     )
-  }
-
-  const handleDelete = async () => {
-    setDeleting(true)
-    try {
-      const res = await deleteLesson(moduleId, lessonId)
-      if (res.success) {
-        toast.success("Xóa bài học thành công!")
-        router.push(`/instructor/courses/${courseId}/modules/${moduleId}`)
-      } else {
-        toast.error(res.error || "Không thể xóa bài học")
-      }
-    } catch (err) {
-      console.error(err)
-      toast.error("Đã xảy ra lỗi khi xóa bài học")
-    } finally {
-      setDeleting(false)
-      setDeleteDialogOpen(false)
-    }
   }
 
   useEffect(() => {
@@ -89,19 +58,13 @@ export default function LessonDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center">
         <Link href={`/instructor/courses/${courseId}/modules/${moduleId}`}>
           <Button variant="ghost" className="gap-2">
             <ArrowLeft className="h-4 w-4" />
             Quay lại
           </Button>
         </Link>
-        <Button
-          variant="destructive"
-          onClick={() => setDeleteDialogOpen(true)}
-        >
-          Xóa bài học
-        </Button>
       </div>
 
       <LessonHeader lesson={lesson} />
@@ -169,28 +132,6 @@ export default function LessonDetailPage() {
         lesson={lesson}
         onUpdated={setLesson}
       />
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Bạn có chắc chắn muốn xóa bài học này?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Hành động này không thể hoàn tác. Bài học sẽ bị xóa vĩnh viễn khỏi module.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Hủy</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={deleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleting ? "Đang xóa..." : "Xóa"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }

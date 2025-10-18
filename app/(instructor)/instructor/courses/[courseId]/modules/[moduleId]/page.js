@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { ArrowLeft, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -10,12 +10,12 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
 import LessonCard from "@/components/instructor/courses/module-detail/lesson-card"
-import LessonEditDialog from "@/components/instructor/courses/module-detail/lesson-edit-dialog"
 import LessonDeleteDialog from "@/components/instructor/courses/module-detail/lesson-delete-dialog"
 import { listCourseLessons, getCourseModuleDetail } from "@/lib/api/course"
 import { FullPageLoader } from "@/components/ui/full-page-loader"
 
 export default function ModuleDetailPage() {
+  const router = useRouter()
   const params = useParams()
   const { courseId, moduleId } = params
 
@@ -23,7 +23,6 @@ export default function ModuleDetailPage() {
   const [lessons, setLessons] = useState([])
   const [loading, setLoading] = useState(true)
 
-  const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedLesson, setSelectedLesson] = useState(null)
 
@@ -56,8 +55,8 @@ export default function ModuleDetailPage() {
 
   // === Handlers ===
   const handleEdit = (lesson) => {
-    setSelectedLesson(lesson)
-    setEditDialogOpen(true)
+    // Navigate to the edit page instead of opening a dialog
+    router.push(`/instructor/courses/${courseId}/modules/${moduleId}/lessons/${lesson.id}/edit`)
   }
 
   const handleDelete = (lesson) => {
@@ -68,13 +67,6 @@ export default function ModuleDetailPage() {
   const confirmDelete = () => {
     toast.success(`Đã xóa bài học "${selectedLesson?.title}"`)
     setDeleteDialogOpen(false)
-  }
-
-  const handleLessonUpdated = (updatedLesson) => {
-    if (!updatedLesson) return
-    setLessons((prev) =>
-      prev.map((l) => (l.id === updatedLesson.id ? updatedLesson : l))
-    )
   }
 
   if (loading) {
@@ -159,12 +151,6 @@ export default function ModuleDetailPage() {
       )}
 
       {/* Dialogs */}
-      <LessonEditDialog
-        open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
-        lesson={selectedLesson}
-        onUpdateSuccess={handleLessonUpdated}
-      />
       <LessonDeleteDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}

@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { FullPageLoader } from "@/components/ui/full-page-loader"
 
 import ModuleCard from "@/components/instructor/courses/course-detail/module-card"
@@ -39,7 +40,7 @@ export default function CourseDetailPage() {
           getCourseById(courseId),
           getCourseModules(courseId),
         ])
-        setCourse(courseData)
+        setCourse(courseData.data)
         setModules(moduleData)
       } catch (err) {
         console.error(err)
@@ -212,6 +213,21 @@ export default function CourseDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* --- Detailed Description --- */}
+      {course.detailedDescription && (
+        <Card className="shadow-md">
+          <CardHeader>
+            <CardTitle>Mô tả chi tiết</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div
+              className="prose prose-sm max-w-none dark:prose-invert"
+              dangerouslySetInnerHTML={{ __html: course.detailedDescription }}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* --- Danh sách module --- */}
       <div className="flex items-center justify-between">
