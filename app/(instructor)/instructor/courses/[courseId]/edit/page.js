@@ -68,6 +68,14 @@ export default function EditCoursePage() {
         const res = await getCourseById(courseId)
         if (res.success && res.data) {
           const courseData = res.data
+
+          // Check if course is published
+          if (courseData.published) {
+            toast.error("Khóa học đã được xuất bản. Vui lòng hủy xuất bản trước khi chỉnh sửa")
+            router.push(`/instructor/courses/${courseId}`)
+            return
+          }
+
           setCourse(courseData)
 
           // Set form values

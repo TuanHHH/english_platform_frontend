@@ -1,7 +1,8 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
-import { MoreVertical, Edit, Trash2, Eye } from "lucide-react"
+import { MoreVertical, Edit, Trash2, Eye, CheckCircle, XCircle } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -11,11 +12,62 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { publishCourse } from "@/lib/api/course"
+import { toast } from "sonner"
+import CoursePublishDialog from "./course-publish-dialog"
 
 export default function CourseCard({ course, onEdit, onDelete }) {
+  const [isPublished, setIsPublished] = useState(course.published)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [showPublishDialog, setShowPublishDialog] = useState(false)
+  const [pendingPublishState, setPendingPublishState] = useState(false)
+
   const skills = Array.isArray(course.skillFocus) ? course.skillFocus : []
   const visibleSkills = skills.slice(0, 3)
   const remainingCount = skills.length - visibleSkills.length
+
+  const handleEditClick = () => {
+    if (isPublished) {
+      toast.error("Vui lòng hủy xuất bản khóa học trước khi chỉnh sửa")
+      return
+    }
+    onEdit(course)
+  }
+
+  const handlePublishClick = () => {
+    const newPublishState = !isPublished
+    setPendingPublishState(newPublishState)
+    setShowPublishDialog(true)
+  }
+
+  const handlePublishConfirm = async () => {
+    // Optimistic update
+    setIsPublished(pendingPublishState)
+    setIsUpdating(true)
+    setShowPublishDialog(false)
+
+    const result = await publishCourse(course.id, pendingPublishState)
+
+    setIsUpdating(false)
+
+    if (result.success) {
+      toast.success(
+        pendingPublishState
+          ? "Khóa học đã được xuất bản"
+          : "Đã hủy xuất bản khóa học"
+      )
+    } else {
+      // Rollback on failure
+      setIsPublished(!pendingPublishState)
+      toast.error(result.error || "Không thể cập nhật trạng thái xuất bản")
+    }
+  }
 
   return (
     <Card className="overflow-hidden shadow-elegant hover:shadow-glow transition-shadow py-0 gap-0">
@@ -28,10 +80,10 @@ export default function CourseCard({ course, onEdit, onDelete }) {
         />
         <Badge
           className={`absolute top-2 right-2 ${
-            course.published ? "bg-green-400" : "bg-gray-400"
+            isPublished ? "bg-green-400" : "bg-gray-400"
           }`}
         >
-          {course.published ? "Đã xuất bản" : "Chưa xuất bản"}
+          {isPublished ? "Đã xuất bản" : "Chưa xuất bản"}
         </Badge>
       </div>
 
@@ -72,8 +124,38 @@ export default function CourseCard({ course, onEdit, onDelete }) {
                   <Eye className="h-4 w-4 mr-2" /> Xem Chi Tiết
                 </DropdownMenuItem>
               </Link>
-              <DropdownMenuItem onClick={() => onEdit(course)}>
-                <Edit className="h-4 w-4 mr-2" /> Chỉnh Sửa
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <DropdownMenuItem
+                        onClick={handleEditClick}
+                        disabled={isPublished}
+                      >
+                        <Edit className="h-4 w-4 mr-2" /> Chỉnh Sửa
+                      </DropdownMenuItem>
+                    </div>
+                  </TooltipTrigger>
+                  {isPublished && (
+                    <TooltipContent side="left">
+                      Vui lòng hủy xuất bản trước khi chỉnh sửa
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
+              <DropdownMenuItem
+                onClick={handlePublishClick}
+                disabled={isUpdating}
+              >
+                {isPublished ? (
+                  <>
+                    <XCircle className="h-4 w-4 mr-2" /> Hủy Xuất Bản
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4 mr-2" /> Xuất Bản
+                  </>
+                )}
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="text-destructive"
@@ -94,6 +176,14 @@ export default function CourseCard({ course, onEdit, onDelete }) {
           <span>{course.lessonCount} bài học</span>
         </div>
       </CardContent>
+
+      <CoursePublishDialog
+        open={showPublishDialog}
+        onOpenChange={setShowPublishDialog}
+        course={course}
+        isPublishing={pendingPublishState}
+        onConfirm={handlePublishConfirm}
+      />
     </Card>
   )
 }

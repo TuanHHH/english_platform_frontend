@@ -4,14 +4,15 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { ArrowLeft, Plus } from "lucide-react"
+import { ArrowLeft, Plus, CheckCircle, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
 import LessonCard from "@/components/instructor/courses/module-detail/lesson-card"
 import LessonDeleteDialog from "@/components/instructor/courses/module-detail/lesson-delete-dialog"
-import { listCourseLessons, getCourseModuleDetail } from "@/lib/api/course"
+import ModulePublishDialog from "@/components/instructor/courses/module-detail/module-publish-dialog"
+import { listCourseLessons, getCourseModuleDetail, publishModule } from "@/lib/api/course"
 import { FullPageLoader } from "@/components/ui/full-page-loader"
 
 export default function ModuleDetailPage() {
@@ -22,9 +23,14 @@ export default function ModuleDetailPage() {
   const [module, setModule] = useState(null)
   const [lessons, setLessons] = useState([])
   const [loading, setLoading] = useState(true)
+  const [isPublished, setIsPublished] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedLesson, setSelectedLesson] = useState(null)
+
+  const [showPublishDialog, setShowPublishDialog] = useState(false)
+  const [pendingPublishState, setPendingPublishState] = useState(false)
 
   // === Fetch module detail + lessons ===
   useEffect(() => {
@@ -37,8 +43,12 @@ export default function ModuleDetailPage() {
           listCourseLessons(moduleId),
         ])
 
-        if (modRes.success) setModule(modRes.data)
-        else toast.error(modRes.error || "Không thể tải thông tin module")
+        if (modRes.success) {
+          setModule(modRes.data)
+          setIsPublished(modRes.data.published || false)
+        } else {
+          toast.error(modRes.error || "Không thể tải thông tin module")
+        }
 
         if (lessonRes.success) setLessons(lessonRes.data || [])
         else toast.error(lessonRes.error || "Không thể tải danh sách bài học")
@@ -67,6 +77,35 @@ export default function ModuleDetailPage() {
   const confirmDelete = () => {
     toast.success(`Đã xóa bài học "${selectedLesson?.title}"`)
     setDeleteDialogOpen(false)
+  }
+
+  const handlePublishClick = () => {
+    const newPublishState = !isPublished
+    setPendingPublishState(newPublishState)
+    setShowPublishDialog(true)
+  }
+
+  const handlePublishConfirm = async () => {
+    // Optimistic update
+    setIsPublished(pendingPublishState)
+    setIsUpdating(true)
+    setShowPublishDialog(false)
+
+    const result = await publishModule(courseId, moduleId, pendingPublishState)
+
+    setIsUpdating(false)
+
+    if (result.success) {
+      toast.success(
+        pendingPublishState
+          ? "Module đã được xuất bản"
+          : "Đã hủy xuất bản module"
+      )
+    } else {
+      // Rollback on failure
+      setIsPublished(!pendingPublishState)
+      toast.error(result.error || "Không thể cập nhật trạng thái xuất bản")
+    }
   }
 
   if (loading) {
@@ -111,7 +150,34 @@ export default function ModuleDetailPage() {
                 <Badge variant="outline">
                   {module.lessonCount ?? lessons.length} bài học
                 </Badge>
+                <Badge
+                  className={`${
+                    isPublished ? "bg-green-400" : "bg-gray-400"
+                  } text-white`}
+                >
+                  {isPublished ? "Đã xuất bản" : "Chưa xuất bản"}
+                </Badge>
               </div>
+            </div>
+            <div>
+              <Button
+                onClick={handlePublishClick}
+                disabled={isUpdating}
+                variant={isPublished ? "outline" : "default"}
+                className={isPublished ? "" : "bg-gradient-primary shadow-glow"}
+              >
+                {isPublished ? (
+                  <>
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Hủy Xuất Bản
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Xuất Bản
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -156,6 +222,14 @@ export default function ModuleDetailPage() {
         onOpenChange={setDeleteDialogOpen}
         lesson={selectedLesson}
         onConfirm={confirmDelete}
+      />
+
+      <ModulePublishDialog
+        open={showPublishDialog}
+        onOpenChange={setShowPublishDialog}
+        module={module}
+        isPublishing={pendingPublishState}
+        onConfirm={handlePublishConfirm}
       />
     </div>
   )

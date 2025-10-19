@@ -251,12 +251,7 @@ export default function CourseDetailPage() {
           {modules.map((module) => (
             <ModuleCard
               key={module.id}
-              module={{
-                id: module.id,
-                title: module.title,
-                order: module.position,
-                lessons: module.lessonCount,
-              }}
+              module={module}
               courseId={courseId}
               onEdit={handleEdit}
               onDelete={handleDelete}

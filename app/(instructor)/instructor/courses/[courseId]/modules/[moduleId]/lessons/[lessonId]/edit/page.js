@@ -21,6 +21,7 @@ export default function LessonEditPage() {
     const { courseId, moduleId, lessonId } = useParams()
     const [loading, setLoading] = useState(false)
     const [initialLoading, setInitialLoading] = useState(true)
+    const [isPublished, setIsPublished] = useState(false)
     const contentRef = useRef("")
     const [introText, setIntroText] = useState("")
     const [initialContentHtml, setInitialContentHtml] = useState("")
@@ -73,6 +74,14 @@ export default function LessonEditPage() {
                 const res = await getLessonDetail(moduleId, lessonId)
                 if (res.success && res.data) {
                     const lesson = res.data
+
+                    // Check if lesson is published
+                    if (lesson.published) {
+                        setIsPublished(true)
+                        toast.error("Bài học đã được xuất bản. Vui lòng hủy xuất bản trước khi chỉnh sửa")
+                        router.push(`/instructor/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`)
+                        return
+                    }
 
                     // Set form values
                     reset({

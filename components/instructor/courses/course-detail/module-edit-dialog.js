@@ -30,7 +30,7 @@ export default function ModuleEditDialog({ open, onOpenChange, module, courseId,
     if (module) {
       reset({
         title: module.title || "",
-        position: module.order?.toString() || "",
+        position: module.position?.toString() || "",
       })
     }
   }, [module, reset])

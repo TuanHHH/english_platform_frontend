@@ -1,13 +1,24 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Edit, Trash2 } from "lucide-react"
+import { MoreVertical, Edit, Trash2, CheckCircle, XCircle } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,7 +29,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { deleteLesson } from "@/lib/api/course"
+import { deleteLesson, publishLesson } from "@/lib/api/course"
+import LessonPublishDialog from "./lesson-publish-dialog"
 
 // Helper: chuyển kind sang tiếng Việt gọn gàng
 function getKindLabel(kind) {
@@ -44,6 +56,11 @@ export default function LessonHeader({ lesson }) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
+  const [isPublished, setIsPublished] = useState(lesson.published || false)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [showPublishDialog, setShowPublishDialog] = useState(false)
+  const [pendingPublishState, setPendingPublishState] = useState(false)
+
   const handleDelete = async () => {
     setDeleting(true)
     try {
@@ -63,6 +80,43 @@ export default function LessonHeader({ lesson }) {
     }
   }
 
+  const handleEditClick = () => {
+    if (isPublished) {
+      toast.error("Vui lòng hủy xuất bản bài học trước khi chỉnh sửa")
+      return
+    }
+    router.push(`/instructor/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/edit`)
+  }
+
+  const handlePublishClick = () => {
+    const newPublishState = !isPublished
+    setPendingPublishState(newPublishState)
+    setShowPublishDialog(true)
+  }
+
+  const handlePublishConfirm = async () => {
+    // Optimistic update
+    setIsPublished(pendingPublishState)
+    setIsUpdating(true)
+    setShowPublishDialog(false)
+
+    const result = await publishLesson(moduleId, lessonId, pendingPublishState)
+
+    setIsUpdating(false)
+
+    if (result.success) {
+      toast.success(
+        pendingPublishState
+          ? "Bài học đã được xuất bản"
+          : "Đã hủy xuất bản bài học"
+      )
+    } else {
+      // Rollback on failure
+      setIsPublished(!pendingPublishState)
+      toast.error(result.error || "Không thể cập nhật trạng thái xuất bản")
+    }
+  }
+
   return (
     <>
       <Card className="shadow-elegant bg-gradient-to-br from-card to-muted/30">
@@ -75,14 +129,12 @@ export default function LessonHeader({ lesson }) {
 
                 <Badge
                   className={
-                    lesson.status?.toLowerCase() === "published"
-                      ? "bg-success text-white"
-                      : "bg-gray-500 text-white"
+                    isPublished
+                      ? "bg-green-400 text-white"
+                      : "bg-gray-400 text-white"
                   }
                 >
-                  {lesson.status?.toLowerCase() === "published"
-                    ? "Đã xuất bản"
-                    : "Bản nháp"}
+                  {isPublished ? "Đã xuất bản" : "Chưa xuất bản"}
                 </Badge>
 
                 {lesson.isFree && (
@@ -107,21 +159,56 @@ export default function LessonHeader({ lesson }) {
               </div>
             </div>
 
-            {/* Action buttons */}
+            {/* Action menu */}
             <div className="flex items-center gap-2">
-              <Link href={`/instructor/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/edit`}>
-                <Button variant="outline">
-                  <Edit className="h-4 w-4 mr-2" />
-                  Chỉnh sửa Lesson
-                </Button>
-              </Link>
-              <Button
-                variant="destructive" className="hover:cursor-pointer"
-                onClick={() => setDeleteDialogOpen(true)}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Xóa bài học
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-popover z-50">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <DropdownMenuItem
+                            onClick={handleEditClick}
+                            disabled={isPublished}
+                          >
+                            <Edit className="h-4 w-4 mr-2" /> Chỉnh sửa
+                          </DropdownMenuItem>
+                        </div>
+                      </TooltipTrigger>
+                      {isPublished && (
+                        <TooltipContent side="left">
+                          Vui lòng hủy xuất bản trước khi chỉnh sửa
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
+                  <DropdownMenuItem
+                    onClick={handlePublishClick}
+                    disabled={isUpdating}
+                  >
+                    {isPublished ? (
+                      <>
+                        <XCircle className="h-4 w-4 mr-2" /> Hủy Xuất Bản
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-2" /> Xuất Bản
+                      </>
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    onClick={() => setDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" /> Xóa bài học
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </CardHeader>
@@ -148,6 +235,15 @@ export default function LessonHeader({ lesson }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Publish Confirmation Dialog */}
+      <LessonPublishDialog
+        open={showPublishDialog}
+        onOpenChange={setShowPublishDialog}
+        lesson={lesson}
+        isPublishing={pendingPublishState}
+        onConfirm={handlePublishConfirm}
+      />
     </>
   )
 }
