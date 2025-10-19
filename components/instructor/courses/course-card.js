@@ -121,7 +121,7 @@ export default function CourseCard({ course, onEdit, onDelete }) {
             <DropdownMenuContent align="end" className="bg-popover z-50">
               <Link href={`/instructor/courses/${course.id}`}>
                 <DropdownMenuItem>
-                  <Eye className="h-4 w-4 mr-2" /> Xem Chi Tiết
+                  <Eye className="h-4 w-4 mr-2" /> Xem chi tiết
                 </DropdownMenuItem>
               </Link>
               <TooltipProvider>
@@ -132,7 +132,7 @@ export default function CourseCard({ course, onEdit, onDelete }) {
                         onClick={handleEditClick}
                         disabled={isPublished}
                       >
-                        <Edit className="h-4 w-4 mr-2" /> Chỉnh Sửa
+                        <Edit className="h-4 w-4 mr-2" /> Chỉnh sửa
                       </DropdownMenuItem>
                     </div>
                   </TooltipTrigger>
@@ -149,11 +149,11 @@ export default function CourseCard({ course, onEdit, onDelete }) {
               >
                 {isPublished ? (
                   <>
-                    <XCircle className="h-4 w-4 mr-2" /> Hủy Xuất Bản
+                    <XCircle className="h-4 w-4 mr-2" /> Hủy xuất bản
                   </>
                 ) : (
                   <>
-                    <CheckCircle className="h-4 w-4 mr-2" /> Xuất Bản
+                    <CheckCircle className="h-4 w-4 mr-2" /> Xuất bản
                   </>
                 )}
               </DropdownMenuItem>

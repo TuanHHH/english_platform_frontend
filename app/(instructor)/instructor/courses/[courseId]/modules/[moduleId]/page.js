@@ -169,12 +169,12 @@ export default function ModuleDetailPage() {
                 {isPublished ? (
                   <>
                     <XCircle className="h-4 w-4 mr-2" />
-                    Hủy Xuất Bản
+                    Hủy xuất bản
                   </>
                 ) : (
                   <>
                     <CheckCircle className="h-4 w-4 mr-2" />
-                    Xuất Bản
+                    Xuất bản
                   </>
                 )}
               </Button>

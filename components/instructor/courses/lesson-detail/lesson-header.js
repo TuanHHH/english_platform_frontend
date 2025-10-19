@@ -193,11 +193,11 @@ export default function LessonHeader({ lesson }) {
                   >
                     {isPublished ? (
                       <>
-                        <XCircle className="h-4 w-4 mr-2" /> Hủy Xuất Bản
+                        <XCircle className="h-4 w-4 mr-2" /> Hủy xuất bản
                       </>
                     ) : (
                       <>
-                        <CheckCircle className="h-4 w-4 mr-2" /> Xuất Bản
+                        <CheckCircle className="h-4 w-4 mr-2" /> Xuất bản
                       </>
                     )}
                   </DropdownMenuItem>
