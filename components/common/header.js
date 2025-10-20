@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { BookOpen, Menu } from "lucide-react"
+import { BookOpen, Menu, ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { navItems } from "@/lib/constants"
@@ -34,6 +34,10 @@ export default function Header() {
           </div>
 
           <div className="hidden md:flex items-center space-x-3">
+            <Link href="/cart" className="relative p-2 text-gray-600 hover:text-blue-600 transition-colors">
+              <ShoppingCart className="h-6 w-6" />
+              <span className="sr-only">Shopping cart</span>
+            </Link>
             <AuthSection />
           </div>
 
@@ -54,6 +58,13 @@ export default function Header() {
                     {item.name}
                   </Link>
                 ))}
+                <Link
+                  href="/cart"
+                  className="flex items-center space-x-3 text-lg font-medium transition-colors hover:text-blue-600"
+                >
+                  <ShoppingCart className="h-5 w-5" />
+                  <span>Giỏ hàng</span>
+                </Link>
                 <div className="pt-4 border-t">
                   <AuthSectionMobile />
                 </div>
