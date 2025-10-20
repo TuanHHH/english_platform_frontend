@@ -15,7 +15,7 @@ export default function CheckoutPage() {
 
   // Mock data
   const courseData = {
-    title: "Khóa học Lập trình Web Full-Stack từ Zero đến Hero",
+    title: "Complete TOEIC 650+",
     instructor: "Nguyễn Văn A",
     image: "/course-thumbnail.jpg",
     rating: 4.8,

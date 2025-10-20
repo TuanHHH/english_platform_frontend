@@ -1,4 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import Link from 'next/link';
 import ProfileCard from '@/components/account/profile';
 import TestHistory from '@/components/account/test-history';
 // import NotificationSettingsWrapper from '@/components/account/notification-setting-wrapper';
@@ -14,9 +15,12 @@ export default function AccountContent() {
           </div>
 
           <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="profile">Hồ sơ</TabsTrigger>
               <TabsTrigger value="history">Lịch sử</TabsTrigger>
+              <TabsTrigger value="orders" asChild>
+                <Link href="/account/orders">Đơn hàng</Link>
+              </TabsTrigger>
               {/* <TabsTrigger value="preferences">Thông báo</TabsTrigger> */}
             </TabsList>
 
