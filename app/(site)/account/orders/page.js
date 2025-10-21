@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Pagination } from "@/components/ui/pagination"
-import { Search, Calendar, ArrowUpDown, Eye } from "lucide-react"
+import { Search, Calendar, ArrowUpDown, Eye, Receipt } from "lucide-react"
 import Link from "next/link"
 
 // Mock data - will be replaced with API integration
@@ -332,13 +332,20 @@ export default function OrdersPage() {
                               </div>
                             </div>
 
-                            <div className="pt-2">
-                              <Link href={`/account/orders/${order.id}`}>
+                            <div className="pt-2 flex gap-2">
+                              <Link href={`/account/orders/${order.id}`} className="flex-1">
                                 <Button variant="outline" size="sm" className="w-full">
                                   <Eye className="w-4 h-4 mr-2" />
                                   Chi tiết
                                 </Button>
                               </Link>
+                              {order.status === 'PAID' && (
+                                <Link href={`/account/invoices/INV${order.id}`}>
+                                  <Button variant="outline" size="sm" title="Xem hóa đơn">
+                                    <Receipt className="w-4 h-4" />
+                                  </Button>
+                                </Link>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -386,10 +393,17 @@ export default function OrdersPage() {
                               </span>
                             </TableCell>
                             <TableCell className="text-center">
-                              <div className="flex justify-center">
+                              <div className="flex justify-center gap-2">
                                 <Badge variant={getStatusVariant(order.status)}>
                                   {getStatusText(order.status)}
                                 </Badge>
+                                {order.status === 'PAID' && (
+                                  <Link href={`/account/invoices/INV${order.id}`}>
+                                    <Button variant="outline" size="sm" title="Xem hóa đơn">
+                                      <Receipt className="w-3 h-3" />
+                                    </Button>
+                                  </Link>
+                                )}
                               </div>
                             </TableCell>
                             <TableCell className="text-center">

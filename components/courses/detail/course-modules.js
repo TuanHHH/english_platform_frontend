@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { ChevronDown, ChevronRight, FileText, CheckCircle2 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { getPublishedModules } from "@/lib/api/course"
+import { getPublishedModules } from "@/lib/api/course-module"
 import { CourseModulesSkeleton } from "./course-modules-skeleton"
 
 export function CourseModules({ courseId }) {

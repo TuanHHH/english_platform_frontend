@@ -9,7 +9,7 @@ import { ArrowLeft } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { createLesson } from "@/lib/api/course"
+import { createLesson } from "@/lib/api/lesson"
 import { lessonSchema } from "@/schema/course"
 import LessonBasicInfo from "@/components/instructor/courses/lesson-create/lesson-basic-info"
 import ContentSection from "@/components/instructor/courses/lesson-create/content-section"

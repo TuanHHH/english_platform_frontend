@@ -29,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { deleteLesson, publishLesson } from "@/lib/api/course"
+import { deleteLesson, publishLesson } from "@/lib/api/lesson"
 import LessonPublishDialog from "./lesson-publish-dialog"
 
 // Helper: chuyển kind sang tiếng Việt gọn gàng

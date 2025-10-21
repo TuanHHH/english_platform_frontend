@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge"
 import LessonCard from "@/components/instructor/courses/module-detail/lesson-card"
 import LessonDeleteDialog from "@/components/instructor/courses/module-detail/lesson-delete-dialog"
 import ModulePublishDialog from "@/components/instructor/courses/module-detail/module-publish-dialog"
-import { listCourseLessons, getCourseModuleDetail, publishModule } from "@/lib/api/course"
+import { listCourseLessons } from "@/lib/api/lesson"
+import { getCourseModuleDetail, publishModule } from "@/lib/api/course-module"
 import { FullPageLoader } from "@/components/ui/full-page-loader"
 
 export default function ModuleDetailPage() {

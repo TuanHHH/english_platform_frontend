@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Plus } from "lucide-react"
 import { toast } from "sonner"
-import { createCourseModule } from "@/lib/api/course"
+import { createCourseModule } from "@/lib/api/course-module"
 import { moduleSchema } from "@/schema/course"
 
 export default function ModuleCreateDialog({ open, onOpenChange, courseId, onCreateSuccess }) {

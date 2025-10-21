@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-import { updateCourseModule } from "@/lib/api/course"
+import { updateCourseModule } from "@/lib/api/course-module"
 import { moduleSchema } from "@/schema/course"
 
 export default function ModuleEditDialog({ open, onOpenChange, module, courseId, onUpdateSuccess }) {

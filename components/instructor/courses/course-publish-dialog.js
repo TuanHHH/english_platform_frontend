@@ -46,7 +46,7 @@ export default function CoursePublishDialog({ open, onOpenChange, course, isPubl
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            {isPublishing ? "Xác nhận xuất bản khóa học" : "Xác nhận hủy xuất bản"}
+            {isPublishing ? "Xác nhận xuất bản khóa học" : "Xác nhận ẩn khóa học"}
           </AlertDialogTitle>
           <AlertDialogDescription>
             {isPublishing ? (
@@ -56,8 +56,8 @@ export default function CoursePublishDialog({ open, onOpenChange, course, isPubl
               </>
             ) : (
               <>
-                Bạn có chắc muốn hủy xuất bản khóa học "{course.title}"?
-                Khóa học sẽ không còn hiển thị cho học viên.
+                Bạn có chắc muốn ẩn khóa học "{course.title}"?
+                Khóa học sẽ không còn hiển thị công khai nhưng vẫn được lưu lại.
               </>
             )}
           </AlertDialogDescription>
@@ -71,8 +71,8 @@ export default function CoursePublishDialog({ open, onOpenChange, course, isPubl
             className={isPublishing ? "" : "bg-destructive text-destructive-foreground hover:bg-destructive/90"}
           >
             {loading
-              ? (isPublishing ? "Đang xuất bản..." : "Đang hủy...")
-              : (isPublishing ? "Xuất bản" : "Hủy xuất bản")
+              ? (isPublishing ? "Đang xuất bản..." : "Đang ẩn...")
+              : (isPublishing ? "Xuất bản" : "Ẩn khóa học")
             }
           </Button>
         </AlertDialogFooter>

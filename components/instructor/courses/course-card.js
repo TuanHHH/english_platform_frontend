@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { MoreVertical, Edit, Trash2, Eye, CheckCircle, XCircle } from "lucide-react"
+import { MoreVertical, Edit, Trash2, Eye, CheckCircle, XCircle, Send, EyeOff } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -18,12 +18,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { publishCourse } from "@/lib/api/course"
+import { publishCourse, changeCourseStatus } from "@/lib/api/course"
 import { toast } from "sonner"
 import CoursePublishDialog from "./course-publish-dialog"
 
 export default function CourseCard({ course, onEdit, onDelete }) {
-  const [isPublished, setIsPublished] = useState(course.published)
+  const [status, setStatus] = useState(course.status)
   const [isUpdating, setIsUpdating] = useState(false)
   const [showPublishDialog, setShowPublishDialog] = useState(false)
   const [pendingPublishState, setPendingPublishState] = useState(false)
@@ -32,12 +32,40 @@ export default function CourseCard({ course, onEdit, onDelete }) {
   const visibleSkills = skills.slice(0, 3)
   const remainingCount = skills.length - visibleSkills.length
 
+  const isPublished = status === "PUBLISHED"
+  const canEdit = status === "DRAFT" || status === "REJECTED" || status === "UNPUBLISHED"
+
   const handleEditClick = () => {
-    if (isPublished) {
+    if (!canEdit) {
       toast.error("Vui lòng hủy xuất bản khóa học trước khi chỉnh sửa")
       return
     }
     onEdit(course)
+  }
+
+  const handleStatusChange = async (newStatus) => {
+    if (isUpdating) return
+
+    setIsUpdating(true)
+    const previousStatus = status
+    setStatus(newStatus)
+
+    const result = await changeCourseStatus(course.id, newStatus)
+    setIsUpdating(false)
+
+    if (result.success) {
+      const successMessages = {
+        "PUBLISHED": "Khóa học đã được xuất bản",
+        "UNPUBLISHED": "Đã ẩn khóa học",
+        "PENDING_REVIEW": "Khóa học đã được gửi để xét duyệt",
+        "DRAFT": "Khóa học đã được chuyển về bản nháp"
+      }
+      toast.success(successMessages[newStatus] || "Trạng thái khóa học đã được cập nhật")
+    } else {
+      // Rollback on failure
+      setStatus(previousStatus)
+      toast.error(result.error || "Không thể cập nhật trạng thái khóa học")
+    }
   }
 
   const handlePublishClick = () => {
@@ -48,25 +76,9 @@ export default function CourseCard({ course, onEdit, onDelete }) {
 
   const handlePublishConfirm = async () => {
     // Optimistic update
-    setIsPublished(pendingPublishState)
-    setIsUpdating(true)
+    const newStatus = pendingPublishState ? "PUBLISHED" : "UNPUBLISHED"
     setShowPublishDialog(false)
-
-    const result = await publishCourse(course.id, pendingPublishState)
-
-    setIsUpdating(false)
-
-    if (result.success) {
-      toast.success(
-        pendingPublishState
-          ? "Khóa học đã được xuất bản"
-          : "Đã hủy xuất bản khóa học"
-      )
-    } else {
-      // Rollback on failure
-      setIsPublished(!pendingPublishState)
-      toast.error(result.error || "Không thể cập nhật trạng thái xuất bản")
-    }
+    await handleStatusChange(newStatus)
   }
 
   return (
@@ -80,10 +92,22 @@ export default function CourseCard({ course, onEdit, onDelete }) {
         />
         <Badge
           className={`absolute top-2 right-2 ${
-            isPublished ? "bg-green-400" : "bg-gray-400"
+            status === "PUBLISHED" ? "bg-green-500 hover:bg-green-600" :
+            status === "DRAFT" ? "bg-gray-400 hover:bg-gray-500" :
+            status === "PENDING_REVIEW" ? "bg-yellow-500 hover:bg-yellow-600" :
+            status === "REJECTED" ? "bg-red-500 hover:bg-red-600" :
+            status === "UNPUBLISHED" ? "bg-orange-500 hover:bg-orange-600" :
+            "bg-gray-400 hover:bg-gray-500"
           }`}
         >
-          {isPublished ? "Đã xuất bản" : "Chưa xuất bản"}
+          {
+            status === "PUBLISHED" ? "Đã xuất bản" :
+            status === "DRAFT" ? "Bản nháp" :
+            status === "PENDING_REVIEW" ? "Chờ duyệt" :
+            status === "REJECTED" ? "Bị từ chối" :
+            status === "UNPUBLISHED" ? "Đã ẩn" :
+            "Không xác định"
+          }
         </Badge>
       </div>
 
@@ -130,33 +154,68 @@ export default function CourseCard({ course, onEdit, onDelete }) {
                     <div>
                       <DropdownMenuItem
                         onClick={handleEditClick}
-                        disabled={isPublished}
+                        disabled={!canEdit}
                       >
                         <Edit className="h-4 w-4 mr-2" /> Chỉnh sửa
                       </DropdownMenuItem>
                     </div>
                   </TooltipTrigger>
-                  {isPublished && (
+                  {!canEdit && (
                     <TooltipContent side="left">
-                      Vui lòng hủy xuất bản trước khi chỉnh sửa
+                      {status === "PUBLISHED"
+                        ? "Vui lòng hủy xuất bản khóa học trước khi chỉnh sửa"
+                        : status === "PENDING_REVIEW"
+                        ? "Khóa học đang chờ duyệt, không thể chỉnh sửa"
+                        : "Không thể chỉnh sửa khóa học ở trạng thái này"
+                      }
                     </TooltipContent>
                   )}
                 </Tooltip>
               </TooltipProvider>
-              <DropdownMenuItem
-                onClick={handlePublishClick}
-                disabled={isUpdating}
-              >
-                {isPublished ? (
-                  <>
-                    <XCircle className="h-4 w-4 mr-2" /> Hủy xuất bản
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="h-4 w-4 mr-2" /> Xuất bản
-                  </>
-                )}
-              </DropdownMenuItem>
+              {status === "DRAFT" && (
+                <DropdownMenuItem
+                  onClick={() => handleStatusChange("PENDING_REVIEW")}
+                  disabled={isUpdating}
+                >
+                  <Send className="h-4 w-4 mr-2" /> Gửi xét duyệt
+                </DropdownMenuItem>
+              )}
+
+              {status === "PENDING_REVIEW" && (
+                <DropdownMenuItem
+                  onClick={() => handleStatusChange("DRAFT")}
+                  disabled={isUpdating}
+                >
+                  <XCircle className="h-4 w-4 mr-2" /> Hủy gửi xét duyệt
+                </DropdownMenuItem>
+              )}
+
+              {status === "PUBLISHED" && (
+                <DropdownMenuItem
+                  onClick={handlePublishClick}
+                  disabled={isUpdating}
+                >
+                  <EyeOff className="h-4 w-4 mr-2" /> Ẩn khóa học
+                </DropdownMenuItem>
+              )}
+
+              {status === "UNPUBLISHED" && (
+                <DropdownMenuItem
+                  onClick={handlePublishClick}
+                  disabled={isUpdating}
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" /> Xuất bản lại
+                </DropdownMenuItem>
+              )}
+
+              {status === "REJECTED" && (
+                <DropdownMenuItem
+                  onClick={() => handleStatusChange("DRAFT")}
+                  disabled={isUpdating}
+                >
+                  <Edit className="h-4 w-4 mr-2" /> Chỉnh sửa lại
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem
                 className="text-destructive"
                 onClick={() => onDelete(course)}

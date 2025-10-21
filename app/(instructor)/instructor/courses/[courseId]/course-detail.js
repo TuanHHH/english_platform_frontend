@@ -15,7 +15,8 @@ import ModuleCreateDialog from "@/components/instructor/courses/course-detail/mo
 import ModuleEditDialog from "@/components/instructor/courses/course-detail/module-edit-dialog"
 import ModuleDeleteDialog from "@/components/instructor/courses/course-detail/module-delete-dialog"
 
-import { getCourseById, getCourseModules, deleteCourseModule } from "@/lib/api/course"
+import { getCourseById } from "@/lib/api/course"
+import { getCourseModules, deleteCourseModule } from "@/lib/api/course-module"
 
 export default function CourseDetailPage() {
   const params = useParams()

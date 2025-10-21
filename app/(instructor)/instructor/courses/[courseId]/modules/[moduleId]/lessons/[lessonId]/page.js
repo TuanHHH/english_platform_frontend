@@ -14,7 +14,7 @@ import LessonTabs from "@/components/instructor/courses/lesson-detail/lesson-tab
 import LessonContentDialog from "@/components/instructor/courses/lesson-detail/lesson-content-dialog"
 import QuizEditDialog from "@/components/instructor/courses/lesson-detail/quiz-edit-dialog"
 
-import { getLessonDetail, updateLesson } from "@/lib/api/course"
+import { getLessonDetail, updateLesson } from "@/lib/api/lesson"
 
 export default function LessonDetailPage() {
   const params = useParams()

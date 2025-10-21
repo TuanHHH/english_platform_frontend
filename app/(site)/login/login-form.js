@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Lock, Mail, Eye, EyeOff } from "lucide-react"
-import FullPageLoader from "@/components/common/full-page-loader"
+import {FullPageLoader} from "@/components/ui/full-page-loader"
 import { loginSchema } from "@/schema/login"
 import { useAuthStore } from "@/store/auth-store"
 

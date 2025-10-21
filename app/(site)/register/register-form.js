@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Eye, EyeOff } from "lucide-react"
 import { register as registerApi } from "@/lib/api/auth"
-import FullPageLoader from "@/components/common/full-page-loader"
+import {FullPageLoader} from "@/components/ui/full-page-loader"
 import { registerSchema } from "@/schema/register"
 
 export default function RegisterForm() {

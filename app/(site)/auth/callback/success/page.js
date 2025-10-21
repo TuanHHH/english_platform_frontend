@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import FullPageLoader from "@/components/common/full-page-loader"
+import {FullPageLoader} from "@/components/ui/full-page-loader"
 import { useAuthStore } from "@/store/auth-store"
 import { toast } from "sonner"
 

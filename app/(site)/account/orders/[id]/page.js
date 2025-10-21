@@ -198,22 +198,19 @@ export default function OrderDetailPage() {
   }
 
   const handleViewInvoice = () => {
-    // TODO: Implement invoice viewing
-    console.log("View invoice for order:", orderDetails.orderId)
+    // Navigate to invoice page
+    router.push(`/account/invoices/INV${orderDetails.orderId}`)
   }
 
-  const handleRequestRefund = async () => {
-    setIsProcessing(true)
-    try {
-      // TODO: Implement refund request API call
-      console.log("Request refund for order:", orderDetails.orderId)
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      alert("Yêu cầu hoàn tiền đã được gửi. Chúng tôi sẽ xử lý trong 3-5 ngày làm việc.")
-    } catch (error) {
-      alert("Có lỗi xảy ra. Vui lòng thử lại.")
-    } finally {
-      setIsProcessing(false)
+  const handleRequestRefund = () => {
+    // Find the first successful payment to use for refund request
+    const successfulPayment = orderDetails.payments?.find(payment => payment.status === "SUCCESS")
+
+    if (successfulPayment && successfulPayment.paymentId) {
+      // Navigate to refund page with payment ID
+      router.push(`/account/refunds/new?paymentId=${successfulPayment.paymentId}`)
+    } else {
+      alert("Không tìm thấy thông tin thanh toán hợp lệ để yêu cầu hoàn tiền.")
     }
   }
 

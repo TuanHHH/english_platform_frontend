@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import Editor from "@/components/common/editor"
-import { updateLesson } from "@/lib/api/course"
+import { updateLesson } from "@/lib/api/lesson"
 
 export default function LessonContentDialog({ open, onOpenChange, lesson, onUpdated }) {
   const { moduleId, lessonId } = useParams()

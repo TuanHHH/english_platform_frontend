@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { ResultIcon } from "@/components/payment/result-icon"
 import { TransactionStatus } from "@/components/payment/transaction-status"
 import { Home, Receipt } from "lucide-react"
+import { Suspense } from "react"
 
 // Mock data function - will be replaced with API integration
 function getMockPaymentResult(provider, status) {
@@ -119,7 +120,7 @@ function getMockPaymentResult(provider, status) {
   return mockData[provider]?.[status] || mockData.momo.success
 }
 
-export default function PaymentResultPage() {
+function PaymentResultContent() {
   const searchParams = useSearchParams()
 
   // Get payment parameters from URL
@@ -272,5 +273,22 @@ export default function PaymentResultPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function PaymentResultPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background py-8">
+        <div className="container max-w-2xl mx-auto px-4">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>Đang tải kết quả thanh toán...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <PaymentResultContent />
+    </Suspense>
   )
 }

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import FullPageLoader from "@/components/common/full-page-loader"
+import {FullPageLoader} from "@/components/ui/full-page-loader"
 import { forgotPassword, verifyOtp, resetPassword } from "@/lib/api/auth"
 
 import EmailStep from "./steps/email-step"
