@@ -4,15 +4,8 @@ import { Play, Clock, BookOpen } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-
+import { formatCurrency } from "@/lib/utils"
 export function CourseCard({ course }) {
-  const formatPrice = (price, currency) => {
-    if (currency === "VND") {
-      return `${price.toLocaleString("vi-VN")} VNĐ`
-    }
-    return `${price} ${currency}`
-  }
-
   const skills = course.skillFocus || []
   const visibleSkills = skills.slice(0, 2)
   const remainingCount = skills.length - visibleSkills.length
@@ -91,7 +84,7 @@ export function CourseCard({ course }) {
 
             <div className="pt-3 border-t">
               <p className="text-lg font-bold text-primary mb-3">
-                {formatPrice(course.priceCents, course.currency)}
+                {formatCurrency(course.priceCents, course.currency)}
               </p>
 
               <Button className="w-full">

@@ -1,49 +1,52 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { CourseInfo } from "@/components/payment/course-info"
 import { PaymentSummary } from "@/components/payment/payment-summary"
 import { PaymentMethods } from "@/components/payment/payment-methods"
 import { ShoppingCart, ArrowLeft, Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import { getCartCheckout } from "@/lib/api/cart"
+import { getCheckoutInfo } from "@/lib/api/course"
 
-export default function CheckoutPage() {
+export default function CourseCheckoutPage() {
   const [selectedPayment, setSelectedPayment] = useState("payOS")
-  const [cartData, setCartData] = useState([])
+  const [courseData, setCourseData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const router = useRouter()
+  const params = useParams()
+  const courseId = params.courseId
 
   useEffect(() => {
-    const fetchCartData = async () => {
+    const fetchCourseData = async () => {
       try {
         setLoading(true)
-        const result = await getCartCheckout()
+        const result = await getCheckoutInfo(courseId)
 
         if (result.success) {
-          setCartData(result.data)
+          setCourseData(result.data)
         } else {
           setError(result.error)
-          toast.error(result.error || "Không thể tải thông tin giỏ hàng. Vui lòng thử lại.")
+          toast.error(result.error || "Không thể tải thông tin khóa học. Vui lòng thử lại.")
         }
       } catch (err) {
         setError(err.message)
-        toast.error("Không thể tải thông tin giỏ hàng. Vui lòng thử lại.")
+        toast.error("Không thể tải thông tin khóa học. Vui lòng thử lại.")
       } finally {
         setLoading(false)
       }
     }
 
-    fetchCartData()
-  }, [])
-
-  // Calculate total from cart data
-  const totalAmount = cartData.reduce((sum, course) => sum + course.priceCents, 0)
+    if (courseId) {
+      fetchCourseData()
+    }
+  }, [courseId])
 
   const handlePayment = () => {
+    if (!courseData) return
+
     const paymentNames = {
       payOS: "Ngân hàng",
       stripe: "Stripe",
@@ -57,32 +60,29 @@ export default function CheckoutPage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
           <Loader2 className="w-12 h-12 animate-spin mx-auto text-primary" />
-          <p className="text-lg font-medium">Đang tải thông tin giỏ hàng...</p>
+          <p className="text-lg font-medium">Đang tải thông tin khóa học...</p>
         </div>
       </div>
     )
   }
 
-  if (error || cartData.length === 0) {
+  if (error || !courseData) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold">
-            {error || "Giỏ hàng trống"}
-          </h2>
-          <p className="text-muted-foreground mb-6">
-            {error || "Không có khóa học nào trong giỏ hàng của bạn"}
-          </p>
-          <Button onClick={() => router.push("/courses")} variant="outline">
+          <h2 className="text-2xl font-bold">Không thể tải thông tin khóa học</h2>
+          <p className="text-muted-foreground mb-6">{error || "Đã xảy ra lỗi không xác định"}</p>
+          <Button onClick={() => router.back()} variant="outline">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Tiếp tục mua sắm
+            Quay lại
           </Button>
         </div>
       </div>
     )
   }
 
+  
   return (
     <div className="min-h-screen bg-background py-8">
       <div className="container max-w-6xl mx-auto px-4">
@@ -94,7 +94,7 @@ export default function CheckoutPage() {
           </Button>
           <div className="flex items-center gap-3">
             <ShoppingCart className="w-8 h-8 text-primary" />
-            <h1 className="text-3xl font-bold">Thanh toán giỏ hàng</h1>
+            <h1 className="text-3xl font-bold">Thanh toán khóa học</h1>
           </div>
         </div>
 
@@ -102,9 +102,7 @@ export default function CheckoutPage() {
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Left Column - Course Info */}
           <div className="lg:col-span-2 space-y-6">
-            {cartData.map((course) => (
-              <CourseInfo key={course.id} course={course} />
-            ))}
+            <CourseInfo course={courseData} />
             <PaymentMethods
               selected={selectedPayment}
               onSelect={setSelectedPayment}
@@ -114,8 +112,8 @@ export default function CheckoutPage() {
           {/* Right Column - Payment Summary */}
           <div className="space-y-6">
             <PaymentSummary
-              price={totalAmount}
-              total={totalAmount}
+              price={courseData.priceCents}
+              total={courseData.priceCents}
             />
 
             <Button

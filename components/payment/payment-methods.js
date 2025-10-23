@@ -8,18 +8,11 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 export function PaymentMethods({ selected, onSelect }) {
   const paymentMethods = [
     {
-      id: "momo",
-      name: "MoMo",
-      description: "Thanh toán qua ví điện tử MoMo",
-      logo: "/momo.png",
-      bg: "bg-pink-50 border-pink-200",
-    },
-    {
-      id: "vnpay",
-      name: "VNPay",
-      description: "Thanh toán qua cổng VNPay",
-      logo: "/vnpay.png",
-      bg: "bg-blue-50 border-blue-200",
+      id: "payOS",
+      name: "PayOS",
+      description: "Thanh toán qua ngân hàng nội địa",
+      logo: "/payos.png",
+      bg: "bg-green-50 border-green-200",
     },
     {
       id: "stripe",
