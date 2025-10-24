@@ -8,11 +8,17 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { formatCurrency } from "@/lib/utils"
 
 export default function CartItem({ item, onRemove, removingItems }) {
+  const isPurchased = item.course.isPurchased
+
   return (
-    <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+    <div className={`flex flex-col sm:flex-row gap-4 p-4 border rounded-lg transition-colors ${
+      isPurchased
+        ? 'opacity-60 bg-gray-50 border-gray-300'
+        : 'hover:bg-gray-50'
+    }`}>
       <div className="flex-shrink-0">
-        <Avatar className="h-16 w-16">
-          <AvatarFallback className="bg-blue-100 text-blue-600">
+        <Avatar className={`h-16 w-16 ${isPurchased ? 'grayscale' : ''}`}>
+          <AvatarFallback className={isPurchased ? 'bg-gray-200 text-gray-500' : 'bg-blue-100 text-blue-600'}>
             {item.course.title.charAt(0).toUpperCase()}
           </AvatarFallback>
         </Avatar>
@@ -21,17 +27,30 @@ export default function CartItem({ item, onRemove, removingItems }) {
       <div className="flex-grow">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div className="flex-grow">
-            <h3 className="font-semibold text-gray-900 mb-1">
-              <Link
-                href={`/courses/${item.course.slug}`}
-                className="hover:text-blue-600 transition-colors line-clamp-1"
-              >
-                {item.course.title}
-              </Link>
+            <h3 className={`font-semibold mb-1 ${isPurchased ? 'text-gray-500' : 'text-gray-900'}`}>
+              {isPurchased ? (
+                <span className="line-clamp-1">{item.course.title}</span>
+              ) : (
+                <Link
+                  href={`/courses/${item.course.slug}`}
+                  className="hover:text-blue-600 transition-colors line-clamp-1"
+                >
+                  {item.course.title}
+                </Link>
+              )}
             </h3>
-            <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+            <p className={`text-sm mb-2 line-clamp-2 ${isPurchased ? 'text-gray-400' : 'text-gray-600'}`}>
               {item.course.description}
             </p>
+
+            {isPurchased && (
+              <div className="mb-2">
+                <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">
+                  Đã mua
+                </Badge>
+              </div>
+            )}
+
             <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
               <Badge variant="secondary">
                 {item.course.language?.toUpperCase() || 'N/A'}
@@ -42,11 +61,13 @@ export default function CartItem({ item, onRemove, removingItems }) {
           </div>
 
           <div className="flex flex-col items-end justify-between gap-2">
-            <div className="text-right">
-              <p className="text-lg font-bold text-blue-600">
-                {formatCurrency(item.course.priceCents, item.course.currency)}
-              </p>
-            </div>
+            {!isPurchased && (
+              <div className="text-right">
+                <p className="text-lg font-bold text-blue-600">
+                  {formatCurrency(item.course.priceCents, item.course.currency)}
+                </p>
+              </div>
+            )}
 
             <Button
               variant="outline"

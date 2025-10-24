@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Loader2, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { toast } from "sonner"
-import { getCart, removeFromCart, clearCart } from "@/lib/api/cart"
+import { useCartStore } from "@/store/cart-store"
 
 // Import cart components
 import CartItem from "@/components/cart/cart-item"
@@ -18,52 +18,28 @@ import ClearCartDialog from "@/components/cart/clear-cart-dialog"
 import EmptyCart from "@/components/cart/empty-cart"
 
 export default function CartPage() {
-  const [cartData, setCartData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [removingItems, setRemovingItems] = useState(new Set())
-  const [currentPage, setCurrentPage] = useState(1)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [clearingCart, setClearingCart] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [clearAllDialogOpen, setClearAllDialogOpen] = useState(false)
   const [itemToDelete, setItemToDelete] = useState(null)
   const router = useRouter()
-  const pageSize = 5
 
-  const fetchCart = async (page = 1, append = false) => {
-    try {
-      if (append) {
-        setLoadingMore(true)
-      } else {
-        setLoading(true)
-      }
+  // Get cart state and actions from Zustand store
+  const {
+    items,
+    summary,
+    isLoading,
+    isRemovingFromCart,
+    isClearingCart,
+    hasHydrated,
+    removeFromCart,
+    clearCart
+  } = useCartStore()
 
-      const result = await getCart(page, pageSize)
-
-      if (result.success) {
-        if (append && cartData) {
-          setCartData(prev => ({
-            ...result.data,
-            result: [...prev.result, ...result.data.result]
-          }))
-        } else {
-          setCartData(result.data)
-        }
-        setCurrentPage(page)
-      } else {
-        toast.error(result.error || "Không thể tải giỏ hàng")
-      }
-    } catch (error) {
-      console.error("Cart fetch error:", error)
-      toast.error("Lỗi khi tải giỏ hàng")
-    } finally {
-      setLoading(false)
-      setLoadingMore(false)
-    }
-  }
+  // Create a Set for removing items to maintain compatibility with CartItem component
+  const removingItems = itemToDelete ? new Set([itemToDelete.id]) : new Set()
 
   const handleRemoveFromCart = (courseId, courseTitle) => {
-    if (removingItems.has(courseId)) return
+    if (isRemovingFromCart) return
     setItemToDelete({ id: courseId, title: courseTitle })
     setDeleteDialogOpen(true)
   }
@@ -72,26 +48,11 @@ export default function CartPage() {
     if (!itemToDelete) return
 
     const courseId = itemToDelete.id
-    setRemovingItems(prev => new Set(prev).add(courseId))
     setDeleteDialogOpen(false)
 
     try {
       const result = await removeFromCart(courseId)
       if (result.success) {
-        setCartData(prev => ({
-          ...prev,
-          result: prev.result.filter(item => item.course.id !== courseId),
-          summary: {
-            ...prev.summary,
-            totalPublishedCourses: prev.summary.totalPublishedCourses - 1,
-            totalPriceCents: prev.summary.totalPriceCents -
-              prev.result.find(item => item.course.id === courseId)?.course?.priceCents || 0
-          },
-          meta: {
-            ...prev.meta,
-            total: prev.meta.total - 1
-          }
-        }))
         toast.success("Đã xóa khóa học khỏi giỏ hàng")
       } else {
         toast.error(result.error || "Không thể xóa khóa học")
@@ -100,11 +61,6 @@ export default function CartPage() {
       console.error("Remove from cart error:", error)
       toast.error("Lỗi khi xóa khóa học")
     } finally {
-      setRemovingItems(prev => {
-        const newSet = new Set(prev)
-        newSet.delete(courseId)
-        return newSet
-      })
       setItemToDelete(null)
     }
   }
@@ -114,25 +70,11 @@ export default function CartPage() {
   }
 
   const confirmClearCart = async () => {
-    setClearingCart(true)
     setClearAllDialogOpen(false)
 
     try {
       const result = await clearCart()
       if (result.success) {
-        setCartData(prev => ({
-          ...prev,
-          result: [],
-          summary: {
-            ...prev.summary,
-            totalPublishedCourses: 0,
-            totalPriceCents: 0
-          },
-          meta: {
-            ...prev.meta,
-            total: 0
-          }
-        }))
         toast.success("Đã xóa tất cả khóa học khỏi giỏ hàng")
       } else {
         toast.error(result.error || "Không thể xóa giỏ hàng")
@@ -140,8 +82,6 @@ export default function CartPage() {
     } catch (error) {
       console.error("Clear cart error:", error)
       toast.error("Lỗi khi xóa giỏ hàng")
-    } finally {
-      setClearingCart(false)
     }
   }
 
@@ -149,17 +89,11 @@ export default function CartPage() {
     router.push("/payment/checkout")
   }
 
-  const loadMore = () => {
-    if (!loadingMore && cartData?.meta?.page < cartData?.meta?.pages) {
-      fetchCart(currentPage + 1, true)
-    }
-  }
+  // Note: Removed useEffect for fetchCart since the store already handles fetching on hydration
+  // This prevents duplicate API calls when the cart page loads
 
-  useEffect(() => {
-    fetchCart()
-  }, [])
-
-  if (loading) {
+  // Show loading state while store is hydrating or fetching data
+  if (!hasHydrated || isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center min-h-[400px]">
@@ -169,11 +103,10 @@ export default function CartPage() {
     )
   }
 
-  if (!cartData || !cartData.result || cartData.result.length === 0) {
+  // Only show empty cart after hydration is complete
+  if (!items || items.length === 0) {
     return <EmptyCart />
   }
-
-  const { result: cartItems, meta, summary } = cartData
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -198,14 +131,14 @@ export default function CartPage() {
             <Card>
               <CardHeader>
                 <CartHeader
-                  itemCount={cartItems.length}
+                  itemCount={items.length}
                   onClearCart={handleClearCart}
-                  clearingCart={clearingCart}
-                  hasActiveRemovals={removingItems.size > 0}
+                  clearingCart={isClearingCart}
+                  hasActiveRemovals={isRemovingFromCart}
                 />
               </CardHeader>
               <CardContent className="space-y-4">
-                {cartItems.map((item) => (
+                {items.map((item) => (
                   <CartItem
                     key={item.id}
                     item={item}
@@ -214,29 +147,6 @@ export default function CartPage() {
                   />
                 ))}
               </CardContent>
-
-              {meta && meta.page < meta.pages && (
-                <CardFooter>
-                  <Button
-                    variant="outline"
-                    onClick={loadMore}
-                    disabled={loadingMore}
-                    className="w-full"
-                  >
-                    {loadingMore ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Đang tải...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Xem thêm ({meta.total - cartItems.length} khóa học còn lại)
-                      </>
-                    )}
-                  </Button>
-                </CardFooter>
-              )}
             </Card>
           </div>
 
@@ -258,7 +168,7 @@ export default function CartPage() {
       <ClearCartDialog
         open={clearAllDialogOpen}
         onOpenChange={setClearAllDialogOpen}
-        itemCount={cartData?.result?.length || 0}
+        itemCount={items?.length || 0}
         onConfirm={confirmClearCart}
       />
     </div>

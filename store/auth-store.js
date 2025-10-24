@@ -5,9 +5,30 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import { getUser, updateUser } from '@/lib/api/user'
 import { login as apiLogin, logout, logoutAll } from '@/lib/api/auth'
 
+// Import cart store for clearing cart during logout
+import { useCartStore } from './cart-store'
+
 // Ignore this flag after first bootstrap
 // (to avoid multiple re-fetches in dev mode with React StrictMode)
 let didBootstrap = false
+
+// Helper function to clear cart store during logout
+const clearCartOnLogout = () => {
+  try {
+    // Clear the cart store state
+    const cartStore = useCartStore.getState()
+    cartStore.items = []
+    cartStore.summary = {
+      totalPublishedCourses: 0,
+      totalPriceCents: 0,
+      currency: 'USD'
+    }
+    // Also clear from localStorage
+    localStorage.removeItem('engpro-cart-storage')
+  } catch (error) {
+    console.error('Failed to clear cart on logout:', error)
+  }
+}
 
 export const useAuthStore = create()(
   persist(
@@ -77,6 +98,14 @@ export const useAuthStore = create()(
           if (result?.success) {
             set({ isLoggedIn: true })
             await get().fetchUser(true)
+            // Fetch cart data after successful login
+            try {
+              const cartStore = useCartStore.getState()
+              await cartStore.fetchCart(true)
+            } catch (cartError) {
+              console.error('Failed to fetch cart after login:', cartError)
+              // Don't fail login if cart fetch fails
+            }
             return { success: true }
           }
           return { error: 'Đăng nhập thất bại. Vui lòng thử lại.' }
@@ -90,9 +119,13 @@ export const useAuthStore = create()(
         try {
           const result = await logout()
           set({ user: null, isLoggedIn: false })
+          // Clear cart data when user logs out
+          clearCartOnLogout()
           return result?.success ? { success: true } : { error: 'Đăng xuất thất bại.' }
         } catch {
           set({ user: null, isLoggedIn: false })
+          // Clear cart data even on error
+          clearCartOnLogout()
           return { error: 'Đăng xuất thất bại.' }
         }
       },
@@ -101,9 +134,13 @@ export const useAuthStore = create()(
         try {
           const result = await logoutAll()
           set({ user: null, isLoggedIn: false })
+          // Clear cart data when user logs out from all devices
+          clearCartOnLogout()
           return result?.success ? { success: true } : { error: 'Đăng xuất tất cả thất bại.' }
         } catch {
           set({ user: null, isLoggedIn: false })
+          // Clear cart data even on error
+          clearCartOnLogout()
           return { error: 'Đăng xuất tất cả thất bại.' }
         }
       },
@@ -111,6 +148,14 @@ export const useAuthStore = create()(
       oauthLogin: async () => {
         set({ isLoggedIn: true })
         await get().fetchUser(true)
+        // Fetch cart data after successful OAuth login
+        try {
+          const cartStore = useCartStore.getState()
+          await cartStore.fetchCart(true)
+        } catch (cartError) {
+          console.error('Failed to fetch cart after OAuth login:', cartError)
+          // Don't fail login if cart fetch fails
+        }
       },
     }),
     {
@@ -124,7 +169,7 @@ export const useAuthStore = create()(
       }),
 
       // After rehydrate: if logged in, always refetch (to update) user data
-      onRehydrateStorage: () => (state, error) => {
+      onRehydrateStorage: () => (state) => {
         if (!state) return
         state.setHasHydrated(true)
 
