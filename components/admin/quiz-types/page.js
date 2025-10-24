@@ -10,7 +10,7 @@ import {
   createQuizType,
   updateQuizType,
   deleteQuizType,
-} from "@/lib/api/quiz/quizType";
+} from "@/lib/api/quiz/quiz-type";
 import { toast } from "sonner"; // Importing toast for notifications
 
 export default function QuizTypesPage() {

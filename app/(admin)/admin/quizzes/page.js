@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
-import { listQuizTypes } from "@/lib/api/quiz/quizType";
+import { listQuizTypes } from "@/lib/api/quiz/quiz-type";
 import { searchQuizzes, deleteQuiz, updateQuiz } from "@/lib/api/quiz/quiz";
 import { toast } from "sonner";
 

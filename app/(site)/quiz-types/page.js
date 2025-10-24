@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { BookOpen } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { listQuizTypes } from "@/lib/api/quiz/quizType";
+import { listQuizTypes } from "@/lib/api/quiz/quiz-type";
 
 export default function QuizTypes() {
   const [quizTypes, setQuizTypes] = useState([]);

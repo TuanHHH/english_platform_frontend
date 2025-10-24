@@ -20,7 +20,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import AdminSidebar from "@/components/common/AdminSidebar";
-import { listQuizTypes } from "@/lib/api/quiz/quizType";
+import { listQuizTypes } from "@/lib/api/quiz/quiz-type";
 import { getQuiz, createQuiz, updateQuiz } from "@/lib/api/quiz/quiz";
 import { toast } from "sonner";
 
