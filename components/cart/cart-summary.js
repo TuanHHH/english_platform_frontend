@@ -35,15 +35,14 @@ export default function CartSummary({ summary }) {
         </div>
       </CardContent>
       <CardFooter className="flex flex-col space-y-2">
-        <Button
-          onClick={() => window.location.href = "/payment/checkout"}
-          className="w-full flex items-center space-x-2"
-          size="lg"
-        >
-          <CreditCard className="h-5 w-5" />
-          <span>Thanh toán ngay</span>
-        </Button>
-
+        <Link className="w-full flex items-center space-x-2" href={"/payment/checkout"}>
+          <Button className="w-full"
+            size="lg"
+          >
+            <CreditCard className="h-5 w-5" />
+            <span>Thanh toán ngay</span>
+          </Button>
+        </Link>
         <Link href="/courses" className="w-full">
           <Button variant="outline" className="w-full">
             Tiếp tục mua sắm

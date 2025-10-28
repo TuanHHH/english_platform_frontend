@@ -13,17 +13,32 @@ import '@n8n/chat/style.css';
 import { createChat } from '@n8n/chat';
 
 export default function MessengerChat() {
+  const pathname = usePathname();
   const { openWidget, setOpenWidget } = useUIStore();
-  const isOpen = openWidget === "chat";
-
   const containerRef = useRef(null);
   const instanceRef = useRef(null);
-  const pathname = usePathname();
 
   const user = useAuthStore((s) => s.user);
   const hasHydrated = useAuthStore((s) => s.hasHydrated);
   const isFetchingUser = useAuthStore((s) => s.isFetchingUser);
   const isAuthenticated = !!user;
+  const isOpen = openWidget === "chat";
+
+  // Paths where the chat widget should not be visible
+  const hiddenPaths = [
+    '/account/*',
+    '/login',
+    '/register',
+    "/forgot-password"
+  ]
+
+  // Check if current path should hide the widget
+  const shouldHide = hiddenPaths.some(path => {
+    if (path.endsWith('/*')) {
+      return pathname.startsWith(path.slice(0, -2))
+    }
+    return pathname === path || pathname.startsWith(path + '/')
+  })
 
   // Close widget chat when change path
   useEffect(() => {
@@ -40,12 +55,12 @@ export default function MessengerChat() {
 
     async function mountN8n() {
       await new Promise(resolve => setTimeout(resolve, 0));
-      
+
       if (!mounted || !containerRef.current) return;
-      if (instanceRef.current) return; 
+      if (instanceRef.current) return;
 
       const webhookUrl = process.env.NEXT_PUBLIC_N8N_CHAT_URL;
-      
+
       if (!webhookUrl) {
         console.warn("Missing webhook URL");
         return;
@@ -93,7 +108,9 @@ export default function MessengerChat() {
     };
   }, [isOpen, isAuthenticated, user?.id]);
 
-  if (!hasHydrated || isFetchingUser) return null;
+  if (shouldHide) return null
+
+  if (!hasHydrated || isFetchingUser) return null
 
   return (
     <>

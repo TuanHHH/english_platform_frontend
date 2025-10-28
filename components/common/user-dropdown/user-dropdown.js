@@ -75,6 +75,13 @@ const UserDropdown = ({ user }) => {
           </DropdownMenuItem>
         )}
 
+        {user?.roles?.includes("INSTRUCTOR") && (
+          <DropdownMenuItem onClick={() => router.push("/instructor")}>
+            <LayoutDashboard className="w-4 h-4 mr-2" />
+            Trang giảng viên
+          </DropdownMenuItem>
+        )}
+
         <DropdownMenuItem onClick={() => router.push("/account")}>
           <UserIcon className="w-4 h-4 mr-2" />
           Tài khoản

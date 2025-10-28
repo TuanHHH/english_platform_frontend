@@ -19,9 +19,9 @@ function CartBadge({ count }) {
     setIsMounted(true)
   }, [])
 
-  // Don't render anything during SSR or before mount
+  // Don't render anything during SSR or before mount or if count is 0/undefined
   if (!isMounted || count === 0 || count === undefined) {
-    return null
+    return <span className="sr-only">No items in cart</span>
   }
 
   return (

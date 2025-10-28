@@ -2,12 +2,12 @@
 
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import { XCircle, RefreshCw, ShoppingCart, Home } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 
-export default function CheckoutCancelPage() {
+function CheckoutCancelContent() {
   const searchParams = useSearchParams()
   const orderId = searchParams.get("orderId")
   const [isRetrying, setIsRetrying] = useState(false)
@@ -74,5 +74,24 @@ export default function CheckoutCancelPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function CheckoutCancelPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center px-4 py-12">
+        <div className="max-w-md mx-auto w-full">
+          <Card className="shadow-lg">
+            <CardContent className="p-8 md:p-10 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Đang tải...</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    }>
+      <CheckoutCancelContent />
+    </Suspense>
   )
 }

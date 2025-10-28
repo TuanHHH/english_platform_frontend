@@ -55,6 +55,17 @@ const UserDropdownMobile = ({ user }) => {
         </Button>
       )}
 
+      {user?.roles?.includes("INSTRUCTOR") && (
+        <Button
+          variant="ghost"
+          className="justify-start w-full"
+          onClick={() => router.push("/instructor")}
+        >
+          <LayoutDashboard className="w-4 h-4 mr-2" />
+          Trang giảng viên
+        </Button>
+      )}
+
       <Button
         variant="ghost"
         className="justify-start w-full"

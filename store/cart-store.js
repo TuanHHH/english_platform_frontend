@@ -3,6 +3,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { addToCart, getCart, removeFromCart, clearCart } from '@/lib/api/cart'
+import { useAuthStore } from './auth-store'
 
 // Ignore this flag after first bootstrap
 // (to avoid multiple re-fetches in dev mode with React StrictMode)
@@ -32,6 +33,23 @@ export const useCartStore = create()(
       // fetch cart data from API
       fetchCart: async (force = false) => {
         const s = get()
+        const authStore = useAuthStore.getState()
+
+        // Only fetch cart if user is logged in
+        if (!authStore.isLoggedIn) {
+          // Clear cart data if user is not logged in and ensure loading is false
+          set({
+            items: [],
+            summary: {
+              totalPublishedCourses: 0,
+              totalPriceCents: 0,
+              currency: 'USD'
+            },
+            isLoading: false
+          })
+          return
+        }
+
         if (!force && s.isLoading) return
 
         set({ isLoading: true })
@@ -65,6 +83,13 @@ export const useCartStore = create()(
       // add course to cart
       addToCart: async (courseId) => {
         const s = get()
+        const authStore = useAuthStore.getState()
+
+        // Check if user is logged in
+        if (!authStore.isLoggedIn) {
+          return { success: false, error: 'Vui lòng đăng nhập để thêm vào giỏ hàng' }
+        }
+
         if (s.isAddingToCart) return
 
         set({ isAddingToCart: true })
@@ -87,6 +112,13 @@ export const useCartStore = create()(
       // remove specific course from cart
       removeFromCart: async (courseId) => {
         const s = get()
+        const authStore = useAuthStore.getState()
+
+        // Check if user is logged in
+        if (!authStore.isLoggedIn) {
+          return { success: false, error: 'Vui lòng đăng nhập để xóa khỏi giỏ hàng' }
+        }
+
         if (s.isRemovingFromCart) return
 
         set({ isRemovingFromCart: true })
@@ -122,6 +154,13 @@ export const useCartStore = create()(
       // clear entire cart
       clearCart: async () => {
         const s = get()
+        const authStore = useAuthStore.getState()
+
+        // Check if user is logged in
+        if (!authStore.isLoggedIn) {
+          return { success: false, error: 'Vui lòng đăng nhập để xóa giỏ hàng' }
+        }
+
         if (s.isClearingCart) return
 
         set({ isClearingCart: true })
@@ -194,8 +233,25 @@ export const useCartStore = create()(
 
         if (!didBootstrap) {
           didBootstrap = true
-          // Always fetch fresh cart data on app start to ensure consistency
-          state.fetchCart(true)
+
+          // Wait a bit for auth store to hydrate, then check authentication
+          setTimeout(() => {
+            const authStore = useAuthStore.getState()
+            if (authStore.isLoggedIn) {
+              state.fetchCart(true)
+            } else {
+              // Ensure cart is cleared and loading is false if user is not logged in
+              useCartStore.setState({
+                items: [],
+                summary: {
+                  totalPublishedCourses: 0,
+                  totalPriceCents: 0,
+                  currency: 'USD'
+                },
+                isLoading: false
+              })
+            }
+          }, 100) // Small delay to ensure auth store has hydrated
         }
       },
     }
