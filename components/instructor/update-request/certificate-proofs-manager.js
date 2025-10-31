@@ -7,7 +7,8 @@ const CertificateProofsManager = ({
   handleSaveProofs,
   handleRemoveProof,
   handleOpenProof,
-  uploadingProofs
+  uploadingProofs,
+  isReadOnly = false
 }) => {
   return (
     <div className="space-y-4">
@@ -17,47 +18,49 @@ const CertificateProofsManager = ({
       </h4>
 
       {/* Upload Area */}
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-        <Upload className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-        <div className="space-y-2">
-          <p className="text-lg font-medium text-gray-700">Tải lên chứng chỉ</p>
-          <p className="text-sm text-gray-500">PDF, JPG, PNG, WebP (tối đa 5MB mỗi file)</p>
+      {!isReadOnly && (
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+          <Upload className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+          <div className="space-y-2">
+            <p className="text-lg font-medium text-gray-700">Tải lên chứng chỉ</p>
+            <p className="text-sm text-gray-500">PDF, JPG, PNG, WebP (tối đa 5MB mỗi file)</p>
+          </div>
+          <input
+            type="file"
+            multiple
+            accept="image/png,image/jpeg,image/webp,application/pdf"
+            onChange={handleFileUpload}
+            className="hidden"
+            id="proof-upload"
+            ref={(input) => {
+              if (input) {
+                input.value = '';
+              }
+            }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-4 cursor-pointer"
+            onClick={() => {
+              const fileInput = document.getElementById('proof-upload');
+              if (fileInput) {
+                fileInput.click();
+              }
+            }}
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Chọn file
+          </Button>
         </div>
-        <input
-          type="file"
-          multiple
-          accept="image/png,image/jpeg,image/webp,application/pdf"
-          onChange={handleFileUpload}
-          className="hidden"
-          id="proof-upload"
-          ref={(input) => {
-            if (input) {
-              input.value = '';
-            }
-          }}
-        />
-        <Button
-          type="button"
-          variant="outline"
-          className="mt-4 cursor-pointer"
-          onClick={() => {
-            const fileInput = document.getElementById('proof-upload');
-            if (fileInput) {
-              fileInput.click();
-            }
-          }}
-        >
-          <Upload className="w-4 h-4 mr-2" />
-          Chọn file
-        </Button>
-      </div>
+      )}
 
       {/* Certificate Proofs List */}
       {certificateProofs.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h5 className="text-sm font-medium text-gray-700">Danh sách chứng chỉ</h5>
-            {certificateProofs.some(proof => !proof.uploaded) && (
+            {!isReadOnly && certificateProofs.some(proof => !proof.uploaded) && (
               <Button
                 type="button"
                 size="sm"
@@ -85,13 +88,15 @@ const CertificateProofsManager = ({
                   <FileText className="w-4 h-4 text-gray-400" />
                   <div>
                     <p className="text-sm font-medium text-gray-700">{proof.name}</p>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      {proof.uploaded ? (
-                        <span className="text-green-600">Đã lưu</span>
-                      ) : (
-                        <span className="text-yellow-600">Chưa lưu</span>
-                      )}
-                    </div>
+                    {!isReadOnly && (
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        {proof.uploaded ? (
+                          <span className="text-green-600">Đã lưu</span>
+                        ) : (
+                          <span className="text-yellow-600">Chưa lưu</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -105,14 +110,16 @@ const CertificateProofsManager = ({
                       <ExternalLink className="w-3 h-3" />
                     </Button>
                   )}
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleRemoveProof(proof.id)}
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
+                  {!isReadOnly && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleRemoveProof(proof.id)}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}

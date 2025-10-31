@@ -21,6 +21,8 @@ export default function LabanDictFrame() {
     '/account/*',
     '/login',
     '/register',
+    '/forgot-password',
+    'become-instructor'
   ]
 
   // Check if current path should hide the widget

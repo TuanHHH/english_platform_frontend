@@ -3,7 +3,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  BarChart3, FileText, Users, MessageSquare, Flag, BookOpen, ShoppingBag
+  BarChart3, FileText, Users, MessageSquare, Flag, BookOpen, ShoppingBag, GraduationCap
 } from "lucide-react";
 
 const AdminSidebar = () => {
@@ -16,10 +16,11 @@ const AdminSidebar = () => {
 
   const menuItems = [
     { title: "Tổng quan", path: "/admin", icon: BarChart3 },
-    { title: "Quản lí đề thi", path: "/admin/exams", icon: FileText },
     { title: "Quản lí người dùng", path: "/admin/users", icon: Users },
-    { title: "Quản lí blog", path: "/admin/blogs", icon: MessageSquare },
+    { title: "Quản lí giảng viên", path: "/admin/instructors", icon: GraduationCap },
     { title: "Quản lí khóa học", path: "/admin/courses", icon: BookOpen },
+    { title: "Quản lí đề thi", path: "/admin/exams", icon: FileText },
+    { title: "Quản lí blog", path: "/admin/blogs", icon: MessageSquare },
     { title: "Quản lí đơn hàng", path: "/admin/orders", icon: ShoppingBag },
     { title: "Quản lí report forum", path: "/admin/reports", icon: Flag }
   ];

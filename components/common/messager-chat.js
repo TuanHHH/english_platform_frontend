@@ -29,7 +29,8 @@ export default function MessengerChat() {
     '/account/*',
     '/login',
     '/register',
-    "/forgot-password"
+    '/forgot-password',
+    'become-instructor'
   ]
 
   // Check if current path should hide the widget
