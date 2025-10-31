@@ -3,7 +3,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  BarChart3, FileText, Users, MessageSquare, Flag, BookOpen
+  BarChart3, FileText, Users, MessageSquare, Flag, BookOpen, ShoppingBag
 } from "lucide-react";
 
 const AdminSidebar = () => {
@@ -20,6 +20,7 @@ const AdminSidebar = () => {
     { title: "Quản lí người dùng", path: "/admin/users", icon: Users },
     { title: "Quản lí blog", path: "/admin/blogs", icon: MessageSquare },
     { title: "Quản lí khóa học", path: "/admin/courses", icon: BookOpen },
+    { title: "Quản lí đơn hàng", path: "/admin/orders", icon: ShoppingBag },
     { title: "Quản lí report forum", path: "/admin/reports", icon: Flag }
   ];
 

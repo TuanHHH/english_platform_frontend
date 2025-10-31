@@ -1,4 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import ProfileCard from '@/components/account/profile';
 import TestHistory from '@/components/account/test-history';
@@ -15,18 +16,41 @@ export default function AccountContent() {
           </div>
 
           <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="profile">Hồ sơ</TabsTrigger>
               <TabsTrigger value="history">Lịch sử</TabsTrigger>
-              <TabsTrigger value="orders" asChild>
-                <Link href="/account/orders">Đơn hàng</Link>
-              </TabsTrigger>
               {/* <TabsTrigger value="preferences">Thông báo</TabsTrigger> */}
             </TabsList>
 
             <TabsContent value="profile">
               <div className="grid md:grid-cols-1 gap-6">
                 <ProfileCard />
+                <div className="bg-white rounded-lg shadow p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900">Đơn hàng của bạn</h3>
+                      <p className="text-sm text-gray-600">Xem và quản lý lịch sử đơn hàng</p>
+                    </div>
+                    <Link href="/account/orders">
+                      <Button variant="outline">
+                        Xem đơn hàng
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+                <div className="bg-white rounded-lg shadow p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900">Yêu cầu giảng viên</h3>
+                      <p className="text-sm text-gray-600">Đăng ký làm giảng viên tại đây</p>
+                    </div>
+                    <Link href="/account/instructor">
+                      <Button variant="outline">
+                        Xem yêu cầu
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
               </div>
             </TabsContent>
 
