@@ -18,6 +18,7 @@ export const FormActionButtons = ({
         </Link>
         <Button 
           variant="destructive" 
+          className="hover:cursor-pointer"
           type="button"
           onClick={onDelete}
         >
