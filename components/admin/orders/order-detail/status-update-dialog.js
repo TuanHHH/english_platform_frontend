@@ -77,16 +77,29 @@ export function StatusUpdateDialog({
                         )}
                     </div>
 
-                    <div>
-                        <label className="text-xs sm:text-sm font-medium">Lý do thay đổi (tùy chọn)</label>
-                        <textarea
-                            className="w-full mt-1 p-2 border rounded-md text-xs sm:text-sm"
-                            rows={3}
-                            placeholder="Nhập lý do thay đổi trạng thái..."
-                            value={statusUpdateReason}
-                            onChange={(e) => setStatusUpdateReason(e.target.value)}
-                        />
-                    </div>
+                    {newStatus === "CANCELLED" && (
+                        <div>
+                            <label className="text-xs sm:text-sm font-medium">
+                                Lý do hủy đơn <span className="text-red-500">*</span>
+                            </label>
+                            <textarea
+                                className="w-full mt-1 p-2 border rounded-md text-xs sm:text-sm"
+                                rows={3}
+                                placeholder="Nhập lý do hủy đơn hàng (15-200 ký tự)..."
+                                value={statusUpdateReason}
+                                onChange={(e) => setStatusUpdateReason(e.target.value)}
+                                maxLength={200}
+                            />
+                            <div className="flex justify-between items-center text-xs mt-1">
+                                <p className={statusUpdateReason.length < 15 ? "text-red-500" : "text-gray-500"}>
+                                    {statusUpdateReason.length < 15 ? `Cần thêm ${15 - statusUpdateReason.length} ký tự` : "Đủ ký tự"}
+                                </p>
+                                <p className="text-gray-500">
+                                    {statusUpdateReason.length}/200 ký tự
+                                </p>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="flex flex-col-reverse sm:flex-row justify-end gap-2">
                         <Button
@@ -98,7 +111,11 @@ export function StatusUpdateDialog({
                         </Button>
                         <Button
                             onClick={handleStatusUpdate}
-                            disabled={isUpdatingStatus || !isStatusUpdateAllowed(orderDetails.status, newStatus)}
+                            disabled={
+                                isUpdatingStatus ||
+                                !isStatusUpdateAllowed(orderDetails.status, newStatus) ||
+                                (newStatus === "CANCELLED" && (statusUpdateReason.length < 15 || statusUpdateReason.length > 200))
+                            }
                             className="w-full sm:w-auto text-xs sm:text-sm"
                         >
                             {isUpdatingStatus ? (

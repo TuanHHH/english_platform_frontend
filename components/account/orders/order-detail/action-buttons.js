@@ -1,13 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Receipt, RefreshCw, XCircle } from "lucide-react"
+import { Receipt, RefreshCw, XCircle, CreditCard } from "lucide-react"
 
 export function ActionButtons({
   orderDetails,
   isProcessing,
   onViewInvoice,
   onRequestRefund,
-  onCancelOrder
+  onCancelOrder,
+  onPayAgain
 }) {
   return (
     <Card>
@@ -24,6 +25,28 @@ export function ActionButtons({
           Xem hóa đơn
         </Button>
 
+        {orderDetails.status === "PENDING" && (
+          <>
+            <Button
+              className="w-full"
+              onClick={onPayAgain}
+              disabled={isProcessing}
+            >
+              <CreditCard className="w-4 h-4 mr-2" />
+              {isProcessing ? "Đang xử lý..." : "Thanh toán ngay"}
+            </Button>
+            <Button
+              variant="destructive"
+              className="w-full"
+              onClick={onCancelOrder}
+              disabled={isProcessing}
+            >
+              <XCircle className="w-4 h-4 mr-2" />
+              {isProcessing ? "Đang xử lý..." : "Hủy đơn hàng"}
+            </Button>
+          </>
+        )}
+
         {orderDetails.status === "PAID" && (
           <Button
             variant="outline"
@@ -33,18 +56,6 @@ export function ActionButtons({
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${isProcessing ? 'animate-spin' : ''}`} />
             {isProcessing ? "Đang xử lý..." : "Yêu cầu hoàn tiền"}
-          </Button>
-        )}
-
-        {orderDetails.status === "PENDING" && (
-          <Button
-            variant="destructive"
-            className="w-full"
-            onClick={onCancelOrder}
-            disabled={isProcessing}
-          >
-            <XCircle className="w-4 h-4 mr-2" />
-            {isProcessing ? "Đang xử lý..." : "Hủy đơn hàng"}
           </Button>
         )}
       </CardContent>

@@ -4,13 +4,15 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { getMyOrderById } from "@/lib/api/order"
+import { toast } from "sonner"
+import { getMyOrderById, cancelOrder } from "@/lib/api/order"
 import { OrderHeader } from "@/components/account/orders/order-detail/order-header"
 import { OrderInfo } from "@/components/account/orders/order-detail/order-info"
 import { OrderItems } from "@/components/account/orders/order-detail/order-items"
 import { PaymentHistory } from "@/components/account/orders/order-detail/payment-history"
 import { CustomerInfo } from "@/components/account/orders/order-detail/customer-info"
 import { ActionButtons } from "@/components/account/orders/order-detail/action-buttons"
+import { CancelOrderDialog } from "@/components/account/orders/order-detail/cancel-order-dialog"
 import { ArrowLeft, CheckCircle, Clock, RefreshCw, XCircle } from "lucide-react"
 
 export default function OrderDetailContent({ orderId }) {
@@ -19,6 +21,7 @@ export default function OrderDetailContent({ orderId }) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [orderDetails, setOrderDetails] = useState(null)
+  const [showCancelDialog, setShowCancelDialog] = useState(false)
 
   // Fetch order details from API
   useEffect(() => {
@@ -116,24 +119,42 @@ export default function OrderDetailContent({ orderId }) {
       // Navigate to refund page with payment ID
       router.push(`/account/refunds/new?paymentId=${successfulPayment.id}`)
     } else {
-      alert("Không tìm thấy thông tin thanh toán hợp lệ để yêu cầu hoàn tiền.")
+      toast.error("Không tìm thấy thông tin thanh toán hợp lệ để yêu cầu hoàn tiền.")
     }
   }
 
-  const handleCancelOrder = async () => {
-    if (!confirm("Bạn có chắc chắn muốn hủy đơn hàng này?")) {
-      return
-    }
+  const handlePayAgain = () => {
+    // Navigate to payment page for this order
+    router.push(`/payment/order/${orderDetails.id}`)
+  }
 
+  const handleCancelOrder = () => {
+    setShowCancelDialog(true)
+  }
+
+  const handleConfirmCancel = async (cancelReason) => {
     setIsProcessing(true)
     try {
-      // TODO: Implement cancel order API call
-      console.log("Cancel order:", orderDetails.id)
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      router.push('/account/orders')
+      const result = await cancelOrder(orderDetails.id, cancelReason)
+
+      if (result.success) {
+        toast.success("Đơn hàng đã được hủy thành công!")
+        setShowCancelDialog(false)
+
+        // Refresh order details to show updated status
+        const updatedOrder = await getMyOrderById(orderId)
+        if (updatedOrder.success) {
+          setOrderDetails(updatedOrder.data)
+        } else {
+          // If refresh fails, redirect to orders list
+          router.push('/account/orders')
+        }
+      } else {
+        toast.error(result.error || "Không thể hủy đơn hàng. Vui lòng thử lại.")
+      }
     } catch (error) {
-      alert("Có lỗi xảy ra. Vui lòng thử lại.")
+      console.error("Error canceling order:", error)
+      toast.error("Có lỗi xảy ra. Vui lòng thử lại.")
     } finally {
       setIsProcessing(false)
     }
@@ -261,6 +282,7 @@ export default function OrderDetailContent({ orderId }) {
                   isProcessing={isProcessing}
                   onViewInvoice={handleViewInvoice}
                   onRequestRefund={handleRequestRefund}
+                  onPayAgain={handlePayAgain}
                   onCancelOrder={handleCancelOrder}
                 />
               </div>
@@ -273,10 +295,19 @@ export default function OrderDetailContent({ orderId }) {
                 isProcessing={isProcessing}
                 onViewInvoice={handleViewInvoice}
                 onRequestRefund={handleRequestRefund}
+                onPayAgain={handlePayAgain}
                 onCancelOrder={handleCancelOrder}
               />
             </div>
           </div>
+
+          {/* Cancel Order Dialog */}
+          <CancelOrderDialog
+            open={showCancelDialog}
+            onOpenChange={setShowCancelDialog}
+            onConfirm={handleConfirmCancel}
+            isProcessing={isProcessing}
+          />
         </div>
       </div>
     </div>

@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { ArrowLeft, Loader2, XCircle } from "lucide-react"
-import { getOrderById } from "@/lib/api/order"
+import { getOrderById, updateOrderStatus } from "@/lib/api/order"
+import { toast } from "sonner"
 import { getStatusIcon, getStatusVariant, getStatusText } from "@/components/admin/orders/order-helpers"
 import { CustomerInfo } from "@/components/admin/orders/order-detail/customer-info"
 import { OrderItems } from "@/components/admin/orders/order-detail/order-items"
@@ -62,29 +63,38 @@ export default function AdminOrderDetailPage() {
       return
     }
 
+    // Validate cancel reason if status is CANCELLED
+    if (newStatus === "CANCELLED" && (statusUpdateReason.length < 15 || statusUpdateReason.length > 200)) {
+      toast.error("Lý do hủy đơn phải từ 15-200 ký tự")
+      return
+    }
+
     setIsUpdatingStatus(true)
 
     try {
-      // TODO: Implement API call to update order status
-      console.log("Updating order status:", {
-        orderId: orderDetails.orderId,
+      const result = await updateOrderStatus(
+        orderDetails.id,
         newStatus,
-        reason: statusUpdateReason
-      })
+        newStatus === "CANCELLED" ? statusUpdateReason : null
+      )
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      if (result.success) {
+        toast.success("Cập nhật trạng thái đơn hàng thành công!")
+        setShowStatusDialog(false)
+        setStatusUpdateReason("")
 
-      // In real implementation, we would refresh the order data
-      alert("Cập nhật trạng thái đơn hàng thành công!")
-      setShowStatusDialog(false)
-      setStatusUpdateReason("")
-
-      // Refresh the page to show updated status
-      router.refresh()
+        // Refresh order details
+        const updatedOrder = await getOrderById(orderId)
+        if (updatedOrder.success) {
+          setOrderDetails(updatedOrder.data)
+          setNewStatus(updatedOrder.data.status)
+        }
+      } else {
+        toast.error(result.error || "Không thể cập nhật trạng thái đơn hàng")
+      }
     } catch (error) {
       console.error("Error updating order status:", error)
-      alert("Có lỗi xảy ra khi cập nhật trạng thái. Vui lòng thử lại.")
+      toast.error("Có lỗi xảy ra khi cập nhật trạng thái. Vui lòng thử lại.")
     } finally {
       setIsUpdatingStatus(false)
     }
@@ -137,9 +147,11 @@ export default function AdminOrderDetailPage() {
                 <p className="text-gray-600 mb-4">
                   Đơn hàng không tồn tại hoặc bạn không có quyền truy cập.
                 </p>
-                <Button onClick={() => router.push("/admin/orders")}>
-                  Quay lại danh sách đơn hàng
-                </Button>
+                <Link href="/admin/orders" className="mt-1">
+                  <Button>
+                    Quay lại danh sách đơn hàng
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           </div>
