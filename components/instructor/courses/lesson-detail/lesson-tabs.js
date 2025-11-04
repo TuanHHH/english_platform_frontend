@@ -73,7 +73,7 @@ export default function LessonTabs({ lesson, onEditContent, onVideoUploaded }) {
     // Check if it's a network/loading error (likely expired token)
     const error = e.target.error
     if (error && (error.code === MediaError.MEDIA_ERR_NETWORK || error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED)) {
-      console.log("Video error detected, attempting to refresh token...")
+      console.warn("Video error detected, attempting to refresh token...")
 
       // Save current playback position
       const currentTime = video.currentTime

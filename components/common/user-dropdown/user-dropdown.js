@@ -3,7 +3,9 @@
 import {
   LayoutDashboard,
   LogOut,
-  User as UserIcon, // vẫn dùng cho menu item
+  User as UserIcon,
+  ChartNoAxesGantt,
+  BookOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -77,10 +79,15 @@ const UserDropdown = ({ user }) => {
 
         {user?.roles?.includes("INSTRUCTOR") && (
           <DropdownMenuItem onClick={() => router.push("/instructor")}>
-            <LayoutDashboard className="w-4 h-4 mr-2" />
+            <ChartNoAxesGantt  className="w-4 h-4 mr-2" />
             Trang giảng viên
           </DropdownMenuItem>
         )}
+
+        <DropdownMenuItem onClick={() => router.push("/my-courses/learning")}>
+          <BookOpen className="w-4 h-4 mr-2" />
+          Khóa học của tôi
+        </DropdownMenuItem>
 
         <DropdownMenuItem onClick={() => router.push("/account")}>
           <UserIcon className="w-4 h-4 mr-2" />

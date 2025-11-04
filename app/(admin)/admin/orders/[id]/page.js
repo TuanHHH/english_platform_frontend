@@ -1,6 +1,6 @@
 "use client"
 
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
@@ -18,7 +18,6 @@ import { StatusUpdateDialog } from "@/components/admin/orders/order-detail/statu
 
 export default function AdminOrderDetailPage() {
   const params = useParams()
-  const router = useRouter()
   const orderId = params.id
 
   const [orderDetails, setOrderDetails] = useState(null)

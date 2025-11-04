@@ -10,7 +10,7 @@ import { useCartStore } from "@/store/cart-store"
 import { formatCurrency } from "@/lib/utils"
 
 const MAX_CART_ITEMS = 10
-export function CoursePurchase({ course }) {
+export function CoursePurchase({ course, isEnrolled = false }) {
   const [isAddingToCart, setIsAddingToCart] = useState(false)
 
   // Get cart state and actions from Zustand store
@@ -54,10 +54,13 @@ export function CoursePurchase({ course }) {
     }
   }
 
-  // Fetch cart data on component mount to have accurate state
+  // Only fetch cart if it's empty (cart is already loaded globally)
   useEffect(() => {
-    fetchCart()
-  }, [fetchCart])
+    if (items.length === 0) {
+      fetchCart()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Calculate if add to cart should be disabled
   const isAlreadyInCart = isInCart(course.id)
@@ -76,6 +79,37 @@ export function CoursePurchase({ course }) {
     if (isAlreadyInCart) return "Khóa học này đã có trong giỏ hàng của bạn"
     if (isCartFull) return `Giỏ hàng đã có tối đa ${MAX_CART_ITEMS} khóa học`
     return null
+  }
+
+  // If user is already enrolled, show different UI
+  if (isEnrolled) {
+    return (
+      <Card className="sticky top-4">
+        <CardContent className="p-6">
+          <div className="mb-6 p-4 rounded-md bg-green-50 border border-green-200">
+            <p className="text-sm font-medium text-green-800 mb-1">
+              ✓ Bạn đã đăng ký khóa học này
+            </p>
+            <p className="text-xs text-green-600">
+              Bạn có thể truy cập toàn bộ nội dung khóa học
+            </p>
+          </div>
+
+          <Link href="/my-courses/learning">
+            <Button className="w-full" size="lg">
+              Vào học ngay
+            </Button>
+          </Link>
+
+          <div className="mt-6 pt-6 border-t">
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li>✓ Truy cập trọn đời</li>
+              <li>✓ Hỗ trợ tận tâm</li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (

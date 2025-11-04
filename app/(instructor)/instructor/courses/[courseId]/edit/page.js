@@ -102,7 +102,6 @@ export default function EditCoursePage() {
           setSelectedSkills(preset)
           setCustomSkills(custom)
         } else {
-          console.log(res)
           toast.error(res.error || "Không thể tải thông tin khóa học")
           router.push("/instructor/courses")
         }

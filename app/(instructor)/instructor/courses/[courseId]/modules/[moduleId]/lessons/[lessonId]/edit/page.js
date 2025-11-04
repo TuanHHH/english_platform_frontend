@@ -58,13 +58,6 @@ export default function LessonEditPage() {
         formState: { errors },
     } = form
 
-    // Log validation errors
-    useEffect(() => {
-        if (Object.keys(errors).length > 0) {
-            console.log("Form validation errors:", errors)
-        }
-    }, [errors])
-
     const lessonKind = watch("kind")
 
     // Fetch lesson data on mount
@@ -133,11 +126,6 @@ export default function LessonEditPage() {
     }
 
     const onSubmit = async (data) => {
-        console.log("Form submitted with data:", data)
-        console.log("Intro text:", introText)
-        console.log("Content ref:", contentRef.current)
-        console.log("Questions:", questions)
-
         setLoading(true)
         try {
             const payload = {
@@ -159,11 +147,7 @@ export default function LessonEditPage() {
                 },
                 mediaId: data.mediaId && data.mediaId.trim() !== "" ? data.mediaId : null,
             }
-
-            console.log("Payload:", JSON.stringify(payload, null, 2))
-
             const res = await updateLesson(moduleId, lessonId, payload)
-            console.log("API Response:", res)
 
             if (res.success) {
                 toast.success("Cập nhật bài học thành công!")
@@ -206,7 +190,7 @@ export default function LessonEditPage() {
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={handleSubmit(onSubmit, (errors) => {
-                            console.log("Form validation failed:", errors)
+                            console.error("Form validation failed:", errors)
                             toast.error("Vui lòng kiểm tra lại các trường bắt buộc")
                         })} className="space-y-6">
                             <LessonBasicInfo

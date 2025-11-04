@@ -6,6 +6,8 @@ import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FullPageLoader } from "@/components/ui/full-page-loader"
 import { getCourseBySlug } from "@/lib/api/course"
+import { useEnrollmentStore } from "@/store/enrollment-store"
+import { useAuthStore } from "@/store/auth-store"
 import {
   CourseHeader,
   CourseInfo,
@@ -21,11 +23,28 @@ export default function CourseDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  // Auth and enrollment stores
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn)
+  const enrollments = useEnrollmentStore((state) => state.enrollments)
+  const fetchEnrollments = useEnrollmentStore((state) => state.fetchEnrollments)
+
+  // Check if user is enrolled in this course
+  const isEnrolled = enrollments.some(
+    (enrollment) => enrollment.courseId === course?.id
+  )
+
   useEffect(() => {
     if (params.slug) {
       fetchCourse()
     }
   }, [params.slug])
+
+  useEffect(() => {
+    // Fetch enrollments when user is logged in
+    if (isLoggedIn && enrollments.length === 0) {
+      fetchEnrollments()
+    }
+  }, [isLoggedIn, fetchEnrollments, enrollments.length])
 
   const fetchCourse = async () => {
     setLoading(true)
@@ -91,7 +110,7 @@ export default function CourseDetailPage() {
 
           {/* Right Column - Purchase Section */}
           <div className="lg:col-span-1">
-            <CoursePurchase course={course} />
+            <CoursePurchase course={course} isEnrolled={isEnrolled} />
           </div>
         </div>
       </div>

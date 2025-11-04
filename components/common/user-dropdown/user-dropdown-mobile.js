@@ -4,6 +4,8 @@ import {
   User as UserIcon,
   LayoutDashboard,
   LogOut,
+  BookOpen,
+  ChartNoAxesGantt 
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -61,10 +63,19 @@ const UserDropdownMobile = ({ user }) => {
           className="justify-start w-full"
           onClick={() => router.push("/instructor")}
         >
-          <LayoutDashboard className="w-4 h-4 mr-2" />
+          <ChartNoAxesGantt className="w-4 h-4 mr-2" />
           Trang giảng viên
         </Button>
       )}
+
+      <Button
+        variant="ghost"
+        className="justify-start w-full"
+        onClick={() => router.push("/my-courses/learning")}
+      >
+        <BookOpen className="w-4 h-4 mr-2" />
+        Khóa học của tôi
+      </Button>
 
       <Button
         variant="ghost"

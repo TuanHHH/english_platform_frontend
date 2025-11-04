@@ -5,7 +5,6 @@ import Image from "next/image"
 import { formatCurrency } from "@/lib/utils"
 
 export function CourseInfo({ course }) {
-  console.log(course)
   return (
     <Card className="p-4">
       <div className="flex gap-4">

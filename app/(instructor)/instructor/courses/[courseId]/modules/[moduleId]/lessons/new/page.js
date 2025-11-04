@@ -81,8 +81,6 @@ export default function LessonCreatePage() {
                 mediaId: data.mediaId && data.mediaId.trim() !== "" ? data.mediaId : null,
             }
 
-            console.log("Payload:", JSON.stringify(payload, null, 2))
-
             const res = await createLesson(moduleId, payload)
             if (res.success) {
                 toast.success("Tạo bài học thành công!")

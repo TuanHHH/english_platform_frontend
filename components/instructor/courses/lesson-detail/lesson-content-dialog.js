@@ -69,8 +69,6 @@ export default function LessonContentDialog({ open, onOpenChange, lesson, onUpda
         mediaId: lesson.primaryMediaId || null,
       }
 
-      console.log("Update payload:", payload)
-
       const res = await updateLesson(moduleId, lessonId, payload)
       if (res.success) {
         toast.success("Nội dung bài học đã được cập nhật")
