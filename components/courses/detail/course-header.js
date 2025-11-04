@@ -3,25 +3,27 @@ import { Badge } from "@/components/ui/badge"
 
 export function CourseHeader({ course }) {
   return (
-    <div className="mb-8">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div className="mb-6 sm:mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         {/* Course Image */}
-        <div className="aspect-video bg-muted rounded-lg overflow-hidden relative">
-          <Image
-            src={course.thumbnail || "/course-placeholder.jpeg"}
-            alt={course.title}
-            fill
-            sizes="(max-width: 1024px) 100vw, 50vw"
-            className="object-cover"
-            priority
-          />
+        <div className="lg:col-span-1">
+          <div className="aspect-video bg-muted rounded-lg overflow-hidden relative">
+            <Image
+              src={course.thumbnail || "/course-placeholder.jpeg"}
+              alt={course.title}
+              fill
+              sizes="(max-width: 1024px) 100vw, 33vw"
+              className="object-cover"
+              priority
+            />
+          </div>
         </div>
 
-        {/* Course Info */}
-        <div className="flex flex-col justify-center">
-          <h1 className="text-4xl font-bold mb-4">{course.title}</h1>
+        {/* Course Info - Takes more space */}
+        <div className="lg:col-span-2 flex flex-col justify-center">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4">{course.title}</h1>
 
-          <p className="text-lg text-muted-foreground mb-6">
+          <p className="text-base sm:text-lg text-muted-foreground mb-4 sm:mb-6">
             {course.description}
           </p>
 
