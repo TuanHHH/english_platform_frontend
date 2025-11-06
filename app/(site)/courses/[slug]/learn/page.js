@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
-import { getEnrollmentsBySlug } from "@/lib/api/enrollment"
+import { getEnrollmentsBySlug, listPublishedLessons } from "@/lib/api/enrollment"
 import {
   LearningHeader,
   VideoLesson,
@@ -122,6 +122,24 @@ export default function LessonPage() {
   const [selectedAnswers, setSelectedAnswers] = useState({})
   const [quizSubmitted, setQuizSubmitted] = useState(false)
   const [completedLessons, setCompletedLessons] = useState(new Set())
+  const [loadedModules, setLoadedModules] = useState(new Set())
+  const [loadingModules, setLoadingModules] = useState(new Set())
+
+  // Load completed lessons from localStorage
+  useEffect(() => {
+    if (!slug) return
+    
+    const storageKey = `completed-lessons-${slug}`
+    const stored = localStorage.getItem(storageKey)
+    if (stored) {
+      try {
+        const completedArray = JSON.parse(stored)
+        setCompletedLessons(new Set(completedArray))
+      } catch (err) {
+        console.error("Error loading completed lessons:", err)
+      }
+    }
+  }, [slug])
 
   // Fetch enrollment data by slug - only when slug changes
   useEffect(() => {
@@ -173,16 +191,63 @@ export default function LessonPage() {
     }
   }, [lessonId, modules])
 
-  const toggleModule = (moduleId) => {
-    setExpandedModules((prev) => {
-      const newSet = new Set(prev)
-      if (newSet.has(moduleId)) {
+  const toggleModule = async (moduleId) => {
+    const isExpanded = expandedModules.has(moduleId)
+    
+    if (isExpanded) {
+      setExpandedModules((prev) => {
+        const newSet = new Set(prev)
         newSet.delete(moduleId)
-      } else {
-        newSet.add(moduleId)
+        return newSet
+      })
+    } else {
+      setExpandedModules((prev) => new Set(prev).add(moduleId))
+      
+      if (!loadedModules.has(moduleId)) {
+        setLoadingModules((prev) => new Set(prev).add(moduleId))
+        
+        try {
+          const result = await listPublishedLessons(moduleId)
+          
+          if (result.success) {
+            setModules((prevModules) => 
+              prevModules.map((module) => 
+                module.id === moduleId 
+                  ? { ...module, lessons: result.data }
+                  : module
+              )
+            )
+            
+            setCompletedLessons((prev) => {
+              const newSet = new Set(prev)
+              result.data.forEach((lesson) => {
+                if (lesson.isCompleted) {
+                  newSet.add(lesson.id)
+                }
+              })
+              
+              const storageKey = `completed-lessons-${slug}`
+              localStorage.setItem(storageKey, JSON.stringify([...newSet]))
+              
+              return newSet
+            })
+            
+            setLoadedModules((prev) => new Set(prev).add(moduleId))
+          } else {
+            toast.error(result.error || "Không thể tải danh sách bài học")
+          }
+        } catch (err) {
+          console.error(err)
+          toast.error("Đã xảy ra lỗi khi tải bài học")
+        } finally {
+          setLoadingModules((prev) => {
+            const newSet = new Set(prev)
+            newSet.delete(moduleId)
+            return newSet
+          })
+        }
       }
-      return newSet
-    })
+    }
   }
 
   const handleLessonClick = (lesson, moduleId) => {
@@ -225,6 +290,22 @@ export default function LessonPage() {
   const handleRetakeQuiz = () => {
     setSelectedAnswers({})
     setQuizSubmitted(false)
+  }
+
+  const handleToggleComplete = (lessonId) => {
+    setCompletedLessons((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(lessonId)) {
+        newSet.delete(lessonId)
+      } else {
+        newSet.add(lessonId)
+      }
+      
+      const storageKey = `completed-lessons-${slug}`
+      localStorage.setItem(storageKey, JSON.stringify([...newSet]))
+      
+      return newSet
+    })
   }
 
   const calculateProgress = () => {
@@ -295,8 +376,11 @@ export default function LessonPage() {
             modules={modules}
             currentLessonId={lessonId}
             expandedModules={expandedModules}
+            loadingModules={loadingModules}
+            completedLessons={completedLessons}
             onToggleModule={toggleModule}
             onLessonClick={handleLessonClick}
+            onToggleComplete={handleToggleComplete}
             onClose={() => setSidebarOpen(false)}
             isMobile={true}
           />

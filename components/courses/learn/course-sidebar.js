@@ -1,20 +1,25 @@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Skeleton } from "@/components/ui/skeleton"
 import { 
   ChevronDown, 
   ChevronRight, 
   FileText, 
   PlayCircle,
-  X 
+  X,
+  Check
 } from "lucide-react"
 
 export default function CourseSidebar({ 
   modules, 
   currentLessonId, 
-  expandedModules, 
+  expandedModules,
+  loadingModules = new Set(),
+  completedLessons = new Set(),
   onToggleModule, 
-  onLessonClick, 
+  onLessonClick,
+  onToggleComplete,
   onClose,
   isMobile 
 }) {
@@ -60,45 +65,78 @@ export default function CourseSidebar({
                   </div>
                 </button>
 
-                {isExpanded && module.lessons && (
+                {isExpanded && (
                   <div className="border-t bg-muted/20">
-                    {module.lessons.map((lesson, lessonIndex) => {
-                      const isCurrentLesson = lesson.id === currentLessonId
-                      const isQuiz = lesson.kind?.toLowerCase() === "quiz"
-                      
-                      return (
-                        <button
-                          key={lesson.id}
-                          onClick={() => onLessonClick(lesson, module.id)}
-                          className={`w-full p-3 flex items-center gap-3 hover:bg-muted/70 transition-colors text-left ${
-                            isCurrentLesson ? "bg-primary/10 border-l-4 border-primary" : ""
-                          }`}
-                        >
-                          {isQuiz ? (
-                            <FileText className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
-                          ) : (
-                            <PlayCircle className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className={`text-sm truncate ${
-                              isCurrentLesson ? "font-semibold" : ""
-                            }`}>
-                              {lessonIndex + 1}. {lesson.title}
-                            </p>
-                            {lesson.estimatedMin && (
-                              <p className="text-xs text-muted-foreground">
-                                {lesson.estimatedMin} phút
-                              </p>
-                            )}
+                    {loadingModules.has(module.id) ? (
+                      <div className="p-3 space-y-3">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="flex items-center gap-3">
+                            <Skeleton className="w-4 h-4 flex-shrink-0" />
+                            <div className="flex-1 space-y-2">
+                              <Skeleton className="h-4 w-3/4" />
+                              <Skeleton className="h-3 w-1/4" />
+                            </div>
                           </div>
-                          {lesson.isFree && (
-                            <Badge variant="outline" className="text-xs">
-                              Miễn phí
-                            </Badge>
-                          )}
-                        </button>
-                      )
-                    })}
+                        ))}
+                      </div>
+                    ) : module.lessons ? (
+                      module.lessons.map((lesson, lessonIndex) => {
+                        const isCurrentLesson = lesson.id === currentLessonId
+                        const isQuiz = lesson.kind?.toLowerCase() === "quiz"
+                        const isCompleted = completedLessons.has(lesson.id)
+                        
+                        return (
+                          <div
+                            key={lesson.id}
+                            className={`flex items-center gap-2 hover:bg-muted/70 transition-colors ${
+                              isCurrentLesson ? "bg-primary/10 border-l-4 border-primary" : ""
+                            }`}
+                          >
+                            <button
+                              onClick={() => onLessonClick(lesson, module.id)}
+                              className="flex-1 p-3 flex items-center gap-3 text-left min-w-0"
+                            >
+                              {isQuiz ? (
+                                <FileText className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
+                              ) : (
+                                <PlayCircle className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-sm truncate ${
+                                  isCurrentLesson ? "font-semibold" : ""
+                                } ${isCompleted ? "line-through text-muted-foreground" : ""}`}>
+                                  {lessonIndex + 1}. {lesson.title}
+                                </p>
+                                {lesson.estimatedMin && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {lesson.estimatedMin} phút
+                                  </p>
+                                )}
+                              </div>
+                              {lesson.isFree && (
+                                <Badge variant="outline" className="text-xs">
+                                  Miễn phí
+                                </Badge>
+                              )}
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onToggleComplete?.(lesson.id)
+                              }}
+                              className={`p-2 mr-2 rounded-md transition-colors ${
+                                isCompleted 
+                                  ? "bg-green-500 text-white hover:bg-green-600" 
+                                  : "bg-muted hover:bg-muted/70"
+                              }`}
+                              title={isCompleted ? "Đánh dấu chưa hoàn thành" : "Đánh dấu đã hoàn thành"}
+                            >
+                              <Check className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )
+                      })
+                    ) : null}
                   </div>
                 )}
               </div>

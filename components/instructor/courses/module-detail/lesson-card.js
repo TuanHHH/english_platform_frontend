@@ -56,6 +56,11 @@ export default function LessonCard({ lesson, courseId, moduleId }) {
             <Badge variant="outline" className="text-xs">
               {config.label}
             </Badge>
+            {lesson.published ? (
+              <Badge className="bg-green-500/15 text-green-600 text-xs">Công khai</Badge>
+            ) : (
+              <Badge className="bg-gray-500/15 text-gray-600 text-xs">Riêng tư</Badge>
+            )}
             {lesson.estimatedMin && <span>{lesson.estimatedMin} phút</span>}
             {lesson.isFree && (
               <Badge className="bg-emerald-500/15 text-emerald-600 text-xs">Miễn phí</Badge>
