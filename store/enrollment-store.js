@@ -14,9 +14,24 @@ export const useEnrollmentStore = create((set, get) => ({
     },
     loading: false,
     error: null,
+    lastFetched: null, // Track when data was last fetched
+    initialized: false, // Track if initial fetch has been attempted
 
     // Actions
-    fetchEnrollments: async (page = 1, pageSize = 10) => {
+    fetchEnrollments: async (page = 1, pageSize = 10, force = false) => {
+        const { pagination: currentPagination, enrollments, lastFetched } = get()
+        
+        // Skip fetch if data already exists for the requested page/size and not forced
+        if (
+            !force &&
+            enrollments.length > 0 &&
+            currentPagination.page === page &&
+            currentPagination.pageSize === pageSize &&
+            lastFetched
+        ) {
+            return
+        }
+
         set({ loading: true, error: null })
         try {
             const response = await getMyEnrollments({
@@ -34,11 +49,14 @@ export const useEnrollmentStore = create((set, get) => ({
                         total: response.data.meta?.total || 0,
                     },
                     loading: false,
+                    lastFetched: Date.now(),
+                    initialized: true,
                 })
             } else {
                 set({
                     error: response.error || "Failed to fetch enrollments",
                     loading: false,
+                    initialized: true,
                 })
             }
         } catch (error) {
@@ -46,6 +64,7 @@ export const useEnrollmentStore = create((set, get) => ({
             set({
                 error: "Failed to fetch enrollments",
                 loading: false,
+                initialized: true,
             })
         }
     },
@@ -65,6 +84,14 @@ export const useEnrollmentStore = create((set, get) => ({
                 total: 0,
             },
             error: null,
+            lastFetched: null,
+            initialized: false,
         })
+    },
+
+    // Force refresh enrollments (bypass cache)
+    refreshEnrollments: async (page = 1, pageSize = 10) => {
+        const { fetchEnrollments } = get()
+        await fetchEnrollments(page, pageSize, true)
     },
 }))

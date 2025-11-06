@@ -23,8 +23,10 @@ export default function LessonEditPage() {
     const [initialLoading, setInitialLoading] = useState(true)
     const [isPublished, setIsPublished] = useState(false)
     const contentRef = useRef("")
+    const quizIntroRef = useRef("")
     const [introText, setIntroText] = useState("")
     const [initialContentHtml, setInitialContentHtml] = useState("")
+    const [initialQuizIntro, setInitialQuizIntro] = useState("")
     const [questions, setQuestions] = useState([
         { question: "", options: ["", ""], answer: 0 }
     ])
@@ -98,6 +100,10 @@ export default function LessonEditPage() {
                     // Set content based on lesson type
                     if (lesson.kind === "QUIZ" && lesson.content?.body?.questions) {
                         setQuestions(lesson.content.body.questions)
+                        if (lesson.content.body.quizzes_content) {
+                            setInitialQuizIntro(lesson.content.body.quizzes_content)
+                            quizIntroRef.current = lesson.content.body.quizzes_content
+                        }
                     } else if (lesson.content?.body) {
                         setIntroText(lesson.content.body.intro || "")
                         if (lesson.content.body.sections?.[0]?.html) {
@@ -125,6 +131,10 @@ export default function LessonEditPage() {
         contentRef.current = newContent
     }
 
+    const handleQuizIntroChange = (newContent) => {
+        quizIntroRef.current = newContent
+    }
+
     const onSubmit = async (data) => {
         setLoading(true)
         try {
@@ -137,7 +147,10 @@ export default function LessonEditPage() {
                 content: {
                     type: data.kind === "QUIZ" ? "quiz" : "html",
                     body: data.kind === "QUIZ"
-                        ? { questions: questions }
+                        ? {
+                            quizzes_content: quizIntroRef.current || undefined,
+                            questions: questions
+                        }
                         : {
                             intro: introText.trim() || undefined,
                             sections: contentRef.current
@@ -202,7 +215,12 @@ export default function LessonEditPage() {
 
                             {/* Content Section - Conditional rendering */}
                             {lessonKind === "QUIZ" ? (
-                                <QuizSection questions={questions} setQuestions={setQuestions} />
+                                <QuizSection
+                                    questions={questions}
+                                    setQuestions={setQuestions}
+                                    introContent={initialQuizIntro}
+                                    onIntroChange={handleQuizIntroChange}
+                                />
                             ) : (
                                 <ContentSection
                                     introText={introText}

@@ -16,6 +16,7 @@ export default function MyCoursesLearningPage() {
     const enrollments = useEnrollmentStore((state) => state.enrollments)
     const pagination = useEnrollmentStore((state) => state.pagination)
     const loading = useEnrollmentStore((state) => state.loading)
+    const initialized = useEnrollmentStore((state) => state.initialized)
     const fetchEnrollments = useEnrollmentStore((state) => state.fetchEnrollments)
     const setPage = useEnrollmentStore((state) => state.setPage)
 
@@ -45,9 +46,9 @@ export default function MyCoursesLearningPage() {
     ]
 
     useEffect(() => {
+        // Only fetch if not already loaded (store will handle caching)
         fetchEnrollments()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    }, [fetchEnrollments])
 
     const handlePageChange = (page) => {
         setPage(page)
@@ -77,10 +78,6 @@ export default function MyCoursesLearningPage() {
         )
     }
 
-    if (loading) {
-        return <LoadingSkeleton />
-    }
-
     return (
         <div className="container mx-auto px-4 py-8">
             {/* Header */}
@@ -105,13 +102,17 @@ export default function MyCoursesLearningPage() {
 
                 {/* Courses Tab */}
                 <TabsContent value="courses">
-                    <CoursesList
-                        enrollments={enrollments}
-                        pagination={pagination}
-                        formatDate={formatDate}
-                        getStatusBadge={getStatusBadge}
-                        onPageChange={handlePageChange}
-                    />
+                    {!initialized || loading ? (
+                        <LoadingSkeleton />
+                    ) : (
+                        <CoursesList
+                            enrollments={enrollments}
+                            pagination={pagination}
+                            formatDate={formatDate}
+                            getStatusBadge={getStatusBadge}
+                            onPageChange={handlePageChange}
+                        />
+                    )}
                 </TabsContent>
 
                 {/* Study Reminders Tab */}

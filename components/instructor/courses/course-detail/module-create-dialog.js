@@ -34,7 +34,6 @@ export default function ModuleCreateDialog({ open, onOpenChange, courseId, onCre
 
       const res = await createCourseModule(courseId, payload)
       if (res.success) {
-        toast.success("Đã tạo module mới")
         onCreateSuccess?.(res.data)
         reset()
         onOpenChange(false)
