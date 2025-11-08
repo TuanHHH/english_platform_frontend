@@ -1,24 +1,46 @@
 "use client";
 
-import { BookOpen, Users, Clock, TrendingUp } from "lucide-react";
+import { useEffect, useState } from "react";
+import { BookOpen, Users, DollarSign, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-
-const stats = [
-  { title: "Tổng khóa học", value: "12", icon: BookOpen, color: "text-primary" },
-  { title: "Học viên", value: "1,234", icon: Users, color: "text-secondary" },
-  { title: "Giờ nội dung", value: "48", icon: Clock, color: "text-accent" },
-  { title: "Tỷ lệ hoàn thành", value: "87%", icon: TrendingUp, color: "text-success" },
-];
-
-const recentCourses = [
-  { name: "English for Beginners", students: 234, status: "Đã xuất bản", progress: 100 },
-  { name: "Business English", students: 156, status: "Đang soạn", progress: 65 },
-  { name: "IELTS Preparation", students: 89, status: "Chờ duyệt", progress: 90 },
-];
+import { Skeleton } from "@/components/ui/skeleton";
+import { getInstructorStats } from "@/lib/api/course";
+import { toast } from "sonner";
+import { GrowthChart } from "@/components/instructor/dashboard/growth-chart";
 
 export default function InstructorDashboard() {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    setLoading(true);
+    try {
+      const result = await getInstructorStats();
+      if (result.success) {
+        setStats(result.data);
+      } else {
+        toast.error(result.error || "Không thể tải thống kê");
+      }
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+      toast.error("Đã xảy ra lỗi khi tải thống kê");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const statsCards = stats ? [
+    { title: "Tổng khóa học", value: stats.totalCourses, icon: BookOpen, color: "text-blue-600" },
+    { title: "Khóa học đã xuất bản", value: stats.publishedCourses, icon: CheckCircle, color: "text-green-600" },
+    { title: "Tổng học viên", value: stats.totalStudents, icon: Users, color: "text-purple-600" },
+    { title: "Doanh thu", value: stats.formattedRevenue, icon: DollarSign, color: "text-orange-600" },
+  ] : [];
   return (
     <div className="space-y-6">
       <div>
@@ -30,62 +52,58 @@ export default function InstructorDashboard() {
 
       {/* --- Stats Section --- */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Card key={stat.title} className="shadow-elegant">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {stat.title}
-              </CardTitle>
-              <stat.icon className={`h-5 w-5 ${stat.color}`} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">{stat.value}</div>
-            </CardContent>
-          </Card>
-        ))}
+        {loading ? (
+          <>
+            {[...Array(4)].map((_, idx) => (
+              <Card key={idx} className="shadow-elegant">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-5 w-5 rounded" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-9 w-16" />
+                </CardContent>
+              </Card>
+            ))}
+          </>
+        ) : (
+          statsCards.map((stat) => (
+            <Card key={stat.title} className="shadow-elegant">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  {stat.title}
+                </CardTitle>
+                <stat.icon className={`h-5 w-5 ${stat.color}`} />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-foreground">{stat.value}</div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
 
-      {/* --- Recent Courses --- */}
+      {/* --- Growth Chart --- */}
+      <GrowthChart />
+
+      {/* --- Quick Actions --- */}
       <Card className="shadow-elegant">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Khóa Học Gần Đây</CardTitle>
-          <Link href="/instructor/courses">
-            <Button variant="outline" size="sm">
-              Xem Tất Cả
-            </Button>
-          </Link>
+        <CardHeader>
+          <CardTitle>Hành động nhanh</CardTitle>
         </CardHeader>
-
         <CardContent>
-          <div className="space-y-4">
-            {recentCourses.map((course, index) => (
-              <Link key={course.name} href={`/instructor/courses/${index + 1}`}>
-                <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-                  <div className="space-y-1">
-                    <p className="font-semibold text-foreground">{course.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {course.students} học viên
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-foreground">{course.status}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {course.progress}% hoàn thành
-                      </p>
-                    </div>
-
-                    <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-primary rounded-full"
-                        style={{ width: `${course.progress}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            ))}
+          <div className="grid gap-4 md:grid-cols-2">
+            <Link href="/instructor/courses/new">
+              <Button className="w-full" size="lg">
+                <BookOpen className="mr-2 h-5 w-5" />
+                Tạo khóa học mới
+              </Button>
+            </Link>
+            <Link href="/instructor/courses">
+              <Button variant="outline" className="w-full" size="lg">
+                Quản lý khóa học
+              </Button>
+            </Link>
           </div>
         </CardContent>
       </Card>

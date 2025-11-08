@@ -50,7 +50,22 @@ export default function MessengerChat() {
 
   // --- Mount N8N chat widget ---
   useEffect(() => {
-    if (!isOpen || !isAuthenticated) return;
+    if (!isOpen || !isAuthenticated) {
+      // Clean up if chat is closed or user logged out
+      if (instanceRef.current) {
+        try {
+          if (typeof instanceRef.current.unmount === 'function') {
+            instanceRef.current.unmount();
+          } else if (typeof instanceRef.current.destroy === 'function') {
+            instanceRef.current.destroy();
+          }
+        } catch (error) {
+          console.error("Failed to cleanup chat:", error);
+        }
+        instanceRef.current = null;
+      }
+      return;
+    }
 
     let mounted = true;
 
@@ -101,8 +116,14 @@ export default function MessengerChat() {
     return () => {
       mounted = false;
       if (instanceRef.current) {
-        if (typeof instanceRef.current.destroy === 'function') {
-          instanceRef.current.destroy();
+        try {
+          if (typeof instanceRef.current.unmount === 'function') {
+            instanceRef.current.unmount();
+          } else if (typeof instanceRef.current.destroy === 'function') {
+            instanceRef.current.destroy();
+          }
+        } catch (error) {
+          console.error("Failed to cleanup chat:", error);
         }
         instanceRef.current = null;
       }

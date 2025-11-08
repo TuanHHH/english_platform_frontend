@@ -7,7 +7,7 @@ import { Clock, CheckCircle2 } from "lucide-react"
 export default function EnrollmentCard({ enrollment, formatDate, getStatusBadge }) {
     return (
         <Link
-            href={`/courses/${enrollment.courseSlug}`}
+            href={`/courses/${enrollment.courseSlug}/learn`}
             className="group"
         >
             <Card className="h-full hover:shadow-lg transition-shadow p-0 gap-0">
