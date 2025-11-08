@@ -160,7 +160,7 @@ export default function LessonCreatePage() {
                                     disabled={loading}
                                     size="lg"
                                 >
-                                    {loading ? "Đang tạo..." : "Tạo bài học"}
+                                    {loading ? "Đang tạo..." : lessonKind === "VIDEO" ? "Upload video ở bước tiếp theo" : "Tạo bài học"}
                                 </Button>
                             </div>
                         </form>

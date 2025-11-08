@@ -8,11 +8,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { getCourseBySlug } from "@/lib/api/course"
 import {
-    CourseHeader,
-    CourseInfo,
-    CourseDescription,
-    CourseModules,
-} from "@/components/courses/detail"
+    AdminCourseHeader,
+    AdminCourseInfo,
+    AdminCourseDescription,
+    AdminCourseModules,
+} from "@/components/admin/courses/detail"
 
 export default function AdminCourseDetailPage() {
     const params = useParams()
@@ -101,13 +101,13 @@ export default function AdminCourseDetailPage() {
                     </Link>
 
                     {/* Course Header */}
-                    <CourseHeader course={course} />
+                    <AdminCourseHeader course={course} />
 
                     {/* Main Content - Full Width */}
                     <div className="space-y-6 mt-6">
-                        <CourseInfo course={course} />
-                        <CourseDescription course={course} />
-                        <CourseModules courseId={course.id} />
+                        <AdminCourseInfo course={course} />
+                        <AdminCourseDescription course={course} />
+                        <AdminCourseModules courseId={course.id} />
                     </div>
                 </div>
             </div>

@@ -111,44 +111,41 @@ export default function AdminCoursesPage() {
   }
 
   return (
-    <div className="space-y-6 overflow-x-hidden max-w-full">
+    <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 lg:p-6">
       {/* Header */}
       <CoursesHeader />
 
       {/* Filters */}
-      <div className="overflow-x-hidden px-2 sm:px-0">
-        <CourseFilters
-          searchInput={searchInput}
-          setSearchInput={setSearchInput}
-          statusFilter={filters.status || "ALL"}
-          onStatusFilterChange={handleStatusFilter}
-          skillsFilter={filters.skills || "ALL"}
-          onSkillsFilterChange={handleSkillsFilter}
-          sortBy={filters.sort}
-          onSortChange={handleSortChange}
-          onSearch={handleSearch}
-        />
-      </div>
+      <CourseFilters
+        searchInput={searchInput}
+        setSearchInput={setSearchInput}
+        statusFilter={filters.status || "ALL"}
+        onStatusFilterChange={handleStatusFilter}
+        skillsFilter={filters.skills || "ALL"}
+        onSkillsFilterChange={handleSkillsFilter}
+        sortBy={filters.sort}
+        onSortChange={handleSortChange}
+        onSearch={handleSearch}
+      />
 
       {/* Results Summary */}
-      <div className="flex justify-between items-center px-2 sm:px-0">
-        <p className="text-sm text-muted-foreground truncate">
-          Hiển thị {courses.length} trên {pagination.total} khóa học
+      <div className="flex justify-between items-center">
+        <p className="text-xs sm:text-sm text-muted-foreground">
+          Hiển thị <span className="font-medium">{courses.length}</span> trên{" "}
+          <span className="font-medium">{pagination.total}</span> khóa học
         </p>
       </div>
 
       {/* Courses Table */}
-      <div className="overflow-x-hidden w-full">
-        <CourseTable
-          courses={courses}
-          loading={loading}
-          onStatusUpdate={handleStatusUpdate}
-        />
-      </div>
+      <CourseTable
+        courses={courses}
+        loading={loading}
+        onStatusUpdate={handleStatusUpdate}
+      />
 
       {/* Pagination */}
       {pagination.pages > 1 && (
-        <div className="flex justify-center px-2 sm:px-0">
+        <div className="flex justify-center">
           <Pagination
             totalPages={pagination.pages}
             currentPage={pagination.page}
