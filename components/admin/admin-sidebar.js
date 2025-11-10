@@ -44,6 +44,11 @@ const AdminSidebar = () => {
       icon: ListChecks,
     },
     {
+      title: "Quản lí phần thi",
+      path: "/admin/quiz-sections",
+      icon: ListChecks,
+    },
+    {
       title: "Quản lí đề thi",
       path: "/admin/quizzes",
       icon: MessageSquare,
