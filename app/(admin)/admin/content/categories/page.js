@@ -1,9 +1,10 @@
 "use client";
 import React, { useEffect, useState } from "react";
-// import AdminSidebar from "@/components/common/AdminSidebar";
 import CategoryForm from "@/components/content/category-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import DeleteItemDialog from "@/components/content/delete-content-dialog";
+import { toast } from "sonner";
 import {
   listCategories,
   createCategory,
@@ -14,6 +15,10 @@ export default function AdminCategoriesPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
+
+  const [openDelete, setOpenDelete] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+  const [deleteTitle, setDeleteTitle] = useState("");
 
   async function load() {
     setLoading(true);
@@ -38,7 +43,8 @@ export default function AdminCategoriesPage() {
 
       setItems(categories);
     } catch (err) {
-      console.error("Lỗi load categories:", err);
+      // console.error("Lỗi load categories:", err);
+      toast.error("Tải danh mục thất bại");
     } finally {
       setLoading(false);
     }
@@ -58,10 +64,25 @@ export default function AdminCategoriesPage() {
     }
   }
 
-  async function onDelete(id) {
-    if (!confirm("Xóa danh mục?")) return;
-    await deleteCategory(id);
-    await load();
+  async function confirmDelete() {
+    if (!deleteId) return;
+    try {
+      await deleteCategory(deleteId);
+      toast.success("Đã xoá danh mục");
+    } catch (err) {
+      toast.error("Xoá danh mục thất bại");
+    } finally {
+      setOpenDelete(false);
+      setDeleteId(null);
+      setDeleteTitle("");
+      await load();
+    }
+  }
+
+  function askDelete(cat) {
+    setDeleteId(cat.id);
+    setDeleteTitle(cat.name || "(không tên)");
+    setOpenDelete(true);
   }
 
   return (
@@ -101,7 +122,8 @@ export default function AdminCategoriesPage() {
                     </div>
                     <Button
                       variant="destructive"
-                      onClick={() => onDelete(c.id)}
+                      // onClick={() => onDelete(c.id)}
+                      onClick={() => askDelete(c)}
                     >
                       Xóa
                     </Button>
@@ -111,6 +133,17 @@ export default function AdminCategoriesPage() {
             )}
           </CardContent>
         </Card>
+
+        <DeleteItemDialog
+          open={openDelete}
+          onOpenChange={setOpenDelete}
+          itemTitle={deleteTitle}
+          onConfirm={confirmDelete}
+          title="Xóa danh mục"
+          description={`Bạn có chắc chắn muốn xóa danh mục "${deleteTitle}"?\n\nHành động này không thể hoàn tác.`}
+          confirmText="Xóa"
+          cancelText="Hủy"
+        />
       </div>
     </div>
   );

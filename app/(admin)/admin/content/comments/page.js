@@ -13,7 +13,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Pagination } from "@/components/ui/pagination";
-import useDebouncedValue from "@/hooks/useDebouncedValue";
+import useDebouncedValue from "@/hooks/use-debounced-value";
 import {
   adminListAllCommentsPaged,
   adminHideComment,
@@ -30,8 +30,8 @@ export default function AdminCommentsPage() {
   const debouncedKeyword = useDebouncedValue(keyword, 1500);
   const [published, setPublished] = useState("all"); // "all" | "true" | "false"
 
-  // Pagination (0-based UI)
-  const [page, setPage] = useState(0);
+  // Pagination (1-based - đã sửa từ 0 sang 1)
+  const [page, setPage] = useState(1);
   const pageSize = 20;
   const [totalPages, setTotalPages] = useState(0);
 
@@ -39,7 +39,7 @@ export default function AdminCommentsPage() {
     setLoading(true);
     try {
       const params = {
-        page: p + 1, // backend 1-based
+        page: p, // đã là 1-based, không cần +1
         pageSize,
         keyword: debouncedKeyword,
       };
@@ -78,9 +78,9 @@ export default function AdminCommentsPage() {
     }
   }
 
-  // Reset về trang 0 khi filter đổi (sau debounce)
+  // Reset về trang 1 khi filter đổi (đã sửa từ 0 sang 1)
   useEffect(() => {
-    setPage(0);
+    setPage(1);
   }, [debouncedKeyword, published]);
 
   // Gọi load khi page/filter đổi
@@ -91,7 +91,8 @@ export default function AdminCommentsPage() {
   const renderAvatar = (c) => {
     const name =
       c.author?.fullName || c.author?.name || c.authorName || "Ẩn danh";
-    const avatar = c.author?.avatarUrl || c.author?.avatar || c?.authorAvatarUrl || null;
+    const avatar =
+      c.author?.avatarUrl || c.author?.avatar || c?.authorAvatarUrl || null;
     if (avatar) {
       return (
         <img

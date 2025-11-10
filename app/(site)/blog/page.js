@@ -6,7 +6,7 @@ import PostCard from "@/components/content/post-card";
 import FiltersBar from "@/components/content/filters-bar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
-import useDebouncedValue from "@/hooks/useDebouncedValue";
+import useDebouncedValue from "@/hooks/use-debounced-value";
 
 export default function BlogIndexPage() {
   const [posts, setPosts] = useState([]);
