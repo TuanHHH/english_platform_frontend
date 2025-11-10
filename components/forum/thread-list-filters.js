@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import useDebouncedValue from "@/hooks/useDebouncedValue";
+import useDebouncedValue from "@/hooks/use-debounced-value";
 
 export default function ThreadListFilters({ categories = [], onChange }) {
   const [keyword, setKeyword] = useState("");

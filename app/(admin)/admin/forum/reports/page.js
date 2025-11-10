@@ -1,34 +1,50 @@
 "use client";
-import { toast } from 'sonner';
+import { toast } from "sonner";
 
 import { useEffect, useState } from "react";
 // import AdminSidebar from "@/components/common/AdminSidebar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { Pagination } from "@/components/ui/pagination";
-import { adminListReports, adminResolveReport, adminHidePost, adminUnhidePost, adminDeletePost } from "@/lib/api/forum/forum";
+import {
+  adminListReports,
+  adminResolveReport,
+  adminHidePost,
+  adminUnhidePost,
+  adminDeletePost,
+} from "@/lib/api/forum/forum";
 
 export default function AdminForumReportsPage() {
   const [items, setItems] = useState([]);
   const [meta, setMeta] = useState({ page: 1, pages: 0 });
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
   const pageSize = 20;
 
   const [type, setType] = useState("THREAD");
   const [onlyOpen, setOnlyOpen] = useState("true");
 
   async function load(p = page) {
-    const params = { page: p + 1, pageSize, type, onlyOpen: onlyOpen === "true" };
+    const params = { page: p, pageSize, type, onlyOpen: onlyOpen === "true" };
     const { items, meta } = await adminListReports(params);
-    setItems(items); setMeta(meta);
+    setItems(items);
+    setMeta(meta);
   }
-  useEffect(()=>{ setPage(0); }, [type, onlyOpen]);
-  useEffect(()=>{ load(page); }, [page, type, onlyOpen]);
+  useEffect(() => {
+    setPage(1);
+  }, [type, onlyOpen]);
+  useEffect(() => {
+    load(page);
+  }, [page, type, onlyOpen]);
 
   async function resolve(id) {
-    const adminId = typeof window !== "undefined" ? localStorage.getItem("x-user-id") : undefined;
-    await adminResolveReport(id, { adminId });
+    await adminResolveReport(id);
     await load(page);
   }
 
@@ -39,7 +55,9 @@ export default function AdminForumReportsPage() {
         <h1 className="text-2xl font-semibold">Forum • Báo cáo</h1>
 
         <Card>
-          <CardHeader><CardTitle>Bộ lọc</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Bộ lọc</CardTitle>
+          </CardHeader>
           <CardContent className="flex gap-2">
             <Select value={type} onValueChange={setType}>
               <SelectTrigger className="w-[200px]">
@@ -65,32 +83,47 @@ export default function AdminForumReportsPage() {
         <Card>
           <CardHeader className="flex items-center justify-between">
             <CardTitle>Danh sách</CardTitle>
-            <Pagination currentPage={page} totalPages={meta?.pages ?? 0} onPageChange={setPage} />
+            <Pagination
+              currentPage={page}
+              totalPages={meta?.pages ?? 0}
+              onPageChange={setPage}
+            />
           </CardHeader>
           <CardContent className="grid gap-2">
-            {items.map(r => (
+            {items.map((r) => (
               <div key={r.id} className="border rounded-md p-3">
                 <div className="text-xs text-muted-foreground">
-                  {r.targetType} • {r.targetId} • {r.createdAt ? new Date(r.createdAt).toLocaleString() : ""}
+                  {r.targetType} • {r.targetId} •{" "}
+                  {r.createdAt ? new Date(r.createdAt).toLocaleString() : ""}
                 </div>
                 {/* Reporter & Preview */}
                 <div className="mt-2 text-sm">
-                  <div><b>Người báo cáo:</b> {r.reporterName || r.userId}</div>
-                  {r.targetType === 'POST' && r.targetPreview && (
+                  <div>
+                    <b>Người báo cáo:</b> {r.reporterName || r.userId}
+                  </div>
+                  {r.targetType === "POST" && r.targetPreview && (
                     <div className="mt-1 p-2 rounded bg-muted/40">
-                      <div className="text-xs text-muted-foreground mb-1">Nội dung bình luận bị báo cáo</div>
-                      <div className="whitespace-pre-wrap">{r.targetPreview}</div>
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Nội dung bình luận bị báo cáo
+                      </div>
+                      <div className="whitespace-pre-wrap">
+                        {r.targetPreview}
+                      </div>
                     </div>
                   )}
                 </div>
                 <div className="mt-1">{r.reason}</div>
                 <div className="mt-2">
                   {r.resolvedAt ? (
-                    <span className="text-xs">Đã xử lý lúc {new Date(r.resolvedAt).toLocaleString()}</span>
+                    <span className="text-xs">
+                      Đã xử lý lúc {new Date(r.resolvedAt).toLocaleString()}
+                    </span>
                   ) : (
-                    <Button size="sm" onClick={()=>resolve(r.id)}>Đánh dấu đã xử lý</Button>
+                    <Button size="sm" onClick={() => resolve(r.id)}>
+                      Đánh dấu đã xử lý
+                    </Button>
                   )}
-                
+
                   {/*__POST_MOD__*/}
                   {/* {r.targetType === 'POST' && (
                     <div className="mt-2 flex gap-2">
@@ -99,14 +132,18 @@ export default function AdminForumReportsPage() {
                       <Button size="sm" variant="destructive" onClick={async()=>{ if(!confirm('Xóa bài này?')) return; await adminDeletePost(r.targetId); toast.success('Đã xóa'); await load(page); }}>Xóa</Button>
                     </div>
                   )} */}
-                  {r.targetType === 'POST' && (
+                  {r.targetType === "POST" && (
                     <div className="mt-2 flex gap-2">
                       {/* Nếu đang HIỆN → chỉ cho ẨN */}
                       {r.targetPublished === true && (
                         <Button
                           size="sm"
                           variant="secondary"
-                          onClick={async () => { await adminHidePost(r.targetId); toast.success('Đã ẩn bài'); await load(page); }}
+                          onClick={async () => {
+                            await adminHidePost(r.targetId);
+                            toast.success("Đã ẩn bài");
+                            await load(page);
+                          }}
                         >
                           Ẩn
                         </Button>
@@ -117,7 +154,11 @@ export default function AdminForumReportsPage() {
                         <Button
                           size="sm"
                           variant="secondary"
-                          onClick={async () => { await adminUnhidePost(r.targetId); toast.success('Đã hiện bài'); await load(page); }}
+                          onClick={async () => {
+                            await adminUnhidePost(r.targetId);
+                            toast.success("Đã hiện bài");
+                            await load(page);
+                          }}
                         >
                           Hiện
                         </Button>
@@ -129,14 +170,22 @@ export default function AdminForumReportsPage() {
                           <Button
                             size="sm"
                             variant="secondary"
-                            onClick={async () => { await adminHidePost(r.targetId); toast.success('Đã ẩn bài'); await load(page); }}
+                            onClick={async () => {
+                              await adminHidePost(r.targetId);
+                              toast.success("Đã ẩn bài");
+                              await load(page);
+                            }}
                           >
                             Ẩn
                           </Button>
                           <Button
                             size="sm"
                             variant="secondary"
-                            onClick={async () => { await adminUnhidePost(r.targetId); toast.success('Đã hiện bài'); await load(page); }}
+                            onClick={async () => {
+                              await adminUnhidePost(r.targetId);
+                              toast.success("Đã hiện bài");
+                              await load(page);
+                            }}
                           >
                             Hiện
                           </Button>
@@ -147,9 +196,9 @@ export default function AdminForumReportsPage() {
                         size="sm"
                         variant="destructive"
                         onClick={async () => {
-                          if (!confirm('Xóa bài này?')) return;
+                          if (!confirm("Xóa bài này?")) return;
                           await adminDeletePost(r.targetId);
-                          toast.success('Đã xóa');
+                          toast.success("Đã xóa");
                           await load(page);
                         }}
                       >
@@ -157,10 +206,14 @@ export default function AdminForumReportsPage() {
                       </Button>
                     </div>
                   )}
-        </div>
+                </div>
               </div>
             ))}
-            {items.length===0 && <div className="text-sm text-muted-foreground">Không có báo cáo</div>}
+            {items.length === 0 && (
+              <div className="text-sm text-muted-foreground">
+                Không có báo cáo
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
