@@ -20,6 +20,7 @@ export default function LessonCreatePage() {
     const { courseId, moduleId } = useParams()
     const [loading, setLoading] = useState(false)
     const contentRef = useRef("")
+    const quizIntroRef = useRef("")
     const [introText, setIntroText] = useState("")
     const [questions, setQuestions] = useState([
         { question: "", options: ["", ""], answer: 0 }
@@ -58,6 +59,10 @@ export default function LessonCreatePage() {
         contentRef.current = newContent
     }
 
+    const handleQuizIntroChange = (newContent) => {
+        quizIntroRef.current = newContent
+    }
+
     const onSubmit = async (data) => {
         setLoading(true)
         try {
@@ -70,7 +75,10 @@ export default function LessonCreatePage() {
                 content: {
                     type: data.kind === "QUIZ" ? "quiz" : "html",
                     body: data.kind === "QUIZ"
-                        ? { questions: questions }
+                        ? {
+                            quizzes_content: quizIntroRef.current || undefined,
+                            questions: questions
+                        }
                         : {
                             intro: introText.trim() || undefined,
                             sections: contentRef.current
@@ -80,8 +88,6 @@ export default function LessonCreatePage() {
                 },
                 mediaId: data.mediaId && data.mediaId.trim() !== "" ? data.mediaId : null,
             }
-
-            console.log("Payload:", JSON.stringify(payload, null, 2))
 
             const res = await createLesson(moduleId, payload)
             if (res.success) {
@@ -112,7 +118,6 @@ export default function LessonCreatePage() {
                         Quay lại module
                     </Button>
                     <h1 className="text-3xl font-bold tracking-tight">Tạo bài học mới</h1>
-                    <p className="text-muted-foreground mt-2">Điền thông tin chi tiết cho bài học của bạn</p>
                 </div>
 
                 {/* Form Card */}
@@ -132,7 +137,12 @@ export default function LessonCreatePage() {
 
                             {/* Content Section - Conditional rendering */}
                             {lessonKind === "QUIZ" ? (
-                                <QuizSection questions={questions} setQuestions={setQuestions} />
+                                <QuizSection
+                                    questions={questions}
+                                    setQuestions={setQuestions}
+                                    introContent=""
+                                    onIntroChange={handleQuizIntroChange}
+                                />
                             ) : (
                                 <ContentSection
                                     introText={introText}
@@ -150,7 +160,7 @@ export default function LessonCreatePage() {
                                     disabled={loading}
                                     size="lg"
                                 >
-                                    {loading ? "Đang tạo..." : "Tạo bài học"}
+                                    {loading ? "Đang tạo..." : lessonKind === "VIDEO" ? "Upload video ở bước tiếp theo" : "Tạo bài học"}
                                 </Button>
                             </div>
                         </form>

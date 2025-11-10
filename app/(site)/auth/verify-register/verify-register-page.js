@@ -4,8 +4,6 @@ import { useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import {FullPageLoader} from "@/components/ui/full-page-loader"
-
-// import thẳng API client
 import { verifyRegister } from "@/lib/api/auth"
 
 export function VerifyRegisterPage() {

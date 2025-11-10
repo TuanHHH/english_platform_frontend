@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -23,6 +24,23 @@ const getStatusColor = (status) => {
       return 'bg-blue-100 text-blue-800'
     default:
       return 'bg-gray-100 text-gray-800'
+  }
+}
+
+const getStatusLabel = (status) => {
+  switch (status) {
+    case 'PUBLISHED':
+      return 'Đã xuất bản'
+    case 'DRAFT':
+      return 'Nháp'
+    case 'PENDING_REVIEW':
+      return 'Chờ phê duyệt'
+    case 'REJECTED':
+      return 'Từ chối'
+    case 'UNPUBLISHED':
+      return 'Tạm ẩn'
+    default:
+      return status
   }
 }
 
@@ -68,7 +86,7 @@ export default function CourseTable({
   }
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden p-0 gap-0">
       <CardContent className="p-0">
         {/* Mobile: Card layout (< 768px) */}
         <div className="block md:hidden">
@@ -87,7 +105,7 @@ export default function CourseTable({
                   </div>
                   <div className="flex-shrink-0">
                     <Badge className={`${getStatusColor(course.status)} text-xs`}>
-                      {course.status}
+                      {getStatusLabel(course.status)}
                     </Badge>
                   </div>
                 </div>
@@ -132,15 +150,19 @@ export default function CourseTable({
 
                 {/* Action Buttons */}
                 <div className="flex justify-end space-x-2 pt-2 border-t border-gray-100">
-                  {/* View button */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="p-2 h-8 w-8"
-                    title="Xem chi tiết"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </Button>
+                  {/* View button - only for PUBLISHED courses */}
+                  {course.status === 'PUBLISHED' && (
+                    <Link href={`/admin/courses/${course.slug}`}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="p-2 h-8 w-8"
+                        title="Xem chi tiết"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                    </Link>
+                  )}
 
                   {/* Status-based actions */}
                   {canApprove(course) && (

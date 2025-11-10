@@ -1,92 +1,90 @@
 import { NextResponse } from "next/server"
 import jwt from "jsonwebtoken"
 
-// Define route rules
+// DEFINE ACCESS RULES
+
 const rules = [
   {
     // Public routes
     routes: ["/login", "/register", "/forgot-password", "/auth/callback/error"],
-    requireAuth: false, // No authentication required
-    redirectIfAuth: "/", // Redirect logged-in users back to home
+    requireAuth: false,
+    redirectIfAuth: "/", // logged-in user should not visit again
   },
   {
     // Private routes
-    routes: ["/dashboard", "/profile", "/settings", "/auth/callback/success"],
-    requireAuth: true, // Requires authentication
-    redirectIfNoAuth: "/login", // Redirect unauthenticated users to login
+    routes: [
+      "/dashboard",
+      "/profile",
+      "/cart",
+      "/auth/callback/success",
+      "/payment/checkout", 
+    ],
+    requireAuth: true,
+    redirectIfNoAuth: "/login",
   },
   {
     // Admin-only routes
-    routes: ["/admin", "/admin/:path*"],
-    requireAuth: true, // Requires authentication
-    requireAdmin: true, // Requires ADMIN role
-    redirectIfNoAuth: "/login", // If not logged in → redirect to login
-    redirectIfNoAdmin: "/forbidden", // If logged in but not admin → redirect to 403 page
+    routes: ["/admin", "/admin/"],
+    requireAuth: true,
+    requireAdmin: true,
+    redirectIfNoAuth: "/login",
+    redirectIfNoAdmin: "/forbidden",
   },
 ]
 
+// MAIN MIDDLEWARE
 export function middleware(request) {
   // const { pathname } = request.nextUrl
 
-  // // Allow all API routes without middleware checks
   // if (pathname.startsWith("/api")) {
   //   return NextResponse.next()
   // }
 
-  // // Get tokens from cookies
   // const access = request.cookies.get("access_token")?.value
   // const refresh = request.cookies.get("refresh_token")?.value
 
-  // // Decode JWT if access token exists
   // let decoded = null
   // if (access) {
   //   try {
-  //     // Decode only (no signature verification here)
   //     decoded = jwt.decode(access)
-  //   } catch (e) {
+  //   } catch {
   //     decoded = null
   //   }
   // }
 
-  // // Iterate through rules
+  // // Duyệt từng rule
   // for (const rule of rules) {
   //   for (const route of rule.routes) {
   //     if (pathname.startsWith(route)) {
-  //       // Case 1: Private route but no tokens
+  //       // Case 1️: Private route nhưng chưa đăng nhập
   //       if (rule.requireAuth && !access && !refresh) {
-  //         return NextResponse.redirect(
-  //           new URL(rule.redirectIfNoAuth, request.url)
-  //         )
+  //         return NextResponse.redirect(new URL(rule.redirectIfNoAuth, request.url))
   //       }
 
-  //       // Case 2: Admin route but user is not admin
+  //       // Case 2️: Admin route nhưng không có quyền
   //       if (rule.requireAdmin) {
   //         const authorities = decoded?.authorities || []
   //         const isAdmin = authorities.includes("ROLE_ADMIN")
   //         if (!isAdmin) {
-  //           return NextResponse.redirect(
-  //             new URL(rule.redirectIfNoAdmin, request.url)
-  //           )
+  //           return NextResponse.redirect(new URL(rule.redirectIfNoAdmin, request.url))
   //         }
   //       }
 
-  //       // Case 3: Public route but already logged in
+  //       // Case 3️: Public route nhưng đã login
   //       if (!rule.requireAuth && access && rule.redirectIfAuth) {
-  //         return NextResponse.redirect(
-  //           new URL(rule.redirectIfAuth, request.url)
-  //         )
+  //         return NextResponse.redirect(new URL(rule.redirectIfAuth, request.url))
   //       }
   //     }
   //   }
   // }
 
-  // Default: allow request
+  // Mặc định cho phép
   return NextResponse.next()
 }
 
-// // Apply middleware for all routes
+// MIDDLEWARE CONFIG
 export const config = {
-  matcher: ["/:path*"],
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|svg|gif|webp)$).*)",
+  ],
 }
-
-

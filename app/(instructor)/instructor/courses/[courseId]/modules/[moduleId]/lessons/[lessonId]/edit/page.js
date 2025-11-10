@@ -23,8 +23,10 @@ export default function LessonEditPage() {
     const [initialLoading, setInitialLoading] = useState(true)
     const [isPublished, setIsPublished] = useState(false)
     const contentRef = useRef("")
+    const quizIntroRef = useRef("")
     const [introText, setIntroText] = useState("")
     const [initialContentHtml, setInitialContentHtml] = useState("")
+    const [initialQuizIntro, setInitialQuizIntro] = useState("")
     const [questions, setQuestions] = useState([
         { question: "", options: ["", ""], answer: 0 }
     ])
@@ -57,13 +59,6 @@ export default function LessonEditPage() {
         reset,
         formState: { errors },
     } = form
-
-    // Log validation errors
-    useEffect(() => {
-        if (Object.keys(errors).length > 0) {
-            console.log("Form validation errors:", errors)
-        }
-    }, [errors])
 
     const lessonKind = watch("kind")
 
@@ -105,6 +100,10 @@ export default function LessonEditPage() {
                     // Set content based on lesson type
                     if (lesson.kind === "QUIZ" && lesson.content?.body?.questions) {
                         setQuestions(lesson.content.body.questions)
+                        if (lesson.content.body.quizzes_content) {
+                            setInitialQuizIntro(lesson.content.body.quizzes_content)
+                            quizIntroRef.current = lesson.content.body.quizzes_content
+                        }
                     } else if (lesson.content?.body) {
                         setIntroText(lesson.content.body.intro || "")
                         if (lesson.content.body.sections?.[0]?.html) {
@@ -132,12 +131,11 @@ export default function LessonEditPage() {
         contentRef.current = newContent
     }
 
-    const onSubmit = async (data) => {
-        console.log("Form submitted with data:", data)
-        console.log("Intro text:", introText)
-        console.log("Content ref:", contentRef.current)
-        console.log("Questions:", questions)
+    const handleQuizIntroChange = (newContent) => {
+        quizIntroRef.current = newContent
+    }
 
+    const onSubmit = async (data) => {
         setLoading(true)
         try {
             const payload = {
@@ -149,7 +147,10 @@ export default function LessonEditPage() {
                 content: {
                     type: data.kind === "QUIZ" ? "quiz" : "html",
                     body: data.kind === "QUIZ"
-                        ? { questions: questions }
+                        ? {
+                            quizzes_content: quizIntroRef.current || undefined,
+                            questions: questions
+                        }
                         : {
                             intro: introText.trim() || undefined,
                             sections: contentRef.current
@@ -159,11 +160,7 @@ export default function LessonEditPage() {
                 },
                 mediaId: data.mediaId && data.mediaId.trim() !== "" ? data.mediaId : null,
             }
-
-            console.log("Payload:", JSON.stringify(payload, null, 2))
-
             const res = await updateLesson(moduleId, lessonId, payload)
-            console.log("API Response:", res)
 
             if (res.success) {
                 toast.success("Cập nhật bài học thành công!")
@@ -206,7 +203,7 @@ export default function LessonEditPage() {
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={handleSubmit(onSubmit, (errors) => {
-                            console.log("Form validation failed:", errors)
+                            console.error("Form validation failed:", errors)
                             toast.error("Vui lòng kiểm tra lại các trường bắt buộc")
                         })} className="space-y-6">
                             <LessonBasicInfo
@@ -218,7 +215,12 @@ export default function LessonEditPage() {
 
                             {/* Content Section - Conditional rendering */}
                             {lessonKind === "QUIZ" ? (
-                                <QuizSection questions={questions} setQuestions={setQuestions} />
+                                <QuizSection
+                                    questions={questions}
+                                    setQuestions={setQuestions}
+                                    introContent={initialQuizIntro}
+                                    onIntroChange={handleQuizIntroChange}
+                                />
                             ) : (
                                 <ContentSection
                                     introText={introText}

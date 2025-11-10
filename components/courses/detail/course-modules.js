@@ -1,16 +1,27 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { ChevronDown, ChevronRight, FileText, CheckCircle2 } from "lucide-react"
+import { ChevronDown, ChevronRight, FileText, CheckCircle2, Clock, PlayCircle, HelpCircle } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { getPublishedModules } from "@/lib/api/course-module"
+import { listPublishedCourseLessons } from "@/lib/api/lesson"
 import { CourseModulesSkeleton } from "./course-modules-skeleton"
+import { LessonPreviewDialog } from "./lesson-preview-dialog"
+import { useAuthStore } from "@/store/auth-store"
 
 export function CourseModules({ courseId }) {
   const [modules, setModules] = useState([])
   const [loading, setLoading] = useState(true)
   const [expandedModules, setExpandedModules] = useState(new Set())
+  const [moduleLessons, setModuleLessons] = useState({})
+  const [loadingLessons, setLoadingLessons] = useState(new Set())
+  const [previewLesson, setPreviewLesson] = useState(null)
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+
+  const user = useAuthStore((s) => s.user)
+  const isAuthenticated = !!user
 
   useEffect(() => {
     if (courseId) {
@@ -29,7 +40,9 @@ export function CourseModules({ courseId }) {
     setLoading(false)
   }
 
-  const toggleModule = (moduleId) => {
+  const toggleModule = async (moduleId) => {
+    const isCurrentlyExpanded = expandedModules.has(moduleId)
+
     setExpandedModules((prev) => {
       const newSet = new Set(prev)
       if (newSet.has(moduleId)) {
@@ -39,6 +52,55 @@ export function CourseModules({ courseId }) {
       }
       return newSet
     })
+
+    // Fetch lessons if expanding and not already loaded
+    if (!isCurrentlyExpanded && !moduleLessons[moduleId]) {
+      setLoadingLessons((prev) => new Set(prev).add(moduleId))
+
+      const result = await listPublishedCourseLessons(moduleId)
+
+      if (result.success) {
+        setModuleLessons((prev) => ({
+          ...prev,
+          [moduleId]: result.data || []
+        }))
+      }
+
+      setLoadingLessons((prev) => {
+        const newSet = new Set(prev)
+        newSet.delete(moduleId)
+        return newSet
+      })
+    }
+  }
+
+  const getLessonIcon = (kind) => {
+    switch (kind) {
+      case "VIDEO":
+        return <PlayCircle className="w-4 h-4" />
+      case "QUIZ":
+        return <HelpCircle className="w-4 h-4" />
+      default:
+        return <FileText className="w-4 h-4" />
+    }
+  }
+
+  const getLessonKindLabel = (kind) => {
+    switch (kind) {
+      case "VIDEO":
+        return "Video"
+      case "QUIZ":
+        return "Quiz"
+      default:
+        return "Bài học"
+    }
+  }
+
+  const handleLessonClick = (lesson, moduleId) => {
+    if (lesson.isFree) {
+      setPreviewLesson({ ...lesson, moduleId })
+      setIsPreviewOpen(true)
+    }
   }
 
   if (loading) {
@@ -100,10 +162,59 @@ export function CourseModules({ courseId }) {
 
                 {isExpanded && (
                   <div className="border-t bg-muted/20 p-4">
-                    <p className="text-sm text-muted-foreground">
-                      Chương này có {module.lessonCount || 0} bài học. Đăng ký
-                      khóa học để xem chi tiết nội dung.
-                    </p>
+                    {loadingLessons.has(module.id) ? (
+                      <div className="space-y-3">
+                        {[...Array(3)].map((_, idx) => (
+                          <div key={idx} className="flex items-center gap-3">
+                            <Skeleton className="w-4 h-4 rounded" />
+                            <div className="flex-1 space-y-2">
+                              <Skeleton className="h-4 w-3/4" />
+                              <Skeleton className="h-3 w-1/2" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : moduleLessons[module.id] && moduleLessons[module.id].length > 0 ? (
+                      <div className="space-y-2">
+                        {moduleLessons[module.id].map((lesson) => (
+                          <div
+                            key={lesson.id}
+                            onClick={() => handleLessonClick(lesson, module.id)}
+                            className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${lesson.isFree
+                              ? "hover:bg-background/50 cursor-pointer"
+                              : "opacity-75"
+                              }`}
+                          >
+                            <div className="text-muted-foreground">
+                              {getLessonIcon(lesson.kind)}
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">
+                                  {lesson.title}
+                                </span>
+                                {lesson.isFree && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    Miễn phí
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  {lesson.estimatedMin} phút
+                                </span>
+                                <span>{getLessonKindLabel(lesson.kind)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Chương này chưa có bài học nào được công bố.
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -111,6 +222,13 @@ export function CourseModules({ courseId }) {
           })}
         </div>
       </CardContent>
+
+      <LessonPreviewDialog
+        lesson={previewLesson}
+        open={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
+        isAuthenticated={isAuthenticated}
+      />
     </Card>
   )
 }

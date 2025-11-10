@@ -94,22 +94,6 @@ export default function LessonBasicInfo({ register, watch, setValue, errors }) {
                     Cho phép học viên xem miễn phí
                 </Label>
             </div>
-
-            {/* Media ID */}
-            <div className="space-y-2">
-                <Label htmlFor="mediaId" className="text-sm font-medium">
-                    Media ID <span className="text-muted-foreground text-xs">(tùy chọn)</span>
-                </Label>
-                <Input
-                    id="mediaId"
-                    placeholder="UUID video hoặc tài liệu"
-                    {...register("mediaId")}
-                    className="transition-all focus-visible:ring-2 font-mono text-sm"
-                />
-                {errors.mediaId && (
-                    <p className="text-destructive text-sm mt-1">{errors.mediaId.message}</p>
-                )}
-            </div>
         </>
     )
 }

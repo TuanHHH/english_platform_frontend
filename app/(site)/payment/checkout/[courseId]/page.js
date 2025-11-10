@@ -9,12 +9,15 @@ import { PaymentMethods } from "@/components/payment/payment-methods"
 import { ShoppingCart, ArrowLeft, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { getCheckoutInfo } from "@/lib/api/course"
+import { createOrder } from "@/lib/api/order"
+import { createStripeCheckout, createPayOSCheckout } from "@/lib/api/payment"
 
 export default function CourseCheckoutPage() {
   const [selectedPayment, setSelectedPayment] = useState("payOS")
   const [courseData, setCourseData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [isProcessing, setIsProcessing] = useState(false)
   const router = useRouter()
   const params = useParams()
   const courseId = params.courseId
@@ -44,15 +47,78 @@ export default function CourseCheckoutPage() {
     }
   }, [courseId])
 
-  const handlePayment = () => {
-    if (!courseData) return
+  const handlePayment = async () => {
+    if (!courseData || isProcessing) return
 
-    const paymentNames = {
-      payOS: "Ngân hàng",
-      stripe: "Stripe",
+    setIsProcessing(true)
+
+    try {
+      // Step 1: Create order with items array format as specified
+      const orderRequest = {
+        orderSource: "DIRECT",
+        items: [
+          {
+            entityType: "COURSE",
+            entityId: courseId,
+            quantity: 1,
+            unitPriceCents: courseData.priceCents
+          }
+        ]
+      }
+
+      const orderResult = await createOrder(orderRequest)
+
+      if (!orderResult.success) {
+        toast.error(orderResult.error || "Không thể tạo đơn hàng")
+        return
+      }
+
+      const order = orderResult.data
+
+      // Step 2: Create payment checkout based on selected method
+      let paymentResult
+      if (selectedPayment === "stripe") {
+        paymentResult = await createStripeCheckout(order.id)
+
+        if (!paymentResult.success) {
+          toast.error(paymentResult.error || "Không thể tạo thanh toán Stripe")
+          return
+        }
+
+        const paymentData = paymentResult.data
+
+        // Step 3: Open Stripe checkout URL directly on this page
+        if (paymentData.checkoutUrl) {
+          window.location.href = paymentData.checkoutUrl
+        } else {
+          toast.error("Không nhận được link thanh toán từ Stripe")
+        }
+      } else if (selectedPayment === "payOS") {
+        paymentResult = await createPayOSCheckout(order.id)
+
+        if (!paymentResult.success) {
+          toast.error(paymentResult.error || "Không thể tạo thanh toán PayOS")
+          return
+        }
+
+        const paymentData = paymentResult.data
+
+        // Step 3: Open PayOS checkout URL directly on this page
+        if (paymentData.checkoutUrl) {
+          window.location.href = paymentData.checkoutUrl
+        } else {
+          toast.error("Không nhận được link thanh toán từ PayOS")
+        }
+      } else {
+        toast.error("Phương thức thanh toán không được hỗ trợ")
+      }
+
+    } catch (err) {
+      console.error("Payment process error:", err)
+      toast.error("Đã xảy ra lỗi trong quá trình thanh toán")
+    } finally {
+      setIsProcessing(false)
     }
-
-    toast(`Chuyển hướng đến cổng thanh toán ${paymentNames[selectedPayment]}...`)
   }
 
   if (loading) {
@@ -120,8 +186,16 @@ export default function CourseCheckoutPage() {
               size="lg"
               className="w-full"
               onClick={handlePayment}
+              disabled={isProcessing}
             >
-              Tiến hành thanh toán
+              {isProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Đang xử lý...
+                </>
+              ) : (
+                "Tiến hành thanh toán"
+              )}
             </Button>
 
             <div className="text-xs text-muted-foreground text-center space-y-1">

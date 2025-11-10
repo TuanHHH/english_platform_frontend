@@ -119,8 +119,6 @@ export default function Editor({ initialContent = "", onContentChange }) {
     if (toolbar && editorContainer) {
       // Di chuyển toolbar xuống sau editor
       container.appendChild(toolbar);
-      
-      console.log("✅ Toolbar moved to bottom");
     }
   }, [isMounted]);
 
@@ -130,17 +128,12 @@ export default function Editor({ initialContent = "", onContentChange }) {
     try {
       const quill = quillRef.current.getEditor();
       const htmlContent = quill.root.innerHTML;
-
-      console.log("🔄 Updating content (preserving attributes)");
-
       setContent(htmlContent);
       if (onContentChange) {
         onContentChange(htmlContent);
       }
-
-      console.log("✅ Content updated");
     } catch (err) {
-      console.error("❌ Error updating content:", err);
+      console.error("Error updating content:", err);
     }
   }, [onContentChange]);
 
@@ -180,11 +173,6 @@ export default function Editor({ initialContent = "", onContentChange }) {
 
         setShowAlignToolbar(true);
         setShowResizeModal(true);
-
-        console.log("🖼️ Image selected:", {
-          currentWidth,
-          hasParent: !!parent,
-        });
       }
     };
 
@@ -196,10 +184,9 @@ export default function Editor({ initialContent = "", onContentChange }) {
   }, [isMounted]);
 
   const handleApplyResize = () => {
-    console.log("🔧 Apply resize START");
 
     if (!selectedImageEl || !quillRef.current) {
-      console.warn("⚠️ Missing image or quill");
+      console.warn("Missing image or quill");
       return;
     }
 
@@ -208,18 +195,12 @@ export default function Editor({ initialContent = "", onContentChange }) {
     if (tempWidth) {
       const widthNum = parseInt(tempWidth, 10);
       if (!isNaN(widthNum) && widthNum > 0) {
-        console.log("📏 Setting width attribute:", widthNum);
-
+     
         selectedImageEl.setAttribute("width", widthNum.toString());
         selectedImageEl.removeAttribute("height");
 
         selectedImageEl.style.width = widthNum + "px";
         selectedImageEl.style.height = "auto";
-
-        console.log(
-          "✅ Width set:",
-          selectedImageEl.outerHTML.substring(0, 100)
-        );
       }
     }
 
@@ -230,12 +211,9 @@ export default function Editor({ initialContent = "", onContentChange }) {
       grandParent.insertBefore(p, selectedImageEl);
       p.appendChild(selectedImageEl);
       parent = p;
-      console.log("📦 Wrapped image in <p>");
     }
 
     if (parent && parent.tagName === "P") {
-      console.log("📍 Applying alignment to parent:", tempAlign);
-
       parent.classList.remove(
         "ql-align-left",
         "ql-align-center",
@@ -246,8 +224,6 @@ export default function Editor({ initialContent = "", onContentChange }) {
       if (tempAlign !== "left") {
         parent.classList.add(`ql-align-${tempAlign}`);
       }
-
-      console.log("✅ Parent classes:", parent.className);
     }
 
     setTimeout(() => {
@@ -260,10 +236,7 @@ export default function Editor({ initialContent = "", onContentChange }) {
       }
       setSelectedImageEl(null);
 
-      console.log("✅ Apply resize COMPLETE");
-
       const finalHTML = quill.root.innerHTML;
-      console.log("📋 Final HTML:", finalHTML.substring(0, 200));
     }, 300);
   };
 
@@ -284,7 +257,6 @@ export default function Editor({ initialContent = "", onContentChange }) {
       full: "800",
     };
     setTempWidth(sizes[size]);
-    console.log("📦 Preset selected:", size);
   };
 
   const handleWidthInputChange = (e) => {
@@ -295,8 +267,6 @@ export default function Editor({ initialContent = "", onContentChange }) {
   };
 
   const applyAlignment = (alignment) => {
-    console.log("🎯 Alignment clicked:", alignment);
-
     if (!selectedImageEl) return;
 
     setTempAlign(alignment);
@@ -319,7 +289,6 @@ export default function Editor({ initialContent = "", onContentChange }) {
       if (alignment !== "left") {
         parent.classList.add(`ql-align-${alignment}`);
       }
-      console.log("✅ Alignment applied");
     }
 
     setTimeout(() => {
@@ -347,8 +316,6 @@ export default function Editor({ initialContent = "", onContentChange }) {
       if (toolbar) {
         toolbar.update(quill.getSelection());
       }
-
-      console.log("[ENTER] keep size ->", keepSize);
     }
   };
 
@@ -378,13 +345,11 @@ export default function Editor({ initialContent = "", onContentChange }) {
               this.quill.format("size", false, "user");
               activeSizeRef.current = null;
             }
-            console.log("[TOOLBAR] header =", value);
           },
           size: function (value) {
             const v = value || DEFAULT_SIZE;
             this.quill.format("size", v, "user");
             activeSizeRef.current = v;
-            console.log("[TOOLBAR] v =", v);
 
             const toolbar = this.quill.getModule("toolbar");
             if (toolbar) {

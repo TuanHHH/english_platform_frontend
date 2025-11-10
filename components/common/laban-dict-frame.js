@@ -1,16 +1,40 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { BookOpen } from "lucide-react"
 import { useUIStore } from "@/store/ui"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
+import { usePathname } from "next/navigation"
 
 export default function LabanDictFrame() {
+  const pathname = usePathname()
   const { openWidget, setOpenWidget } = useUIStore()
   const isOpen = openWidget === "dict"
+  const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
-    if (!isOpen) return
+    setIsMounted(true)
+  }, [])
+
+  // Paths where the dictionary widget should not be visible
+  const hiddenPaths = [
+    '/account/*',
+    '/login',
+    '/register',
+    '/forgot-password',
+    'become-instructor'
+  ]
+
+  // Check if current path should hide the widget
+  const shouldHide = hiddenPaths.some(path => {
+    if (path.endsWith('/*')) {
+      return pathname.startsWith(path.slice(0, -2))
+    }
+    return pathname === path || pathname.startsWith(path + '/')
+  })
+
+  useEffect(() => {
+    if (!isOpen || !isMounted) return
 
     // Block request laban.vn/stats
     const originalOpen = XMLHttpRequest.prototype.open
@@ -49,7 +73,9 @@ export default function LabanDictFrame() {
       XMLHttpRequest.prototype.open = originalOpen
       document.body.removeChild(script)
     }
-  }, [isOpen])
+  }, [isOpen, isMounted])
+
+  if (shouldHide) return null
 
   return (
     <>

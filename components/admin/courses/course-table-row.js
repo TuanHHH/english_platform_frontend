@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/utils"
@@ -27,6 +28,23 @@ export default function CourseTableRow({ course, onStatusUpdate }) {
         return "bg-blue-100 text-blue-800"
       default:
         return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case "PUBLISHED":
+        return "Đã xuất bản"
+      case "DRAFT":
+        return "Nháp"
+      case "PENDING_REVIEW":
+        return "Chờ phê duyệt"
+      case "REJECTED":
+        return "Từ chối"
+      case "UNPUBLISHED":
+        return "Tạm ẩn"
+      default:
+        return status
     }
   }
 
@@ -58,13 +76,13 @@ export default function CourseTableRow({ course, onStatusUpdate }) {
   return (
     <>
       <tr className="hover:bg-gray-50">
-        <td className="px-3 py-3 sm:px-4 sm:py-4 align-top">
-          <div className="max-w-full sm:max-w-xs overflow-hidden">
+        <td className="px-3 py-3 sm:px-4 sm:py-4 align-top min-h-0">
+          <div className="flex-1 min-w-0 overflow-hidden">
             {/* Title  */}
             <div
               className="
                 text-sm font-medium text-gray-900 mb-1
-                mobile-title-truncate break-words
+                line-clamp-1
               "
               title={course.title}
             >
@@ -75,7 +93,7 @@ export default function CourseTableRow({ course, onStatusUpdate }) {
             <div
               className="
                 text-sm text-gray-500 mb-2
-                mobile-desc-truncate break-words
+                line-clamp-3
               "
               title={course.description}
             >
@@ -90,7 +108,7 @@ export default function CourseTableRow({ course, onStatusUpdate }) {
                     course.status
                   )} text-xs flex-shrink-0 whitespace-nowrap`}
                 >
-                  {course.status}
+                  {getStatusLabel(course.status)}
                 </Badge>
                 <div className="flex flex-wrap gap-1 flex-1 justify-end">
                   {course.skillFocus?.slice(0, 2).map((skill, index) => (
@@ -123,7 +141,7 @@ export default function CourseTableRow({ course, onStatusUpdate }) {
         </td>
 
         <td className="px-3 py-3 sm:px-4 sm:py-4 whitespace-nowrap hidden sm:table-cell">
-          <Badge className={getStatusColor(course.status)}>{course.status}</Badge>
+          <Badge className={getStatusColor(course.status)}>{getStatusLabel(course.status)}</Badge>
         </td>
 
         <td className="px-3 py-3 sm:px-4 sm:py-4 hidden lg:table-cell">
@@ -158,15 +176,19 @@ export default function CourseTableRow({ course, onStatusUpdate }) {
 
         <td className="px-3 py-3 sm:px-4 sm:py-4 whitespace-nowrap text-sm font-medium">
           <div className="flex space-x-1 sm:space-x-2">
-            {/* View */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="p-1 h-7 w-7 sm:h-8 sm:w-8"
-              title="Xem chi tiết"
-            >
-              <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </Button>
+            {/* View - only for PUBLISHED courses */}
+            {course.status === "PUBLISHED" && (
+              <Link href={`/admin/courses/${course.slug}`}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="p-1 h-7 w-7 sm:h-8 sm:w-8"
+                  title="Xem chi tiết"
+                >
+                  <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </Button>
+              </Link>
+            )}
 
             {/* Approve */}
             {canApprove && (

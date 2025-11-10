@@ -86,11 +86,6 @@ export function CourseCard({ course }) {
               <p className="text-lg font-bold text-primary mb-3">
                 {formatCurrency(course.priceCents, course.currency)}
               </p>
-
-              <Button className="w-full">
-                <Play className="w-4 h-4 mr-2" />
-                Xem chi tiết
-              </Button>
             </div>
           </div>
         </CardContent>

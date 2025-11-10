@@ -19,45 +19,44 @@ export default function CourseFilters({
   return (
     <Card>
       <CardContent className="p-3 sm:p-4 lg:p-6">
-        <div className="space-y-3 sm:space-y-4">
+        <div className="space-y-3">
           {/* Responsive filter layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4">
-            {/* Search input - full width on mobile, 4 cols on desktop */}
-            <div className="lg:col-span-4 order-1 lg:order-none">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2 sm:gap-3">
+            {/* Search input - spans 2 cols on tablet, 4 cols on desktop */}
+            <div className="sm:col-span-2 lg:col-span-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-2.5 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   placeholder="Tìm kiếm khóa học..."
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && onSearch()}
-                  className="pl-10 w-full text-sm"
+                  className="pl-9 sm:pl-10 w-full text-sm h-9 sm:h-10"
                 />
               </div>
             </div>
 
-            {/* Status filter - full width on mobile, 3 cols on desktop */}
-            <div className="lg:col-span-3 order-2 lg:order-none">
+            {/* Status filter */}
+            <div className="lg:col-span-3">
               <Select value={statusFilter || "ALL"} onValueChange={onStatusFilterChange}>
-                <SelectTrigger className="w-full text-sm">
-                  <Filter className="w-4 h-4 mr-2 flex-shrink-0" />
+                <SelectTrigger className="w-full text-sm h-9 sm:h-10">
+                  <Filter className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 flex-shrink-0" />
                   <SelectValue placeholder="Trạng thái" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">Tất cả trạng thái</SelectItem>
-                  <SelectItem value="DRAFT">Nháp</SelectItem>
                   <SelectItem value="PENDING_REVIEW">Chờ phê duyệt</SelectItem>
                   <SelectItem value="REJECTED">Từ chối</SelectItem>
                   <SelectItem value="PUBLISHED">Đã xuất bản</SelectItem>
-                  <SelectItem value="UNPUBLISHED">Chưa xuất bản</SelectItem>
+                  <SelectItem value="UNPUBLISHED">Tạm ẩn</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Skills filter - full width on mobile, 3 cols on desktop */}
-            <div className="lg:col-span-3 order-3 lg:order-none">
+            {/* Skills filter */}
+            <div className="lg:col-span-3">
               <Select value={skillsFilter} onValueChange={onSkillsFilterChange}>
-                <SelectTrigger className="w-full text-sm">
+                <SelectTrigger className="w-full text-sm h-9 sm:h-10">
                   <SelectValue placeholder="Kỹ năng" />
                 </SelectTrigger>
                 <SelectContent>
@@ -73,10 +72,10 @@ export default function CourseFilters({
               </Select>
             </div>
 
-            {/* Sort filter - full width on mobile, 2 cols on desktop */}
-            <div className="lg:col-span-2 order-4 lg:order-none">
+            {/* Sort filter */}
+            <div className="lg:col-span-2">
               <Select value={sortBy} onValueChange={onSortChange}>
-                <SelectTrigger className="w-full text-sm">
+                <SelectTrigger className="w-full text-sm h-9 sm:h-10">
                   <SelectValue placeholder="Sắp xếp" />
                 </SelectTrigger>
                 <SelectContent>

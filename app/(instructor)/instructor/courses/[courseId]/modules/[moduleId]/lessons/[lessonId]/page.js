@@ -12,7 +12,6 @@ import { FullPageLoader } from "@/components/ui/full-page-loader"
 import LessonHeader from "@/components/instructor/courses/lesson-detail/lesson-header"
 import LessonTabs from "@/components/instructor/courses/lesson-detail/lesson-tabs"
 import LessonContentDialog from "@/components/instructor/courses/lesson-detail/lesson-content-dialog"
-import QuizEditDialog from "@/components/instructor/courses/lesson-detail/quiz-edit-dialog"
 
 import { getLessonDetail, updateLesson } from "@/lib/api/lesson"
 
@@ -25,7 +24,6 @@ export default function LessonDetailPage() {
   const [loading, setLoading] = useState(true)
 
   const [editContentDialogOpen, setEditContentDialogOpen] = useState(false)
-  const [quizDialogOpen, setQuizDialogOpen] = useState(false)
 
   const equalsIgnoreCase = (a, b) => {
     return (
@@ -111,10 +109,17 @@ export default function LessonDetailPage() {
             />
           ) : (
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="font-semibold text-lg">Quiz: {lesson.title}</h2>
-                <Button onClick={() => setQuizDialogOpen(true)}>Chỉnh sửa Quiz</Button>
-              </div>
+              <h2 className="font-semibold text-lg mb-4">Quiz: {lesson.title}</h2>
+
+              {lesson.content?.body?.quizzes_content && (
+                <div className="border rounded-lg p-4 bg-muted/20">
+                  <h3 className="font-medium text-sm text-muted-foreground mb-2">Nội dung</h3>
+                  <div
+                    className="prose prose-sm max-w-none dark:prose-invert"
+                    dangerouslySetInnerHTML={{ __html: lesson.content.body.quizzes_content }}
+                  />
+                </div>
+              )}
 
               {lesson.content?.body?.questions?.length > 0 ? (
                 <ul className="space-y-3">
@@ -155,13 +160,6 @@ export default function LessonDetailPage() {
       <LessonContentDialog
         open={editContentDialogOpen}
         onOpenChange={setEditContentDialogOpen}
-        lesson={lesson}
-        onUpdated={setLesson}
-      />
-
-      <QuizEditDialog
-        open={quizDialogOpen}
-        onOpenChange={setQuizDialogOpen}
         lesson={lesson}
         onUpdated={setLesson}
       />
