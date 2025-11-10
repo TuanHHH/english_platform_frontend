@@ -26,7 +26,7 @@ export default function QuizTypes() {
       <h1 className="text-2xl font-semibold mb-6">Các loại bài thi</h1>
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         {quizTypes.map((qt) => (
-          <Link key={qt.id} href={`/quiz/types/${qt.id}`}>
+          <Link key={qt.id} href={`/quiz-types/${qt.id}/sections`}>
             <Card className="cursor-pointer hover:shadow-lg transition-all border border-muted/50">
               <CardHeader>
                 <div className="w-12 h-12 bg-primary text-white rounded-lg flex items-center justify-center mb-4">

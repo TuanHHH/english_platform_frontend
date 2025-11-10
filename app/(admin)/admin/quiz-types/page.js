@@ -1,23 +1,35 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
-// import AdminSidebar from "@/components/common/AdminSidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   listQuizTypes,
   createQuizType,
   updateQuizType,
   deleteQuizType,
 } from "@/lib/api/quiz/quiz-type";
-import { toast } from "sonner"; // Importing toast for notifications
+import { toast } from "sonner";
 
 export default function QuizTypesPage() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({ code: "", name: "", description: "" });
+  const [form, setForm] = useState({ name: "", description: "" });
   const [editingId, setEditingId] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
 
   // Load quiz types from API
   async function load() {
@@ -38,6 +50,13 @@ export default function QuizTypesPage() {
   // Handle form submission
   const onSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate form
+    if (!form.name.trim()) {
+      toast.error("Lỗi", { description: "Tên Quiz Type không được để trống" });
+      return;
+    }
+
     try {
       if (editingId) {
         await updateQuizType(editingId, {
@@ -49,12 +68,19 @@ export default function QuizTypesPage() {
         await createQuizType(form);
         toast.success("Tạo mới thành công", { description: "QuizType mới đã được thêm!" });
       }
-      setForm({ code: "", name: "", description: "" });
+      setForm({ name: "", description: "" });
       setEditingId(null);
       await load();
-    } catch (e) {
-      console.error(e);
-      toast.error("Lỗi", { description: "Không thể lưu QuizType" });
+    } catch (error) {
+      console.error(error);
+      
+      // Handle API error response
+      const errorMessage = error?.response?.data?.message || error?.message || "Không thể lưu QuizType";
+      const errorCode = error?.response?.data?.code;
+      
+      toast.error("Lỗi", { 
+        description: `${errorMessage}${errorCode ? ` (Mã: ${errorCode})` : ""}` 
+      });
     }
   };
 
@@ -62,27 +88,43 @@ export default function QuizTypesPage() {
   const onEdit = (item) => {
     setEditingId(item.id);
     setForm({
-      code: item.code,
       name: item.name,
       description: item.description || "",
     });
   };
 
-  // Delete quiz type
-  const onDelete = async (id) => {
-    if (!window.confirm("Xóa QuizType này?")) return;
+  // Trigger delete confirmation dialog
+  const openDeleteDialog = (id) => {
+    setDeleteTargetId(id);
+    setDeleteDialogOpen(true);
+  };
+
+  // Confirm delete quiz type
+  const onConfirmDelete = async () => {
+    if (!deleteTargetId) return;
+
     try {
-      await deleteQuizType(id);
+      await deleteQuizType(deleteTargetId);
       await load();
       toast.success("Xóa thành công", { description: "QuizType đã bị xóa." });
-    } catch (e) {
-      toast.error("Lỗi", { description: "Không thể xóa QuizType này" });
+    } catch (error) {
+      console.error(error);
+      
+      // Handle API error response
+      const errorMessage = error?.response?.data?.message || error?.message || "Không thể xóa QuizType này";
+      const errorCode = error?.response?.data?.code;
+      
+      toast.error("Lỗi", { 
+        description: `${errorMessage}${errorCode ? ` (Mã: ${errorCode})` : ""}` 
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setDeleteTargetId(null);
     }
   };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* <AdminSidebar /> */}
       <div className="flex-1 p-6 md:p-10 space-y-6">
         <h1 className="text-3xl font-semibold mb-6">Quản lí loại đề thi</h1>
 
@@ -93,14 +135,6 @@ export default function QuizTypesPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={onSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <Input
-                placeholder="Code"
-                value={form.code}
-                disabled={!!editingId}
-                onChange={(e) =>
-                  setForm({ ...form, code: e.target.value })
-                }
-              />
               <Input
                 placeholder="Name"
                 value={form.name}
@@ -126,7 +160,7 @@ export default function QuizTypesPage() {
                     variant="outline"
                     onClick={() => {
                       setEditingId(null);
-                      setForm({ code: "", name: "", description: "" });
+                      setForm({ name: "", description: "" });
                     }}
                   >
                     Hủy
@@ -157,9 +191,6 @@ export default function QuizTypesPage() {
                     <div>
                       <div className="font-medium">
                         {it.name}{" "}
-                        <span className="text-xs text-muted-foreground">
-                          ({it.code})
-                        </span>
                       </div>
                       {it.description && (
                         <div className="text-sm text-muted-foreground">
@@ -178,7 +209,7 @@ export default function QuizTypesPage() {
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={() => onDelete(it.id)}
+                        onClick={() => openDeleteDialog(it.id)}
                       >
                         Xóa
                       </Button>
@@ -190,6 +221,24 @@ export default function QuizTypesPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa Quiz Type này?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={onConfirmDelete} className="bg-red-600 hover:bg-red-700">
+              Xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
