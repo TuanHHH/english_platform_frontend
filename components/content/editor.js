@@ -3,14 +3,25 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
+import { toast } from "sonner";
+import { uploadMedia } from "@/lib/api/media";
 
-export default function Editor({ initialContent = "", onContentChange }) {
+export default function Editor({
+  initialContent = "",
+  onContentChange,
+  useServerUpload = false, // Prop mới: true = upload S3, false = base64/link
+  uploadFolder = "forums", // Folder để upload lên S3
+}) {
   const [content, setContent] = useState(initialContent);
   const [isMounted, setIsMounted] = useState(false);
   const quillRef = useRef(null);
   const containerRef = useRef(null);
 
   const activeSizeRef = useRef("14pt");
+
+  // State cho image upload
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingAudio, setUploadingAudio] = useState(false);
 
   const SIZE_LIST = [
     "8pt",
@@ -34,6 +45,7 @@ export default function Editor({ initialContent = "", onContentChange }) {
   // State cho audio modal
   const [showAudioModal, setShowAudioModal] = useState(false);
   const [audioUrl, setAudioUrl] = useState("");
+  const [audioFile, setAudioFile] = useState(null);
 
   const ReactQuill = useMemo(
     () =>
@@ -177,6 +189,125 @@ export default function Editor({ initialContent = "", onContentChange }) {
     }
   }, [onContentChange]);
 
+  // ========== CONVERT IMAGE TO BASE64 ==========
+  const convertImageToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // ========== UPLOAD ẢNH (S3 hoặc Base64) ==========
+  const handleImageUpload = useCallback(async () => {
+    const input = document.createElement("input");
+    input.setAttribute("type", "file");
+    input.setAttribute("accept", "image/*");
+
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+
+      // Validate size - 50MB
+      const maxSize = 50 * 1024 * 1024;
+      if (file.size > maxSize) {
+        toast.error("Ảnh quá lớn! Vui lòng chọn ảnh nhỏ hơn 50MB.");
+        return;
+      }
+
+      // Validate type
+      const allowedTypes = [
+        "image/png",
+        "image/jpeg",
+        "image/jpg",
+        "image/gif",
+        "image/webp",
+        "image/bmp",
+      ];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(
+          "Vui lòng chọn ảnh định dạng hợp lệ (PNG, JPG, GIF, WEBP, BMP)."
+        );
+        return;
+      }
+
+      const quill = quillRef.current?.getEditor();
+      if (!quill) return;
+
+      const range = quill.getSelection(true);
+
+      setUploadingImage(true);
+
+      try {
+        let imageUrl;
+
+        if (useServerUpload) {
+          // Upload lên S3
+          const toastId = toast.loading("Đang upload ảnh lên AWS S3...");
+
+          console.log("📤 Uploading image to S3:", {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+          });
+
+          const uploadResult = await uploadMedia(file, uploadFolder);
+
+          if (!uploadResult.success || !uploadResult.data?.url) {
+            toast.error(uploadResult.error || "Upload ảnh thất bại", {
+              id: toastId,
+            });
+            return;
+          }
+
+          imageUrl = uploadResult.data.url;
+          console.log("✅ Upload success:", {
+            url: imageUrl,
+            filename: uploadResult.data.filename,
+            size: uploadResult.data.fileSize,
+          });
+
+          toast.success(
+            `Upload thành công! ${uploadResult.data.filename || ""}`,
+            { id: toastId }
+          );
+        } else {
+          // Convert to Base64
+          // toast.loading("Đang chuyển đổi ảnh sang Base64...");
+
+          console.log("🔄 Converting image to Base64:", {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+          });
+
+          imageUrl = await convertImageToBase64(file);
+
+          console.log("✅ Base64 conversion success");
+          toast.success("Ảnh đã được chuyển đổi sang Base64!");
+        }
+
+        // Insert ảnh vào editor
+        quill.insertEmbed(range.index, "image", imageUrl, "user");
+        quill.setSelection(range.index + 1);
+
+        // Update content
+        setTimeout(() => {
+          updateQuillContent();
+        }, 100);
+      } catch (error) {
+        console.error("❌ Image processing error:", error);
+        toast.error("Đã xảy ra lỗi khi xử lý ảnh");
+      } finally {
+        setUploadingImage(false);
+      }
+    };
+
+    input.click();
+  }, [useServerUpload, uploadFolder, updateQuillContent]);
+
+  // ========== IMAGE CLICK & RESIZE ==========
   useEffect(() => {
     if (!isMounted) return;
 
@@ -385,25 +516,104 @@ export default function Editor({ initialContent = "", onContentChange }) {
     }
   };
 
-  // Handler cho audio - mở modal thay vì prompt
-  const handleAudioInsert = () => {
-    if (!audioUrl.trim()) return;
+  // ========== AUDIO HANDLER (Upload S3 hoặc URL) ==========
+  const handleAudioInsert = async () => {
+    const quill = quillRef.current?.getEditor();
+    if (!quill) return;
 
-    let url = audioUrl.trim();
-    if (url.startsWith("http://")) {
-      url = url.replace("http://", "https://");
-    }
+    const range = quill.getSelection(true);
 
-    if (quillRef.current) {
-      const quill = quillRef.current.getEditor();
-      const range = quill.getSelection(true);
+    if (useServerUpload && audioFile) {
+      // Upload audio lên S3
+      setUploadingAudio(true);
+      const toastId = toast.loading("Đang upload audio lên AWS S3...");
+
+      try {
+        console.log("📤 Uploading audio to S3:", {
+          name: audioFile.name,
+          size: audioFile.size,
+          type: audioFile.type,
+        });
+
+        const uploadResult = await uploadMedia(audioFile, uploadFolder);
+
+        if (!uploadResult.success || !uploadResult.data?.url) {
+          toast.error(uploadResult.error || "Upload audio thất bại", {
+            id: toastId,
+          });
+          return;
+        }
+
+        const uploadedUrl = uploadResult.data.url;
+        console.log("✅ Audio upload success:", {
+          url: uploadedUrl,
+          filename: uploadResult.data.filename,
+        });
+
+        quill.insertEmbed(range.index, "audio", uploadedUrl, "user");
+        quill.setSelection(range.index + 1);
+
+        toast.success(
+          `Upload audio thành công! ${uploadResult.data.filename || ""}`,
+          { id: toastId }
+        );
+
+        setTimeout(() => {
+          updateQuillContent();
+        }, 100);
+      } catch (error) {
+        console.error("❌ Audio upload error:", error);
+        toast.error("Đã xảy ra lỗi khi upload audio", { id: toastId });
+      } finally {
+        setUploadingAudio(false);
+      }
+    } else if (!useServerUpload && audioUrl.trim()) {
+      // Chèn audio từ URL
+      let url = audioUrl.trim();
+      if (url.startsWith("http://")) {
+        url = url.replace("http://", "https://");
+      }
+
       quill.insertEmbed(range.index, "audio", url, "user");
       quill.setSelection(range.index + 1);
-      console.log("🎵 Audio inserted:", url);
+      console.log("🎵 Audio inserted from URL:", url);
+
+      setTimeout(() => {
+        updateQuillContent();
+      }, 100);
     }
 
     setShowAudioModal(false);
     setAudioUrl("");
+    setAudioFile(null);
+  };
+
+  const handleAudioFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate size - 50MB
+    const maxSize = 50 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("File audio quá lớn! Vui lòng chọn file nhỏ hơn 50MB.");
+      return;
+    }
+
+    // Validate type
+    const allowedTypes = [
+      "audio/mpeg",
+      "audio/mp3",
+      "audio/wav",
+      "audio/ogg",
+      "audio/m4a",
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Vui lòng chọn file audio hợp lệ (MP3, WAV, OGG, M4A).");
+      return;
+    }
+
+    setAudioFile(file);
+    setAudioUrl(""); // Clear URL khi chọn file
   };
 
   const modules = useMemo(
@@ -439,22 +649,24 @@ export default function Editor({ initialContent = "", onContentChange }) {
             const v = value || DEFAULT_SIZE;
             this.quill.format("size", v, "user");
             activeSizeRef.current = v;
-            console.log("[TOOLBAR] v =", v);
+            console.log("[TOOLBAR] size =", v);
 
             const toolbar = this.quill.getModule("toolbar");
             if (toolbar) {
               toolbar.update(this.quill.getSelection());
             }
           },
+          image: handleImageUpload,
           audio: function () {
             setShowAudioModal(true);
             setAudioUrl("");
+            setAudioFile(null);
           },
         },
       },
       history: { delay: 800, maxStack: 100, userOnly: false },
     }),
-    []
+    [handleImageUpload]
   );
 
   const formats = [
@@ -709,25 +921,34 @@ export default function Editor({ initialContent = "", onContentChange }) {
           margin: 0 0 16px 0;
         }
 
-        .audio-modal input {
+        .audio-modal input[type="text"],
+        .audio-modal input[type="file"] {
           width: 100%;
           padding: 10px;
           border: 1px solid #ddd;
           border-radius: 6px;
           font-size: 14px;
-          margin-bottom: 8px;
+          margin-bottom: 12px;
         }
 
         .audio-modal .audio-hint {
           font-size: 13px;
           color: #666;
-          margin-bottom: 20px;
+          margin-bottom: 12px;
+        }
+
+        .audio-modal .audio-separator {
+          text-align: center;
+          color: #999;
+          margin: 16px 0;
+          font-size: 14px;
         }
 
         .audio-modal-actions {
           display: flex;
           gap: 12px;
           justify-content: flex-end;
+          margin-top: 20px;
         }
 
         .audio-modal-actions button {
@@ -758,6 +979,11 @@ export default function Editor({ initialContent = "", onContentChange }) {
           background: #005bb5;
         }
 
+        .audio-modal-actions button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
         @media (max-width: 600px) {
           .audio-modal {
             width: 90vw;
@@ -773,7 +999,11 @@ export default function Editor({ initialContent = "", onContentChange }) {
           onChange={handleChange}
           modules={modules}
           formats={formats}
-          placeholder="Start typing... (Click ảnh để resize & căn lề, click 🎵 để thêm audio)"
+          placeholder={
+            useServerUpload
+              ? "Start typing... (Click ảnh/🎵 để upload lên S3, click ảnh để resize & căn lề)"
+              : "Start typing... (Ảnh: Base64, Audio: URL link, click ảnh để resize & căn lề)"
+          }
           preserveWhitespace={true}
           onKeyDown={handleKeyDown}
         />
@@ -788,29 +1018,67 @@ export default function Editor({ initialContent = "", onContentChange }) {
             onClick={() => setShowAudioModal(false)}
           >
             <div className="audio-modal" onClick={(e) => e.stopPropagation()}>
-              <h3>Thêm Audio</h3>
-              <input
-                type="text"
-                autoFocus
-                placeholder="Nhập URL audio (mp3, wav, ogg)..."
-                value={audioUrl}
-                onChange={(e) => setAudioUrl(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleAudioInsert();
-                }}
-              />
-              <div className="audio-hint">
-                Ví dụ: https://storage.googleapis.com/kstoefl/sound/1421132469368.mp3
-              </div>
+              <h3>
+                {useServerUpload ? "Upload Audio lên S3" : "Thêm Audio từ URL"}
+              </h3>
+
+              {useServerUpload ? (
+                <>
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    onChange={handleAudioFileChange}
+                  />
+                  {audioFile && (
+                    <div className="audio-hint">
+                      File đã chọn: {audioFile.name} (
+                      {(audioFile.size / 1024 / 1024).toFixed(2)} MB)
+                    </div>
+                  )}
+                  <div className="audio-hint">
+                    Hỗ trợ: MP3, WAV, OGG, M4A (tối đa 50MB)
+                  </div>
+                </>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    autoFocus
+                    placeholder="Nhập URL audio (mp3, wav, ogg)..."
+                    value={audioUrl}
+                    onChange={(e) => setAudioUrl(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleAudioInsert();
+                    }}
+                  />
+                  <div className="audio-hint">
+                    Ví dụ:
+                    https://storage.googleapis.com/kstoefl/sound/1421132469368.mp3
+                  </div>
+                </>
+              )}
+
               <div className="audio-modal-actions">
                 <button
                   className="cancel"
                   onClick={() => setShowAudioModal(false)}
+                  disabled={uploadingAudio}
                 >
                   Hủy
                 </button>
-                <button className="confirm" onClick={handleAudioInsert}>
-                  Chèn Audio
+                <button
+                  className="confirm"
+                  onClick={handleAudioInsert}
+                  disabled={
+                    uploadingAudio ||
+                    (useServerUpload ? !audioFile : !audioUrl.trim())
+                  }
+                >
+                  {uploadingAudio
+                    ? "Đang upload..."
+                    : useServerUpload
+                    ? "Upload & Chèn"
+                    : "Chèn Audio"}
                 </button>
               </div>
             </div>
