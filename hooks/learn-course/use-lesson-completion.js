@@ -7,6 +7,46 @@ export function useLessonCompletion(
     setModules,
     enrollmentData
 ) {
+    const markAsComplete = async (lessonId, showToast = true) => {
+        // Don't mark if already completed
+        if (completedLessons.has(lessonId)) return
+
+        // Optimistic update
+        setCompletedLessons((prev) => {
+            const newSet = new Set(prev)
+            newSet.add(lessonId)
+            return newSet
+        })
+
+        setModules((prevModules) =>
+            prevModules.map((module) => ({
+                ...module,
+                lessons: module.lessons?.map((lesson) =>
+                    lesson.id === lessonId
+                        ? { ...lesson, isCompleted: true }
+                        : lesson
+                )
+            }))
+        )
+
+        try {
+            const result = await markLessonCompleted(lessonId, enrollmentData?.enrollmentId)
+
+            if (result.success) {
+                if (showToast) {
+                    toast.success("Đã đánh dấu hoàn thành bài học")
+                }
+            } else {
+                revertOptimisticUpdate(lessonId, false)
+                toast.error(result.error || "Không thể cập nhật trạng thái bài học")
+            }
+        } catch (err) {
+            console.error("Error marking lesson complete:", err)
+            revertOptimisticUpdate(lessonId, false)
+            toast.error("Đã xảy ra lỗi khi cập nhật trạng thái")
+        }
+    }
+
     const handleToggleComplete = async (lessonId) => {
         const isCurrentlyCompleted = completedLessons.has(lessonId)
 
@@ -79,5 +119,5 @@ export function useLessonCompletion(
         )
     }
 
-    return { handleToggleComplete }
+    return { handleToggleComplete, markAsComplete }
 }

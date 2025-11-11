@@ -36,7 +36,7 @@ const InstructorRequestList = ({
         />
       ))}
 
-      {requests.length > 0 && (
+      {requests.length > 1 && (
         <div className="mt-6">
           <Pagination
             currentPage={currentPage}

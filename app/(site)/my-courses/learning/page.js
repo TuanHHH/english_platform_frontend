@@ -1,18 +1,21 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BookOpen, Bell } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { BookOpen, Bell, Badge, Plus } from "lucide-react"
 import LoadingSkeleton from "@/components/my-course/loading-skeleton"
 import CoursesList from "@/components/my-course/courses-list"
-import RemindersList from "@/components/my-course/reminders-list"
+import SchedulesList from "@/components/my-course/schedules-list"
+import CreateScheduleDialog from "@/components/my-course/create-schedule-dialog"
+import EditScheduleDialog from "@/components/my-course/edit-schedule-dialog"
 import { useEnrollmentStore } from "@/store/enrollment-store"
+import { getMySchedule } from "@/lib/api/schedule"
 
 export default function MyCoursesLearningPage() {
     const [activeTab, setActiveTab] = useState("courses")
 
-    // Zustand store
+    // Zustand store for courses
     const enrollments = useEnrollmentStore((state) => state.enrollments)
     const pagination = useEnrollmentStore((state) => state.pagination)
     const loading = useEnrollmentStore((state) => state.loading)
@@ -20,38 +23,80 @@ export default function MyCoursesLearningPage() {
     const fetchEnrollments = useEnrollmentStore((state) => state.fetchEnrollments)
     const setPage = useEnrollmentStore((state) => state.setPage)
 
-    // Mock data for study reminders
-    const mockReminders = [
-        {
-            id: 1,
-            courseTitle: "[IELTS Fundamentals] Từ vựng và ngữ pháp cơ bản IELTS",
-            reminderTime: "09:00",
-            days: ["Mon", "Wed", "Fri"],
-            isActive: true,
-        },
-        {
-            id: 2,
-            courseTitle: "Advanced English Grammar",
-            reminderTime: "14:30",
-            days: ["Tue", "Thu"],
-            isActive: true,
-        },
-        {
-            id: 3,
-            courseTitle: "TOEIC Listening Practice",
-            reminderTime: "20:00",
-            days: ["Mon", "Tue", "Wed", "Thu", "Fri"],
-            isActive: false,
-        },
-    ]
+    // State for study schedules
+    const [studyPlans, setStudyPlans] = useState([])
+    const [schedulesPagination, setSchedulesPagination] = useState(null)
+    const [schedulesLoading, setSchedulesLoading] = useState(false)
+    const [schedulesPage, setSchedulesPage] = useState(1)
+    const [schedulesSort, setSchedulesSort] = useState("createdAt,desc")
+    const [createDialogOpen, setCreateDialogOpen] = useState(false)
+    const [editDialogOpen, setEditDialogOpen] = useState(false)
+    const [selectedPlan, setSelectedPlan] = useState(null)
 
     useEffect(() => {
         // Only fetch if not already loaded (store will handle caching)
         fetchEnrollments()
     }, [fetchEnrollments])
 
+    useEffect(() => {
+        // Fetch schedules when reminders tab is active or when sort/page changes
+        if (activeTab === "reminders") {
+            fetchSchedules(schedulesPage, schedulesSort)
+        }
+    }, [activeTab, schedulesPage, schedulesSort])
+
+    const fetchSchedules = async (page, sort) => {
+        setSchedulesLoading(true)
+        try {
+            const result = await getMySchedule(page, 5, sort)
+            if (result.success) {
+                setStudyPlans(result.data?.result || [])
+                setSchedulesPagination(result.data?.meta || null)
+            }
+        } catch (error) {
+            console.error("Failed to fetch schedules:", error)
+        } finally {
+            setSchedulesLoading(false)
+        }
+    }
+
     const handlePageChange = (page) => {
         setPage(page)
+    }
+
+    const handleSchedulesPageChange = (page) => {
+        setSchedulesPage(page)
+    }
+
+    const handleSchedulesSortChange = (sort) => {
+        setSchedulesSort(sort)
+        setSchedulesPage(1) // Reset to first page when sorting changes
+    }
+
+    const handleCreateSuccess = () => {
+        // Refresh the schedules list after successful creation
+        fetchSchedules(schedulesPage, schedulesSort)
+    }
+
+    const handleEdit = (plan) => {
+        setSelectedPlan(plan)
+        setEditDialogOpen(true)
+    }
+
+    const handleEditSuccess = (updatedPlan) => {
+        // Optimistic UI update - update the local state without refetching
+        setStudyPlans((prevPlans) =>
+            prevPlans.map((plan) =>
+                plan.id === updatedPlan.id ? updatedPlan : plan
+            )
+        )
+    }
+
+    const handleDelete = (planId) => {
+        // Optimistic UI update - remove the plan from local state
+        setStudyPlans((prevPlans) =>
+            prevPlans.filter((plan) => plan.id !== planId)
+        )
     }
 
     const formatDate = (dateString) => {
@@ -89,16 +134,28 @@ export default function MyCoursesLearningPage() {
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="mb-6">
-                    <TabsTrigger value="courses" className="flex items-center gap-2">
-                        <BookOpen className="w-4 h-4" />
-                        Danh sách khóa học
-                    </TabsTrigger>
-                    <TabsTrigger value="reminders" className="flex items-center gap-2">
-                        <Bell className="w-4 h-4" />
-                        Nhắc nhở học tập
-                    </TabsTrigger>
-                </TabsList>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                    <TabsList className="w-full sm:w-auto">
+                        <TabsTrigger value="courses" className="flex items-center gap-2 flex-1 sm:flex-none">
+                            <BookOpen className="w-4 h-4" />
+                            <span className="hidden sm:inline">Danh sách khóa học</span>
+                            <span className="sm:hidden">Khóa học</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="reminders" className="flex items-center gap-2 flex-1 sm:flex-none">
+                            <Bell className="w-4 h-4" />
+                            <span className="hidden sm:inline">Nhắc nhở học tập</span>
+                            <span className="sm:hidden">Lịch học</span>
+                        </TabsTrigger>
+                    </TabsList>
+
+                    {activeTab === "reminders" && (
+                        <Button onClick={() => setCreateDialogOpen(true)} className="w-full sm:w-auto">
+                            <Plus className="w-4 h-4 mr-2" />
+                            <span className="hidden sm:inline">Tạo kế hoạch mới</span>
+                            <span className="sm:hidden">Tạo kế hoạch</span>
+                        </Button>
+                    )}
+                </div>
 
                 {/* Courses Tab */}
                 <TabsContent value="courses">
@@ -117,9 +174,36 @@ export default function MyCoursesLearningPage() {
 
                 {/* Study Reminders Tab */}
                 <TabsContent value="reminders">
-                    <RemindersList reminders={mockReminders} />
+                    {schedulesLoading ? (
+                        <LoadingSkeleton />
+                    ) : (
+                        <SchedulesList
+                            studyPlans={studyPlans}
+                            pagination={schedulesPagination}
+                            onPageChange={handleSchedulesPageChange}
+                            sortValue={schedulesSort}
+                            onSortChange={handleSchedulesSortChange}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                        />
+                    )}
                 </TabsContent>
             </Tabs>
+
+            {/* Create Schedule Dialog */}
+            <CreateScheduleDialog
+                open={createDialogOpen}
+                onOpenChange={setCreateDialogOpen}
+                onSuccess={handleCreateSuccess}
+            />
+
+            {/* Edit Schedule Dialog */}
+            <EditScheduleDialog
+                open={editDialogOpen}
+                onOpenChange={setEditDialogOpen}
+                onSuccess={handleEditSuccess}
+                studyPlan={selectedPlan}
+            />
         </div>
     )
 }

@@ -15,6 +15,7 @@ import { useLessonNavigation } from "@/hooks/learn-course/use-lesson-navigation"
 import { useQuizState } from "@/hooks/learn-course/use-quiz-state"
 import { useLessonCompletion } from "@/hooks/learn-course/use-lesson-completion"
 import { useCourseProgress } from "@/hooks/learn-course/use-course-progress"
+import { useLessonSequence } from "@/hooks/learn-course/use-lesson-sequence"
 
 export default function LessonPage() {
   const params = useParams()
@@ -54,7 +55,7 @@ export default function LessonPage() {
   } = useQuizState(currentLesson, determinedLessonId)
 
   // Handle lesson completion
-  const { handleToggleComplete } = useLessonCompletion(
+  const { handleToggleComplete, markAsComplete } = useLessonCompletion(
     completedLessons,
     setCompletedLessons,
     setModules,
@@ -64,11 +65,34 @@ export default function LessonPage() {
   // Calculate progress (reactively updates when completedLessons changes)
   const progress = useCourseProgress(modules, completedLessons)
 
+  // Get previous/next lesson navigation
+  const { previousLesson, nextLesson, hasPrevious, hasNext } = useLessonSequence(
+    modules,
+    determinedLessonId
+  )
+
   const isQuizLesson = currentLesson?.kind?.toLowerCase() === "quiz"
 
   const handleLessonClickWithSidebar = (lesson) => {
     handleLessonClick(lesson)
     setSidebarOpen(false)
+  }
+
+  const handlePreviousLesson = () => {
+    if (previousLesson) {
+      handleLessonClick(previousLesson)
+    }
+  }
+
+  const handleNextLesson = () => {
+    // For TEXT lessons, mark as complete when clicking next
+    if (currentLesson?.kind === "TEXT" && currentLesson?.id) {
+      markAsComplete(currentLesson.id, false)
+    }
+
+    if (nextLesson) {
+      handleLessonClick(nextLesson)
+    }
   }
 
   if (loading) {
@@ -111,9 +135,21 @@ export default function LessonPage() {
                 onAnswerSelect={handleAnswerSelect}
                 onSubmit={handleQuizSubmit}
                 onRetake={handleRetakeQuiz}
+                onPrevious={handlePreviousLesson}
+                onNext={handleNextLesson}
+                hasPrevious={hasPrevious}
+                hasNext={hasNext}
+                onMarkComplete={markAsComplete}
               />
             ) : (
-              <VideoLesson lesson={currentLesson} />
+              <VideoLesson
+                lesson={currentLesson}
+                onPrevious={handlePreviousLesson}
+                onNext={handleNextLesson}
+                hasPrevious={hasPrevious}
+                hasNext={hasNext}
+                onMarkComplete={markAsComplete}
+              />
             )}
           </div>
         </div>

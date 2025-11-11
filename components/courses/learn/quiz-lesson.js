@@ -2,30 +2,52 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { CheckCircle2, X } from "lucide-react"
+import LessonNavigation from "./lesson-navigation"
 
-export default function QuizLesson({ 
-  lesson, 
-  selectedAnswers, 
-  quizSubmitted, 
-  onAnswerSelect, 
-  onSubmit, 
-  onRetake 
+export default function QuizLesson({
+  lesson,
+  selectedAnswers,
+  quizSubmitted,
+  onAnswerSelect,
+  onSubmit,
+  onRetake,
+  onPrevious,
+  onNext,
+  hasPrevious,
+  hasNext,
+  onMarkComplete
 }) {
+  const handleNextClick = () => {
+    // Mark as complete if quiz is submitted
+    if (quizSubmitted && onMarkComplete && lesson?.id) {
+      onMarkComplete(lesson.id, false)
+    }
+    if (onNext) {
+      onNext()
+    }
+  }
   if (!lesson) return null
 
   const questions = lesson.content?.body?.questions || []
 
   return (
     <div className="space-y-6">
+      <LessonNavigation
+        onPrevious={onPrevious}
+        onNext={handleNextClick}
+        hasPrevious={hasPrevious}
+        hasNext={hasNext}
+      />
+
       <h1 className="text-3xl font-bold">{lesson.title}</h1>
-      
+
       {lesson.content?.body?.quizzes_content && (
         <div className="border rounded-lg p-6 bg-muted/20">
           <h3 className="font-semibold text-lg mb-4">Mô tả</h3>
           <div
             className="prose prose-sm max-w-none dark:prose-invert"
-            dangerouslySetInnerHTML={{ 
-              __html: lesson.content.body.quizzes_content 
+            dangerouslySetInnerHTML={{
+              __html: lesson.content.body.quizzes_content
             }}
           />
         </div>
@@ -50,7 +72,7 @@ export default function QuizLesson({
                         {q.question}
                       </p>
                       {quizSubmitted && (
-                        <Badge 
+                        <Badge
                           variant={isCorrect ? "default" : "destructive"}
                           className={isCorrect ? "bg-green-500" : ""}
                         >
@@ -58,14 +80,14 @@ export default function QuizLesson({
                         </Badge>
                       )}
                     </div>
-                    
+
                     <div className="space-y-3">
                       {q.options.map((opt, i) => {
                         const isSelected = selectedOption === i
                         const isCorrectAnswer = i === correctOption
-                        
+
                         let buttonClass = "w-full text-left p-4 rounded-lg border-2 transition-all "
-                        
+
                         if (quizSubmitted) {
                           if (isCorrectAnswer) {
                             buttonClass += "bg-green-50 border-green-500 dark:bg-green-950/50 "
@@ -90,11 +112,10 @@ export default function QuizLesson({
                             className={buttonClass}
                           >
                             <div className="flex items-center gap-3">
-                              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                                isSelected 
-                                  ? "border-primary bg-primary" 
-                                  : "border-muted-foreground"
-                              }`}>
+                              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isSelected
+                                ? "border-primary bg-primary"
+                                : "border-muted-foreground"
+                                }`}>
                                 {isSelected && (
                                   <div className="w-2 h-2 rounded-full bg-white" />
                                 )}
@@ -122,7 +143,7 @@ export default function QuizLesson({
             <div className="text-sm text-muted-foreground">
               {quizSubmitted ? (
                 <span className="font-medium">
-                  Kết quả: {Object.keys(selectedAnswers).filter((key) => 
+                  Kết quả: {Object.keys(selectedAnswers).filter((key) =>
                     selectedAnswers[key] === questions[key].answer
                   ).length}/{questions.length} câu đúng
                 </span>
@@ -132,14 +153,14 @@ export default function QuizLesson({
                 </span>
               )}
             </div>
-            
+
             <div className="flex gap-3">
               {quizSubmitted ? (
                 <Button onClick={onRetake} variant="outline">
                   Làm lại
                 </Button>
               ) : (
-                <Button 
+                <Button
                   onClick={onSubmit}
                   disabled={Object.keys(selectedAnswers).length < questions.length}
                 >

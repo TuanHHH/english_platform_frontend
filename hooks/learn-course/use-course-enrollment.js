@@ -99,7 +99,14 @@ export function useCourseEnrollment(slug, lessonIdFromUrl) {
         }
 
         fetchEnrollmentData()
-    }, [slug, lessonIdFromUrl, router])
+    }, [slug, router])
+
+    // Separate effect to update determinedLessonId when URL changes
+    useEffect(() => {
+        if (lessonIdFromUrl && modules.length > 0) {
+            setDeterminedLessonId(lessonIdFromUrl)
+        }
+    }, [lessonIdFromUrl, modules.length])
 
     return {
         enrollmentData,

@@ -2,12 +2,16 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getAdminInstructorRequests } from "@/lib/api/instructor";
+import { Button } from "@/components/ui/button";
+import { getAdminInstructorRequests, getInstructorList } from "@/lib/api/instructor";
 import { toast } from "sonner";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 // Import subcomponents
 import InstructorRequestList from "@/components/admin/instructor-management/instructor-request-list";
 import InstructorFilters from "@/components/admin/instructor-management/instructor-filters";
+import InstructorListSection from "@/components/admin/instructor-management/instructor-list-section";
+import InstructorListFilters from "@/components/admin/instructor-management/instructor-list-filters";
 
 const InstructorManagement = () => {
   const [instructorRequests, setInstructorRequests] = useState([]);
@@ -19,7 +23,6 @@ const InstructorManagement = () => {
 
   const setPage = (newPage) => {
     if (newPage < 1) {
-      console.error("[BLOCKED] Attempted to set page to", newPage);
       return;
     }
     setPageInternal(newPage);
@@ -29,12 +32,37 @@ const InstructorManagement = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
 
+  // Instructor list states
+  const [instructors, setInstructors] = useState([]);
+  const [instructorPage, setInstructorPageInternal] = useState(1);
+
+  const setInstructorPage = (newPage) => {
+    if (newPage < 1) {
+      console.error("[BLOCKED] Attempted to set instructor page to", newPage);
+      return;
+    }
+    setInstructorPageInternal(newPage);
+  };
+
+  const [instructorTotalPages, setInstructorTotalPages] = useState(1);
+  const [instructorSortField, setInstructorSortField] = useState("createdAt");
+  const [instructorSortDir, setInstructorSortDir] = useState("asc");
+  const [instructorSearch, setInstructorSearch] = useState("");
+  const [instructorDebouncedSearch, setInstructorDebouncedSearch] = useState("");
+  const [instructorLoading, setInstructorLoading] = useState(false);
+  const [showInstructorList, setShowInstructorList] = useState(false);
+
   const isMounted = useRef(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 1000);
     return () => clearTimeout(timer);
   }, [search]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setInstructorDebouncedSearch(instructorSearch), 1000);
+    return () => clearTimeout(timer);
+  }, [instructorSearch]);
 
   // === Fetch API ===
   const fetchInstructorRequests = async () => {
@@ -60,10 +88,41 @@ const InstructorManagement = () => {
     }
   };
 
+  // === Fetch Instructor List ===
+  const fetchInstructors = async () => {
+    setInstructorLoading(true);
+
+    try {
+      const { success, data } = await getInstructorList(
+        instructorPage,
+        pageSize,
+        instructorSortField,
+        instructorSortDir,
+        instructorDebouncedSearch || null
+      );
+
+      if (success && data) {
+        setInstructors(data.result ?? []);
+        setInstructorTotalPages(data.meta?.pages ?? 1);
+      }
+    } catch (error) {
+      console.error("[ERROR] Fetching instructors:", error);
+      toast.error("Lấy danh sách giảng viên thất bại");
+    } finally {
+      setInstructorLoading(false);
+    }
+  };
+
   // Only fetch when dependencies change
   useEffect(() => {
     fetchInstructorRequests();
   }, [page, status, sortDir]);
+
+  useEffect(() => {
+    if (showInstructorList) {
+      fetchInstructors();
+    }
+  }, [instructorPage, instructorSortField, instructorSortDir, instructorDebouncedSearch, showInstructorList]);
 
   useEffect(() => {
     if (!isMounted.current) {
@@ -101,6 +160,26 @@ const InstructorManagement = () => {
     setPage(1);
   };
 
+  // Instructor list handlers
+  const handleInstructorSearchChange = (value) => {
+    setInstructorSearch(value);
+    setInstructorPage(1);
+  };
+
+  const handleInstructorSortFieldChange = (value) => {
+    setInstructorSortField(value);
+    setInstructorPage(1);
+  };
+
+  const handleInstructorSortDirToggle = () => {
+    setInstructorSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    setInstructorPage(1);
+  };
+
+  const handleToggleInstructorList = () => {
+    setShowInstructorList((prev) => !prev);
+  };
+
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-8">
@@ -131,6 +210,49 @@ const InstructorManagement = () => {
             onPageChange={setPage}
           />
         </CardContent>
+      </Card>
+
+      <Card className="mt-8">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Danh sách Giảng viên</CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleToggleInstructorList}
+            className="flex items-center gap-2"
+          >
+            {showInstructorList ? (
+              <>
+                <ChevronUp className="h-4 w-4" />
+                Ẩn
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-4 w-4" />
+                Hiển thị
+              </>
+            )}
+          </Button>
+        </CardHeader>
+        {showInstructorList && (
+          <CardContent>
+            <InstructorListFilters
+              search={instructorSearch}
+              onSearchChange={handleInstructorSearchChange}
+              sortField={instructorSortField}
+              onSortFieldChange={handleInstructorSortFieldChange}
+              sortDir={instructorSortDir}
+              onSortDirToggle={handleInstructorSortDirToggle}
+            />
+            <InstructorListSection
+              instructors={instructors}
+              loading={instructorLoading}
+              currentPage={instructorPage}
+              totalPages={instructorTotalPages}
+              onPageChange={setInstructorPage}
+            />
+          </CardContent>
+        )}
       </Card>
     </div>
   );
