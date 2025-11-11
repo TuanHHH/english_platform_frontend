@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Plus, Trash2, Calendar, Clock } from "lucide-react"
 import { updateStudyPlan } from "@/lib/api/schedule"
-import { updateStudyPlanSchema } from "@/lib/validations/study-plan"
+import { updateStudyPlanSchema } from "@/schema/study-plan"
 
 export default function EditScheduleDialog({ open, onOpenChange, onSuccess, studyPlan }) {
     const {
@@ -199,112 +199,112 @@ export default function EditScheduleDialog({ open, onOpenChange, onSuccess, stud
                             const hasDbId = watchedSchedules?.[index]?.id
 
                             return (
-                            <div
-                                key={field.id}
-                                className="p-4 border rounded-lg space-y-3 bg-muted/40"
-                            >
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm font-medium">
-                                        Plan #{index + 1}
-                                        {hasDbId && <span className="text-xs text-muted-foreground ml-2">(Đã tồn tại)</span>}
-                                        {!hasDbId && <span className="text-xs text-green-600 ml-2">(Mới)</span>}
-                                    </span>
-                                    {fields.length > 1 && (
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => remove(index)}
-                                            disabled={isSubmitting}
-                                        >
-                                            <Trash2 className="w-4 h-4 text-red-500" />
-                                        </Button>
-                                    )}
-                                </div>
-
-                                {/* Hidden ID field to preserve existing schedule IDs */}
-                                <input type="hidden" {...register(`schedules.${index}.id`)} />
-
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="space-y-2">
-                                        <Label htmlFor={`schedules.${index}.startTime`}>
-                                            <Calendar className="w-3 h-3 inline mr-1" />
-                                            Thời gian bắt đầu
-                                        </Label>
-                                        <Input
-                                            id={`schedules.${index}.startTime`}
-                                            type="datetime-local"
-                                            {...register(`schedules.${index}.startTime`)}
-                                            disabled={isSubmitting}
-                                        />
-                                        {errors.schedules?.[index]?.startTime && (
-                                            <p className="text-xs text-red-500">
-                                                {errors.schedules[index].startTime.message}
-                                            </p>
+                                <div
+                                    key={field.id}
+                                    className="p-4 border rounded-lg space-y-3 bg-muted/40"
+                                >
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-sm font-medium">
+                                            Plan #{index + 1}
+                                            {hasDbId && <span className="text-xs text-muted-foreground ml-2">(Đã tồn tại)</span>}
+                                            {!hasDbId && <span className="text-xs text-green-600 ml-2">(Mới)</span>}
+                                        </span>
+                                        {fields.length > 1 && (
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => remove(index)}
+                                                disabled={isSubmitting}
+                                            >
+                                                <Trash2 className="w-4 h-4 text-red-500" />
+                                            </Button>
                                         )}
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor={`schedules.${index}.durationMin`}>
-                                            <Clock className="w-3 h-3 inline mr-1" />
-                                            Thời lượng (phút)
-                                        </Label>
-                                        <Input
-                                            id={`schedules.${index}.durationMin`}
-                                            type="number"
-                                            min="1"
-                                            placeholder="60"
-                                            {...register(`schedules.${index}.durationMin`)}
-                                            disabled={isSubmitting}
-                                        />
-                                        {errors.schedules?.[index]?.durationMin && (
-                                            <p className="text-xs text-red-500">
-                                                {errors.schedules[index].durationMin.message}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
+                                    {/* Hidden ID field to preserve existing schedule IDs */}
+                                    <input type="hidden" {...register(`schedules.${index}.id`)} />
 
-                                <div className="space-y-2">
-                                    <Label htmlFor={`schedules.${index}.taskDesc`}>
-                                        Mô tả nhiệm vụ
-                                    </Label>
-                                    <Textarea
-                                        id={`schedules.${index}.taskDesc`}
-                                        placeholder="Ví dụ: Làm riêng từng part bạn muốn luyện tập - Part 1 & 2"
-                                        {...register(`schedules.${index}.taskDesc`)}
-                                        disabled={isSubmitting}
-                                        rows={2}
-                                    />
-                                    {errors.schedules?.[index]?.taskDesc && (
-                                        <p className="text-xs text-red-500">
-                                            {errors.schedules[index].taskDesc.message}
-                                        </p>
-                                    )}
-                                </div>
-
-                                {/* Sync to Google Calendar */}
-                                <div className="flex items-center space-x-2">
-                                    <Controller
-                                        name={`schedules.${index}.syncToCalendar`}
-                                        control={control}
-                                        render={({ field }) => (
-                                            <Checkbox
-                                                id={`schedules.${index}.syncToCalendar`}
-                                                checked={field.value}
-                                                onCheckedChange={field.onChange}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="space-y-2">
+                                            <Label htmlFor={`schedules.${index}.startTime`}>
+                                                <Calendar className="w-3 h-3 inline mr-1" />
+                                                Thời gian bắt đầu
+                                            </Label>
+                                            <Input
+                                                id={`schedules.${index}.startTime`}
+                                                type="datetime-local"
+                                                {...register(`schedules.${index}.startTime`)}
                                                 disabled={isSubmitting}
                                             />
+                                            {errors.schedules?.[index]?.startTime && (
+                                                <p className="text-xs text-red-500">
+                                                    {errors.schedules[index].startTime.message}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor={`schedules.${index}.durationMin`}>
+                                                <Clock className="w-3 h-3 inline mr-1" />
+                                                Thời lượng (phút)
+                                            </Label>
+                                            <Input
+                                                id={`schedules.${index}.durationMin`}
+                                                type="number"
+                                                min="1"
+                                                placeholder="60"
+                                                {...register(`schedules.${index}.durationMin`)}
+                                                disabled={isSubmitting}
+                                            />
+                                            {errors.schedules?.[index]?.durationMin && (
+                                                <p className="text-xs text-red-500">
+                                                    {errors.schedules[index].durationMin.message}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor={`schedules.${index}.taskDesc`}>
+                                            Mô tả nhiệm vụ
+                                        </Label>
+                                        <Textarea
+                                            id={`schedules.${index}.taskDesc`}
+                                            placeholder="Ví dụ: Làm riêng từng part bạn muốn luyện tập - Part 1 & 2"
+                                            {...register(`schedules.${index}.taskDesc`)}
+                                            disabled={isSubmitting}
+                                            rows={2}
+                                        />
+                                        {errors.schedules?.[index]?.taskDesc && (
+                                            <p className="text-xs text-red-500">
+                                                {errors.schedules[index].taskDesc.message}
+                                            </p>
                                         )}
-                                    />
-                                    <Label
-                                        htmlFor={`schedules.${index}.syncToCalendar`}
-                                        className="text-sm font-normal cursor-pointer"
-                                    >
-                                        Đồng bộ với Google Calendar
-                                    </Label>
+                                    </div>
+
+                                    {/* Sync to Google Calendar */}
+                                    <div className="flex items-center space-x-2">
+                                        <Controller
+                                            name={`schedules.${index}.syncToCalendar`}
+                                            control={control}
+                                            render={({ field }) => (
+                                                <Checkbox
+                                                    id={`schedules.${index}.syncToCalendar`}
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                    disabled={isSubmitting}
+                                                />
+                                            )}
+                                        />
+                                        <Label
+                                            htmlFor={`schedules.${index}.syncToCalendar`}
+                                            className="text-sm font-normal cursor-pointer"
+                                        >
+                                            Đồng bộ với Google Calendar
+                                        </Label>
+                                    </div>
                                 </div>
-                            </div>
                             )
                         })}
                     </div>

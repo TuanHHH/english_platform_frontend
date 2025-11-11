@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Plus, Trash2, Calendar, Clock } from "lucide-react"
 import { createStudyPlan } from "@/lib/api/schedule"
-import { createStudyPlanSchema } from "@/lib/validations/study-plan"
+import { createStudyPlanSchema } from "@/schema/study-plan"
 
 export default function CreateScheduleDialog({ open, onOpenChange, onSuccess }) {
     const {
