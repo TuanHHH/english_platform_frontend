@@ -1,10 +1,13 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useAuthStore } from "@/store/auth-store";
+import { appCreateComment, appDeleteComment } from "@/lib/api/content/comments";
 
-// Lấy tên & avatar từ nhiều kiểu field khác nhau để khớp mọi payload backend
+// ---- Helpers to read inconsistent backend fields safely ----
 function displayNameOf(c) {
   return (
     c?.author?.fullName ||
@@ -17,66 +20,252 @@ function displayNameOf(c) {
 function avatarOf(c) {
   return (
     c?.author?.avatarUrl ||
-    c?.authorAvatarUrl ||
     c?.author?.avatar ||
-    c?.avatarUrl ||
+    c?.authorAvatarUrl ||
+    c?.author_avatar_url ||
     null
   );
 }
+function authorIdOf(c) {
+  return c?.author?.id ?? c?.authorId ?? c?.author_id ?? null;
+}
 function initials(name) {
-  if (!name) return "U";
-  const parts = name.trim().split(/\s+/);
-  const a = parts[0]?.[0] ?? "";
-  const b = parts.length > 1 ? parts[parts.length - 1]?.[0] : "";
-  return (a + b || a).toUpperCase();
+  if (!name) return "A";
+  const parts = (name || "").trim().split(/\s+/);
+  const first = parts[0]?.[0] || "";
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
+  return (first + last).toUpperCase() || (first || "A").toUpperCase();
 }
 
-export default function CommentList({ postId, initial, onCreate }) {
-  const [body, setBody] = useState("");
+// ---- Single comment item (both level-1 and level-2) ----
+function CommentItem({ c, isOwner, onDelete, children, onReplyClick, canReply }) {
+  const name = displayNameOf(c);
+  const avatar = avatarOf(c);
+  const createdAt = c.createdAt ? new Date(c.createdAt).toLocaleString() : "";
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-3">
-        {initial?.map((c) => {
-          const name = displayNameOf(c);
-          const avatar = avatarOf(c);
-          return (
-            <div key={c.id} className="rounded-md border p-3">
-              <div className="flex items-center gap-3 mb-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={avatar ?? undefined} alt={name} />
-                  <AvatarFallback>{initials(name)}</AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col">
-                  <div className="text-sm font-medium">{name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {c.createdAt ? new Date(c.createdAt).toLocaleString() : ""}
-                  </div>
-                </div>
-              </div>
-              <div className="whitespace-pre-wrap text-sm">{c.bodyMd}</div>
-            </div>
-          );
-        })}
+    <div className="flex gap-3 py-3">
+      <Avatar className="h-8 w-8 shrink-0">
+        <AvatarImage src={avatar ?? undefined} alt={name} />
+        <AvatarFallback>{initials(name)}</AvatarFallback>
+      </Avatar>
+      <div className="flex-1">
+        <div className="flex items-center gap-2">
+          <div className="text-sm font-medium">{name}</div>
+          <div className="text-xs text-muted-foreground">{createdAt}</div>
+          <div className="ml-auto flex items-center gap-2">
+            {canReply && (
+              <button
+                className="text-xs underline"
+                onClick={onReplyClick}
+              >
+                Trả lời
+              </button>
+            )}
+            {isOwner && (
+              <button
+                className="text-xs text-red-600 underline"
+                onClick={() => onDelete?.(c)}
+              >
+                Xóa
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="whitespace-pre-wrap text-sm mt-1">{c.bodyMd || c.body || ""}</div>
+        {children}
       </div>
+    </div>
+  );
+}
 
-      {onCreate && (
-        <form
-          className="space-y-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            onCreate({ bodyMd: body });
-            setBody("");
-          }}
-        >
-          <Textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder="Viết bình luận..."
-          />
-          <Button type="submit">Gửi bình luận</Button>
-        </form>
+// ---- Inline reply form (only level-1 can be replied to) ----
+function InlineReplyForm({ onSubmit, onCancel, loading }) {
+  const [body, setBody] = useState("");
+  return (
+    <form
+      className="mt-2 flex flex-col gap-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!body.trim()) return;
+        onSubmit?.(body);
+        setBody("");
+      }}
+    >
+      <Textarea
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        placeholder="Viết phản hồi..."
+        rows={3}
+      />
+      <div className="flex gap-2">
+        <Button type="submit" disabled={loading}>Gửi</Button>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
+          Hủy
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+// ---- Main CommentList for Blog with 2-level threading ----
+export default function CommentList({ postId, initial = [], onCreate }) {
+  const user = useAuthStore(s => s.user);
+  const isLoggedIn = useAuthStore(s => s.isLoggedIn);
+
+  const [items, setItems] = useState(initial || []);
+  const [creatingTop, setCreatingTop] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyLoading, setReplyLoading] = useState(false);
+  const myId = user?.id;
+
+  // Cập nhật items khi initial thay đổi (từ pagination)
+  useEffect(() => {
+    setItems(initial || []);
+  }, [initial]);
+
+  // Group into 2 levels: top-level (no parentId) and replies (parentId refers to top-level)
+  const { topLevel, childrenMap } = useMemo(() => {
+    const tops = [];
+    const map = {};
+    for (const c of items) {
+      const pid = c.parentId ?? c.parent_id ?? null;
+      if (!pid) {
+        tops.push(c);
+      } else {
+        if (!map[pid]) map[pid] = [];
+        map[pid].push(c);
+      }
+    }
+    const byTime = (a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+    tops.sort(byTime);
+    Object.values(map).forEach(arr => arr.sort(byTime));
+    return { topLevel: tops, childrenMap: map };
+  }, [items]);
+
+  async function handleDelete(comment) {
+    if (!comment?.id) return;
+    const ok = typeof window !== "undefined" ? window.confirm("Bạn có chắc muốn xóa bình luận này?") : true;
+    if (!ok) return;
+    try {
+      await appDeleteComment(comment.id);
+      setItems(prev => prev.filter(x => x.id !== comment.id));
+    } catch (e) {
+      console.error(e);
+      toast.error("Xóa bình luận thất bại.");
+    }
+  }
+
+  async function handleReply(parent, body) {
+    if (!parent?.id) return;
+    setReplyLoading(true);
+    try {
+      const payload = { bodyMd: body, parentId: parent.id };
+      const created = await appCreateComment(postId, payload);
+      setItems(prev => [...prev, created]);
+      setReplyingTo(null);
+    } catch (e) {
+      console.error(e);
+      toast.error("Gửi phản hồi thất bại. Vui lòng thử lại.");
+    } finally {
+      setReplyLoading(false);
+    }
+  }
+
+  async function handleCreateTop(e, body, setBody) {
+    e.preventDefault();
+    if (!body.trim()) return;
+    setCreatingTop(true);
+    try {
+      if (onCreate) {
+        const created = await onCreate({ bodyMd: body });
+        if (created) setItems(prev => [...prev, created]);
+      } else {
+        const created = await appCreateComment(postId, { bodyMd: body });
+        setItems(prev => [...prev, created]);
+      }
+      setBody("");
+    } catch (e) {
+      console.error(e);
+      toast.error("Gửi phản hồi thất bại");
+    } finally {
+      setCreatingTop(false);
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      {/* Existing comments */}
+      {topLevel.map((c) => {
+        const isOwner = myId && authorIdOf(c) && String(authorIdOf(c)) === String(myId);
+        const replies = childrenMap[c.id] || [];
+        const canReply = isLoggedIn;
+        return (
+          <div key={c.id || Math.random()} className="border-b pb-3">
+            <CommentItem
+              c={c}
+              isOwner={!!isOwner}
+              onDelete={handleDelete}
+              canReply={canReply}
+              onReplyClick={() => setReplyingTo(c)}
+            >
+              {/* Level-2 list */}
+              {replies.length > 0 && (
+                <div className="mt-2 ml-8 space-y-2">
+                  {replies.map((r) => {
+                    const rOwner = myId && authorIdOf(r) && String(authorIdOf(r)) === String(myId);
+                    return (
+                      <CommentItem
+                        key={r.id || Math.random()}
+                        c={r}
+                        isOwner={!!rOwner}
+                        onDelete={handleDelete}
+                        canReply={false}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Inline reply form (only for level-1) */}
+              {replyingTo?.id === c.id && (
+                <div className="mt-2 ml-8">
+                  <InlineReplyForm
+                    loading={replyLoading}
+                    onCancel={() => setReplyingTo(null)}
+                    onSubmit={(body) => handleReply(c, body)}
+                  />
+                </div>
+              )}
+            </CommentItem>
+          </div>
+        );
+      })}
+
+      {/* Top-level create form */}
+      {isLoggedIn ? (
+        <TopLevelCreateForm onSubmit={handleCreateTop} creating={creatingTop} />
+      ) : (
+        <div className="text-sm text-muted-foreground">Bạn cần đăng nhập để bình luận.</div>
       )}
     </div>
+  );
+}
+
+// Extracted top-level create form for clarity
+function TopLevelCreateForm({ onSubmit, creating }) {
+  const [body, setBody] = useState("");
+  return (
+    <form className="mt-2 flex flex-col gap-2" onSubmit={(e) => onSubmit(e, body, setBody)}>
+      <Textarea
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        placeholder="Viết bình luận..."
+        rows={3}
+      />
+      <div>
+        <Button type="submit" disabled={creating}>Gửi bình luận</Button>
+      </div>
+    </form>
   );
 }

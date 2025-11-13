@@ -2,6 +2,15 @@
 
 import { useEffect, useMemo, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { getPublicQuiz } from "@/lib/api/quiz/quiz";
 import { submitOneShot } from "@/lib/api/assessment/attempt";
@@ -17,6 +26,10 @@ export default function PracticePage() {
   const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // State cho warning dialog
+  const [warningDialogOpen, setWarningDialogOpen] = useState(false);
+  const [warningMessage, setWarningMessage] = useState("");
 
   // để cuộn về kết quả nếu bạn muốn giữ lại flow xem tại chỗ (ở bản này sẽ redirect)
   const resultRef = useRef(null);
@@ -73,14 +86,20 @@ export default function PracticePage() {
 
   const onSubmit = async () => {
     if (answered < total) {
-      const ok = confirm(
+      setWarningMessage(
         `Bạn mới trả lời ${answered}/${total} câu. Vẫn nộp bài?`
       );
-      if (!ok) return;
+      setWarningDialogOpen(true);
+      return;
     }
 
+    await handleSubmit();
+  };
+
+  const handleSubmit = async () => {
     try {
       setLoading(true);
+      setWarningDialogOpen(false);
 
       // Chuẩn payload theo attempt submit
       const payloadAnswers = questions.map((q) => ({
@@ -107,7 +126,8 @@ export default function PracticePage() {
       }
     } catch (e) {
       console.error("Submit failed:", e);
-      alert("Nộp bài thất bại. Vui lòng thử lại.");
+      setWarningMessage("Nộp bài thất bại. Vui lòng thử lại.");
+      setWarningDialogOpen(true);
     } finally {
       setLoading(false);
     }
@@ -260,6 +280,23 @@ export default function PracticePage() {
           </div>
         </div>
       </>
+
+      {/* Warning dialog - chỉ hiển thị thông báo */}
+      <AlertDialog open={warningDialogOpen} onOpenChange={setWarningDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Thông báo</AlertDialogTitle>
+            <AlertDialogDescription>
+              {warningMessage}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setWarningDialogOpen(false)}>
+              Đồng ý
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

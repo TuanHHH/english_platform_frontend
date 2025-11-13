@@ -4,6 +4,16 @@ import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import Editor from "@/components/content/editor";
 import Link from "next/link";
 import { getQuiz, updateQuiz } from "@/lib/api/quiz/quiz";
@@ -31,6 +41,10 @@ export default function QuizQuestionsWithContextPage() {
   const [questions, setQuestions] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  // State cho delete confirmation dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [questionToDelete, setQuestionToDelete] = useState(null);
 
   // Tính toán orderIndex cao nhất
   const maxOrderIndex = useMemo(() => {
@@ -79,11 +93,20 @@ export default function QuizQuestionsWithContextPage() {
     }
   }
 
-  async function onDeleteQuestion(id) {
-    if (!confirm("Xóa câu hỏi này?")) return;
+  // Hàm mở dialog xác nhận xóa
+  function openDeleteDialog(question) {
+    setQuestionToDelete(question);
+    setDeleteDialogOpen(true);
+  }
+
+  // Hàm xử lý xóa sau khi xác nhận
+  async function handleDeleteQuestion() {
+    if (!questionToDelete) return;
     try {
-      await deleteQuestion(id);
+      await deleteQuestion(questionToDelete.id);
       toast.success("Đã xóa câu hỏi.");
+      setDeleteDialogOpen(false);
+      setQuestionToDelete(null);
       loadAll(page);
     } catch (e) {
       toast.error(e?.message || "Không xóa được câu hỏi.");
@@ -259,7 +282,7 @@ export default function QuizQuestionsWithContextPage() {
                           <Button
                             size="sm"
                             variant="destructive"
-                            onClick={() => onDeleteQuestion(q.id)}
+                            onClick={() => openDeleteDialog(q)}
                           >
                             🗑️ Xóa
                           </Button>
@@ -333,6 +356,31 @@ export default function QuizQuestionsWithContextPage() {
           </Card>
         </div>
       </main>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa câu hỏi</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa câu hỏi{" "}
+              <strong>
+                #{questionToDelete?.orderIndex || ""} 
+              </strong>
+              ? Hành động này không thể hoàn tác và sẽ xóa cả các đáp án liên quan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteQuestion} 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -5,7 +5,18 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { forumGetThreadBySlug, forumListThreadPosts } from "@/lib/api/forum/forum";
 import { Pagination } from "@/components/ui/pagination";
 import ReplyForm from "@/components/forum/reply-form";
+import ReplyToPostForm from "@/components/forum/reply-to-post-form";
 import ReportDialog from "@/components/forum/report-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   appReportPost,
   appReportThread,
@@ -23,11 +34,16 @@ export default function ThreadDetailPage() {
   const [thread, setThread] = useState(null);
   const [posts, setPosts] = useState([]);
   const [meta, setMeta] = useState({ page: 1, pages: 0 });
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1); 
+  const [replyingPostId, setReplyingPostId] = useState(null);
 
   const [reportOpen, setReportOpen] = useState(false);
-  const [reportTarget, setReportTarget] = useState(null); // {type:"post"|"thread", id:string}
+  const [reportTarget, setReportTarget] = useState(null);
   const [reportLoading, setReportLoading] = useState(false);
+
+  // State cho delete confirmation dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [postToDelete, setPostToDelete] = useState(null);
 
   const pageSize = 20;
 
@@ -36,7 +52,7 @@ export default function ThreadDetailPage() {
   const hydrateFromMe = useAuthStore((s) => s.hydrateFromMe);
   const fetchMe = useAuthStore((s) => s.fetchMe);
   useEffect(() => {
-    (hydrateFromMe || fetchMe)?.(); // nếu store có sẵn, hydrate user một lần
+    (hydrateFromMe || fetchMe)?.();
   }, [hydrateFromMe, fetchMe]);
 
   // So sánh ID an toàn
@@ -50,13 +66,13 @@ export default function ThreadDetailPage() {
   }
   async function loadPosts(p = page) {
     if (!thread?.id) return;
-    const { items, meta } = await forumListThreadPosts(thread.id, { page: p + 1, pageSize });
+    const { items, meta } = await forumListThreadPosts(thread.id, { page: p, pageSize }); 
     setPosts(items || []);
-    setMeta(meta || { page: p + 1, pages: 0 });
+    setMeta(meta || { page: p, pages: 0 }); 
   }
 
   useEffect(() => { load(); }, [slug]);
-  useEffect(() => { setPage(0); }, [thread?.id]);
+  useEffect(() => { setPage(1); }, [thread?.id]); 
   useEffect(() => { loadPosts(page); }, [page, thread?.id]);
 
   function openReportDialog(target) {
@@ -76,6 +92,26 @@ export default function ThreadDetailPage() {
       toast.error("Gửi báo cáo thất bại. Vui lòng thử lại.");
     } finally {
       setReportLoading(false);
+    }
+  }
+
+  // Hàm xử lý xóa post
+  function openDeleteDialog(postId) {
+    setPostToDelete(postId);
+    setDeleteDialogOpen(true);
+  }
+
+  async function handleDeletePost() {
+    if (!postToDelete) return;
+    try {
+      await appDeleteOwnPost(postToDelete);
+      toast.success("Đã xóa phản hồi");
+      setDeleteDialogOpen(false);
+      setPostToDelete(null);
+      await loadPosts(1);
+    } catch (e) {
+      console.error(e);
+      toast.error("Xóa phản hồi thất bại");
     }
   }
 
@@ -144,50 +180,138 @@ export default function ThreadDetailPage() {
         </CardHeader>
 
         <CardContent className="grid gap-3">
-          {posts.map((p) => (
-            <div key={p.id} className="border rounded-md p-3">
-              <div className="text-xs text-muted-foreground mb-1">
-                <span className="inline-flex items-center gap-2">
-                  <img src={p.authorAvatarUrl || "/avatar.svg"} className="w-5 h-5 rounded-full object-cover" alt=""/>
-                  {p.authorName || "Ẩn danh"}
-                </span>
-                {" • "}
-                {p.createdAt ? new Date(p.createdAt).toLocaleString() : ""}
-              </div>
+          {/* Hiển thị bình luận 2 cấp (cấp 1 + trả lời cấp 2) */}
+          {(() => {
+            // Tạo map parentId -> danh sách con
+            const byParent = new Map();
+            (posts || []).forEach(p => {
+              const key = p.parentId ? String(p.parentId) : null;
+              const arr = byParent.get(key) || [];
+              arr.push(p);
+              byParent.set(key, arr);
+            });
+            const roots = byParent.get(null) || [];
 
-              <div className="whitespace-pre-wrap">{p.bodyMd}</div>
+            return roots.map((p) => {
+              const children = byParent.get(String(p.id)) || [];
+              return (
+                <div key={p.id} className="border rounded-md p-3">
+                  <div className="text-xs text-muted-foreground mb-1">
+                    <span className="inline-flex items-center gap-2">
+                      <img src={p.authorAvatarUrl || "/avatar.svg"} className="w-5 h-5 rounded-full object-cover" alt=""/>
+                      {p.authorName || "Ẩn danh"}
+                    </span>
+                    {" • "}
+                    {p.createdAt ? new Date(p.createdAt).toLocaleString() : ""}
+                  </div>
 
-              <div className="mt-2">
-                {/* Xóa phản hồi: chỉ chủ comment */}
-                {eqIds(user?.id, p.authorId) && (
-                  <button
-                    className="text-xs mr-3 hover:underline"
-                    onClick={async () => {
-                      if (!confirm("Xóa phản hồi này?")) return;
-                      await appDeleteOwnPost(p.id);
-                      toast.success("Đã xóa phản hồi");
-                      await loadPosts(0);
-                    }}
-                  >
-                    Xóa
-                  </button>
-                )}
+                  <div className="whitespace-pre-wrap">{p.bodyMd}</div>
 
-                {/* Báo cáo comment: KHÔNG hiển thị nếu là chủ comment */}
-                {!eqIds(user?.id, p.authorId) && (
-                  <button
-                    onClick={() => openReportDialog({ type: "post", id: p.id })}
-                    className="text-xs text-destructive hover:underline"
-                  >
-                    Báo cáo
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-          {posts.length === 0 && <div className="text-sm text-muted-foreground">Chưa có phản hồi.</div>}
+                  <div className="mt-2 flex flex-wrap gap-3 items-center">
+                    {/* Xóa phản hồi: chỉ chủ comment */}
+                    {eqIds(user?.id, p.authorId) && (
+                      <button
+                        className="text-xs hover:underline"
+                        onClick={() => openDeleteDialog(p.id)}
+                      >
+                        Xóa
+                      </button>
+                    )}
+
+                    {/* Báo cáo comment: KHÔNG hiển thị nếu là chủ comment */}
+                    {!eqIds(user?.id, p.authorId) && (
+                      <button
+                        onClick={() => openReportDialog({ type: "post", id: p.id })}
+                        className="text-xs text-destructive hover:underline"
+                      >
+                        Báo cáo
+                      </button>
+                    )}
+
+                    {/* Trả lời cấp 2: chỉ cho cấp 1 và khi thread chưa khóa */}
+                    {!thread?.locked && (
+                      <button
+                        className="text-xs hover:underline"
+                        onClick={() => setReplyingPostId(replyingPostId === p.id ? null : p.id)}
+                      >
+                        {replyingPostId === p.id ? "Đóng trả lời" : "Trả lời"}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Form trả lời cấp 2 */}
+                  {!thread?.locked && replyingPostId === p.id && (
+                    <div className="mt-3">
+                      <ReplyToPostForm
+                        threadId={thread.id}
+                        parentPostId={p.id}
+                        onDone={async () => { setReplyingPostId(null); await loadPosts(1); }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Danh sách trả lời (cấp 2) */}
+                  {children?.length > 0 && (
+                    <div className="mt-3 space-y-3">
+                      {children.map((c) => (
+                        <div key={c.id} className="ml-6 pl-3 border-l">
+                          <div className="text-xs text-muted-foreground mb-1">
+                            <span className="inline-flex items-center gap-2">
+                              <img src={c.authorAvatarUrl || "/avatar.svg"} className="w-4 h-4 rounded-full object-cover" alt=""/>
+                              {c.authorName || "Ẩn danh"}
+                            </span>
+                            {" • "}
+                            {c.createdAt ? new Date(c.createdAt).toLocaleString() : ""}
+                          </div>
+                          <div className="whitespace-pre-wrap">{c.bodyMd}</div>
+                          <div className="mt-2">
+                            {/* Xóa: chỉ chủ comment */}
+                            {eqIds(user?.id, c.authorId) && (
+                              <button
+                                className="text-xs hover:underline mr-3"
+                                onClick={() => openDeleteDialog(c.id)}
+                              >
+                                Xóa
+                              </button>
+                            )}
+                            {/* Báo cáo: KHÔNG hiển thị nếu là chủ comment */}
+                            {!eqIds(user?.id, c.authorId) && (
+                              <button
+                                onClick={() => openReportDialog({ type: "post", id: c.id })}
+                                className="text-xs text-destructive hover:underline"
+                              >
+                                Báo cáo
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            });
+          })()}
         </CardContent>
       </Card>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa phản hồi</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa phản hồi này? Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeletePost} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Report dialog (thread/post) */}
       <ReportDialog
@@ -203,7 +327,7 @@ export default function ThreadDetailPage() {
         <Card>
           <CardHeader><CardTitle>Trả lời</CardTitle></CardHeader>
           <CardContent>
-            <ReplyForm threadId={thread.id} onDone={() => loadPosts(0)} />
+            <ReplyForm threadId={thread.id} onDone={() => loadPosts(1)} /> 
           </CardContent>
         </Card>
       )}
