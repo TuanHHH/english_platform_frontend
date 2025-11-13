@@ -18,8 +18,7 @@ export default function BlogIndexPage() {
   const filterKey = JSON.stringify(filters);
   const debouncedFilterKey = useDebouncedValue(filterKey, 1500);
 
-  // Pagination (0-based)
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
   const pageSize = 20;
   const [totalPages, setTotalPages] = useState(0);
 
@@ -29,7 +28,7 @@ export default function BlogIndexPage() {
       const parsedFilters = key ? JSON.parse(key) : {};
       const [catsData, paged] = await Promise.all([
         listCategories(),
-        publicListPostsPaged({ ...parsedFilters, page: p + 1, pageSize }),
+        publicListPostsPaged({ ...parsedFilters, page: p, pageSize }),
       ]);
       setCats(catsData);
       setPosts(paged.items);
@@ -39,8 +38,8 @@ export default function BlogIndexPage() {
     }
   }
 
-  // Reset về trang 0 sau khi filter đã debounce xong
-  useEffect(() => { setPage(0); }, [debouncedFilterKey]);
+  // Reset về trang 1 sau khi filter đã debounce xong
+  useEffect(() => { setPage(1); }, [debouncedFilterKey]);
 
   // Gọi API khi page hoặc filter (đã debounce) thay đổi
   useEffect(() => { load(page, debouncedFilterKey); }, [page, debouncedFilterKey]);
@@ -67,7 +66,7 @@ export default function BlogIndexPage() {
               <Pagination
                 currentPage={page}
                 totalPages={totalPages}
-                onPageChange={(newPage) => setPage(newPage)}
+                onPageChange={setPage} 
               />
             </>
           )}

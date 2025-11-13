@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -8,6 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import { listQuizTypes } from "@/lib/api/quiz/quiz-type";
 import {
@@ -41,6 +50,10 @@ export default function AdminQuizSectionsPage() {
 
   const [editingId, setEditingId] = useState(null);
   const [editRow, setEditRow] = useState({ name: "", quizTypeId: "", skill: "" });
+
+  // State cho delete confirmation dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [sectionToDelete, setSectionToDelete] = useState(null);
 
   const typeMap = useMemo(
     () => Object.fromEntries(types.map((t) => [String(t.id), t.name])),
@@ -117,20 +130,31 @@ export default function AdminQuizSectionsPage() {
     }
   };
 
-  const onDelete = async (id) => {
-    if (!confirm("Xóa section này?")) return;
+  // Hàm mở dialog xác nhận xóa
+  const openDeleteDialog = (section) => {
+    setSectionToDelete(section);
+    setDeleteDialogOpen(true);
+  };
+
+  // Hàm xử lý xóa sau khi xác nhận
+  const handleDeleteSection = async () => {
+    if (!sectionToDelete) return;
     try {
-      const response = await deleteQuizSection(id);
+      const response = await deleteQuizSection(sectionToDelete.id);
 
       // Kiểm tra response từ API
       if (response?.success === false) {
         // API trả về lỗi nhưng status 200
         toast.error(response?.message || "Xóa thất bại");
+        setDeleteDialogOpen(false);
+        setSectionToDelete(null);
         return;
       }
 
       // Xóa thành công
       toast.success("Đã xóa section thành công");
+      setDeleteDialogOpen(false);
+      setSectionToDelete(null);
       await load();
     } catch (e) {
       console.error(e);
@@ -349,7 +373,7 @@ export default function AdminQuizSectionsPage() {
                           <Button
                             size="sm"
                             variant="destructive"
-                            onClick={() => onDelete(it.id)}
+                            onClick={() => openDeleteDialog(it)}
                           >
                             Xóa
                           </Button>
@@ -371,6 +395,37 @@ export default function AdminQuizSectionsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa quiz section</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa section{" "}
+              <strong>"{sectionToDelete?.name}"</strong>?
+              {sectionToDelete && (
+                <div className="mt-2 text-sm">
+                  <div>Type: {sectionToDelete.quizTypeName}</div>
+                  <div>Skill: {sectionToDelete.skill || sectionToDelete.sectionSkill || sectionToDelete.quizSkill || "N/A"}</div>
+                </div>
+              )}
+              <div className="mt-2 text-orange-600 font-medium">
+                Hành động này không thể hoàn tác.
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteSection}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
