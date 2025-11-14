@@ -213,7 +213,7 @@ export default function CourseCard({ course, onEdit, onDelete }) {
                   onClick={() => handleStatusChange("DRAFT")}
                   disabled={isUpdating}
                 >
-                  <Edit className="h-4 w-4 mr-2" /> Chỉnh sửa lại
+                  <Edit className="h-4 w-4 mr-2" /> Chuyển qua bản nháp
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem

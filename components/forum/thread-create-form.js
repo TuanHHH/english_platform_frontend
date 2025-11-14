@@ -8,8 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { forumListCategories } from "@/lib/api/forum/forum";
 import { appCreateThread } from "@/lib/api/forum/forum";
-// Nếu bạn đã dùng Editor của blog:
-import Editor from "@/components/content/editor"; // bodyMd (HTML) từ Quill
+import Editor from "@/components/content/editor";
 
 export default function ThreadCreateForm() {
   const router = useRouter();
@@ -56,23 +55,32 @@ export default function ThreadCreateForm() {
         <CardTitle>Tạo chủ đề mới</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid gap-2">
-          <label className="text-sm font-medium">Tiêu đề</label>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">
+            Tiêu đề <span className="text-destructive">*</span>
+          </label>
           <Input
-            placeholder="Nhập tiêu đề..."
+            placeholder="Nhập tiêu đề chủ đề..."
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            maxLength={200}
           />
+          <p className="text-xs text-muted-foreground">
+            {title.length}/200 ký tự
+          </p>
         </div>
 
-        <div className="grid gap-2">
+        <div className="space-y-2">
           <label className="text-sm font-medium">Danh mục</label>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {cats.map((c) => (
-              <label key={c.id} className="flex items-center gap-2 text-sm">
+              <label
+                key={c.id}
+                className="flex items-center gap-2 text-sm cursor-pointer hover:text-primary transition-colors"
+              >
                 <input
                   type="checkbox"
-                  className="accent-primary"
+                  className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
                   checked={categoryIds.includes(c.id)}
                   onChange={() => toggleCat(c.id)}
                 />
@@ -80,20 +88,34 @@ export default function ThreadCreateForm() {
               </label>
             ))}
             {cats.length === 0 && (
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-muted-foreground col-span-full">
                 Chưa có danh mục forum.
               </span>
             )}
           </div>
+          {categoryIds.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Đã chọn {categoryIds.length} danh mục
+            </p>
+          )}
         </div>
 
-        <div className="grid gap-2">
-          <label className="text-sm font-medium">Nội dung</label>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">
+            Nội dung <span className="text-destructive">*</span>
+          </label>
           <Editor initialContent="" onContentChange={setBodyMd} />
         </div>
 
-        <div className="flex justify-end">
-          <Button onClick={submit} disabled={loading}>
+        <div className="flex justify-end gap-2 pt-4">
+          <Button
+            variant="outline"
+            onClick={() => router.push("/forum")}
+            disabled={loading}
+          >
+            Hủy
+          </Button>
+          <Button onClick={submit} disabled={loading || !title.trim() || !bodyMd.trim()}>
             {loading ? "Đang tạo..." : "Tạo chủ đề"}
           </Button>
         </div>
