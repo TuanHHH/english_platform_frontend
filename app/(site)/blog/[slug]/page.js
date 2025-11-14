@@ -1,87 +1,107 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import { publicGetPostBySlug } from "@/lib/api/content/posts";
 import {
-  publicListCommentsByPost,
+  publicListCommentsByPostPaged,
   appCreateComment,
 } from "@/lib/api/content/comments";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import CommentList from "@/components/content/comment-list";
 import { sanitizeHtml } from "@/lib/sanitize";
 
 export default function BlogDetailPage() {
   const { slug } = useParams();
+
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [commentsLoading, setCommentsLoading] = useState(false);
   
-  // Pagination state
   const [page, setPage] = useState(1);
-  const pageSize = 10; // Số comments mỗi trang
-  const [totalPages, setTotalPages] = useState(0);
+  const [meta, setMeta] = useState({
+    page: 1,
+    pages: 1,
+    total: 0,
+    pageSize: 10
+  });
 
-  // Load comments function với pagination
-  async function loadComments(postId, p = page) {
+  // ✅ Bỏ dependency page để tránh vòng lặp
+  const loadComments = useCallback(async (postId, currentPage) => {
     setCommentsLoading(true);
     try {
-      const response = await publicListCommentsByPost(postId, {
-        page: p,
-        size: pageSize,
+      const { items, meta: m } = await publicListCommentsByPostPaged(postId, {
+        page: currentPage,
+        size: 10,
       });
       
-      // Xử lý response tùy theo cấu trúc API trả về
-      let commentsData = [];
-      let meta = null;
+      console.log("Comments loaded:", items?.length || 0);
+      console.log("Meta data:", m);
       
-      if (response?.items) {
-        // Nếu API trả về dạng { items: [], meta: {} }
-        commentsData = response.items;
-        meta = response.meta;
-      } else if (response?.content) {
-        commentsData = response.content;
-        meta = response.meta;
-      } else if (response?.data?.result) {
-        commentsData = response.data.result;
-        meta = response.data.meta;
-      } else if (Array.isArray(response)) {
-        commentsData = response;
-      }
+      setComments(items || []);
+      setMeta({
+        page: m?.page || currentPage,
+        pages: m?.pages || m?.totalPages || 1,
+        total: m?.total || m?.totalItems || 0,
+        pageSize: m?.pageSize || 10
+      });
       
-      setComments(commentsData);
-      setTotalPages(meta?.pages ?? Math.ceil((meta?.total ?? 0) / pageSize) ?? 0);
     } catch (error) {
       console.error("Error loading comments:", error);
-    //   toast.error("Không thể tải bình luận");
+      toast.error("Không thể tải bình luận");
       setComments([]);
-      setTotalPages(0);
+      setMeta({ page: 1, pages: 1, total: 0, pageSize: 10 });
     } finally {
       setCommentsLoading(false);
     }
-  }
+  }, []); // ✅ Không phụ thuộc vào page
 
-  // Handle comment creation
-  async function handleCreateComment(payload) {
+  // ✅ Khi tạo comment mới → chuyển đến trang cuối
+  const handleCreateComment = useCallback(async (payload) => {
     try {
       const created = await appCreateComment(post.id, payload);
       
-      // Reset về trang 1 và reload comments sau khi tạo comment mới
-      setPage(1);
-      await loadComments(post.id, 1);
+      // Reload để lấy meta mới
+      const { items, meta: m } = await publicListCommentsByPostPaged(post.id, {
+        page: 1,
+        size: 10,
+      });
       
-    //   toast.success("Bình luận đã được gửi thành công!");
+      const totalPages = m?.pages || m?.totalPages || 1;
+      
+      // Chuyển đến trang cuối
+      setPage(totalPages);
+      await loadComments(post.id, totalPages);
+      
+      toast.success("Bình luận đã được gửi thành công!");
+      
       return created;
     } catch (error) {
       console.error("Error creating comment:", error);
       toast.error("Gửi bình luận thất bại. Vui lòng thử lại.");
       throw error;
     }
-  }
+  }, [post?.id, loadComments]);
 
-  // Initial load
+  // ✅ Khi xóa comment → giữ nguyên trang hiện tại
+  const handleDeleteComment = useCallback(async (commentId) => {
+    try {
+      await loadComments(post.id, page);
+      toast.success("Đã xóa bình luận");
+    } catch (error) {
+      console.error("Error reloading comments after delete:", error);
+    }
+  }, [post?.id, page, loadComments]);
+
+  const handlePageChange = useCallback((newPage) => {
+    if (newPage < 1 || newPage > meta.pages || newPage === page) return;
+    setPage(newPage);
+  }, [page, meta.pages]);
+
+  // ✅ Initial load - CHỈ phụ thuộc vào slug
   useEffect(() => {
     async function init() {
       if (!slug) return;
@@ -92,41 +112,55 @@ export default function BlogDetailPage() {
         setPost(postData);
         
         if (postData?.id) {
+          setPage(1); // Reset về trang 1
           await loadComments(postData.id, 1);
         }
       } catch (error) {
         console.error("Error loading post:", error);
-        // toast.error("Không thể tải bài viết");
+        toast.error("Không thể tải bài viết");
       } finally {
         setIsLoading(false);
       }
     }
 
     init();
-  }, [slug]);
+  }, [slug]); // ✅ CHỈ phụ thuộc vào slug
 
-  // Load comments khi page thay đổi
+  // ✅ Load comments khi page thay đổi
   useEffect(() => {
-    if (post?.id) {
+    if (post?.id && page >= 1) {
       loadComments(post.id, page);
     }
-  }, [page]);
+  }, [page, post?.id, loadComments]);
 
   if (isLoading) {
-    return <div className="container mx-auto p-4">Đang tải...</div>;
+    return (
+      <div className="container mx-auto p-4 flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Đang tải...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!post) {
-    return <div className="container mx-auto p-4">Không tìm thấy bài viết.</div>;
+    return (
+      <div className="container mx-auto p-4 flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-lg mb-4">Không tìm thấy bài viết.</p>
+          <Button onClick={() => window.history.back()}>Quay lại</Button>
+        </div>
+      </div>
+    );
   }
 
-  const html = sanitizeHtml(post.bodyMd || "");
+  const html = sanitizeHtml(post.bodyMd || post.bodyHtml || post.body || "");
 
   return (
     <div className="container mx-auto p-4 space-y-4">
       <Card>
         <CardHeader>
-          {/* Author header */}
           <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
             <img 
               src={post.authorAvatarUrl || "/avatar.svg"} 
@@ -155,25 +189,32 @@ export default function BlogDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Bình luận</CardTitle>
+          <CardTitle>
+            Bình luận {meta.total > 0 && `(${meta.total})`}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {commentsLoading ? (
-            <div className="text-center py-4">Đang tải bình luận...</div>
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+              <p className="text-sm text-muted-foreground">Đang tải bình luận...</p>
+            </div>
           ) : (
             <>
               <CommentList
                 postId={post.id}
                 initial={comments}
                 onCreate={handleCreateComment}
+                onDelete={handleDeleteComment}
               />
               
-              {totalPages > 1 && (
-                <div className="mt-4">
+              {meta.pages > 1 && (
+                <div className="mt-6 pt-4 border-t">
                   <Pagination
+                    base={1}
+                    totalPages={meta.pages}
                     currentPage={page}
-                    totalPages={totalPages}
-                    onPageChange={setPage}
+                    onPageChange={handlePageChange}
                   />
                 </div>
               )}
