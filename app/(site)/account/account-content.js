@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import ProfileCard from '@/components/account/profile';
 import TestHistory from '@/components/account/test-history';
-// import NotificationSettingsWrapper from '@/components/account/notification-setting-wrapper';
 
 export default function AccountContent() {
   return (
