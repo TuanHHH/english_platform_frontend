@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useForm, useFieldArray, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
@@ -16,17 +16,27 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Plus, Trash2, Calendar, Clock } from "lucide-react"
-import { createStudyPlan } from "@/lib/api/schedule"
+import { Plus, Trash2, Calendar, Clock, Sparkles } from "lucide-react"
+import { createStudyPlan, generateAIPlan } from "@/lib/api/schedule"
 import { createStudyPlanSchema } from "@/schema/study-plan"
 
 export default function CreateScheduleDialog({ open, onOpenChange, onSuccess }) {
+    const [showAIForm, setShowAIForm] = useState(false)
+    const [aiGenerating, setAiGenerating] = useState(false)
+    const [aiInputs, setAiInputs] = useState({
+        goal: "",
+        totalTime: "",
+        notes: ""
+    })
+    const [aiGeneratedPlan, setAiGeneratedPlan] = useState(null)
+
     const {
         register,
         control,
         handleSubmit,
         formState: { errors, isSubmitting },
         reset,
+        setValue,
         setError: setFormError
     } = useForm({
         resolver: zodResolver(createStudyPlanSchema),
@@ -43,7 +53,7 @@ export default function CreateScheduleDialog({ open, onOpenChange, onSuccess }) 
         }
     })
 
-    const { fields, append, remove } = useFieldArray({
+    const { fields, append, remove, replace } = useFieldArray({
         control,
         name: "schedules"
     })
@@ -52,6 +62,9 @@ export default function CreateScheduleDialog({ open, onOpenChange, onSuccess }) 
     useEffect(() => {
         if (!open) {
             reset()
+            setShowAIForm(false)
+            setAiInputs({ goal: "", totalTime: "", notes: "" })
+            setAiGeneratedPlan(null)
         }
     }, [open, reset])
 
@@ -97,15 +110,172 @@ export default function CreateScheduleDialog({ open, onOpenChange, onSuccess }) 
         })
     }
 
+    const handleGenerateAI = async () => {
+        if (!aiInputs.goal || !aiInputs.totalTime) {
+            setFormError("root", {
+                type: "manual",
+                message: "Vui lòng nhập mục tiêu và tổng thời gian"
+            })
+            return
+        }
+
+        setAiGenerating(true)
+        try {
+            const result = await generateAIPlan({
+                goal: aiInputs.goal,
+                totalTime: parseInt(aiInputs.totalTime, 10),
+                notes: aiInputs.notes || undefined
+            })
+
+            if (result.success && result.data) {
+                setAiGeneratedPlan(result.data)
+
+                // Populate form with AI generated data
+                setValue("title", result.data.title || "")
+
+                // Replace all schedules at once (more efficient than removing one by one)
+                const newSchedules = result.data.schedules?.map((schedule) => {
+                    // Convert ISO string to datetime-local format
+                    const date = new Date(schedule.startTime)
+                    const localDateTime = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+                        .toISOString()
+                        .slice(0, 16)
+
+                    return {
+                        startTime: localDateTime,
+                        durationMin: schedule.durationMin.toString(),
+                        taskDesc: schedule.taskDesc || "",
+                        syncToCalendar: false
+                    }
+                }) || []
+
+                replace(newSchedules)
+                setShowAIForm(false)
+            } else {
+                setFormError("root", {
+                    type: "manual",
+                    message: result.error || "Tạo kế hoạch AI thất bại"
+                })
+            }
+        } catch (err) {
+            setFormError("root", {
+                type: "manual",
+                message: "Có lỗi xảy ra khi tạo kế hoạch AI"
+            })
+        } finally {
+            setAiGenerating(false)
+        }
+    }
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-6xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Tạo kế hoạch học tập mới</DialogTitle>
                     <DialogDescription>
                         Tạo kế hoạch học tập chi tiết với các buổi học cụ thể
                     </DialogDescription>
                 </DialogHeader>
+
+                {/* AI Generation Toggle */}
+                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+                    <div className="flex items-center gap-2">
+                        <Sparkles className="w-5 h-5 text-purple-600" />
+                        <span className="text-sm font-medium text-purple-900">
+                            Tạo tự động bằng AI
+                        </span>
+                    </div>
+                    <Button
+                        type="button"
+                        variant={showAIForm ? "secondary" : "default"}
+                        size="sm"
+                        onClick={() => setShowAIForm(!showAIForm)}
+                        disabled={isSubmitting || aiGenerating}
+                    >
+                        {showAIForm ? "Đóng" : "Sử dụng AI"}
+                    </Button>
+                </div>
+
+                {/* AI Input Form */}
+                {showAIForm && (
+                    <div className="space-y-4 p-4 bg-purple-50/50 rounded-lg border border-purple-200">
+                        <div className="space-y-2">
+                            <Label htmlFor="ai-goal">
+                                Mục tiêu học tập <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                                id="ai-goal"
+                                placeholder="Ví dụ: Cải thiện kỹ năng nói tiếng Anh cho phỏng vấn xin việc"
+                                value={aiInputs.goal}
+                                onChange={(e) => setAiInputs({ ...aiInputs, goal: e.target.value })}
+                                disabled={aiGenerating}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="ai-totalTime">
+                                Tổng thời gian (phút) <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                                id="ai-totalTime"
+                                type="number"
+                                min="1"
+                                placeholder="120"
+                                value={aiInputs.totalTime}
+                                onChange={(e) => setAiInputs({ ...aiInputs, totalTime: e.target.value })}
+                                disabled={aiGenerating}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="ai-notes">
+                                Ghi chú thêm (tùy chọn)
+                            </Label>
+                            <Textarea
+                                id="ai-notes"
+                                placeholder="Ví dụ: Tập trung vào từ vựng kinh doanh và kỹ năng thuyết trình"
+                                value={aiInputs.notes}
+                                onChange={(e) => setAiInputs({ ...aiInputs, notes: e.target.value })}
+                                disabled={aiGenerating}
+                                rows={2}
+                            />
+                        </div>
+
+                        <Button
+                            type="button"
+                            onClick={handleGenerateAI}
+                            disabled={aiGenerating || !aiInputs.goal || !aiInputs.totalTime}
+                            className="w-full"
+                        >
+                            {aiGenerating ? (
+                                <>
+                                    <Sparkles className="w-4 h-4 mr-2 animate-spin" />
+                                    Đang tạo kế hoạch...
+                                </>
+                            ) : (
+                                <>
+                                    <Sparkles className="w-4 h-4 mr-2" />
+                                    Tạo kế hoạch AI
+                                </>
+                            )}
+                        </Button>
+                    </div>
+                )}
+
+                {/* AI Generated Plan Info */}
+                {aiGeneratedPlan && !showAIForm && (
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex items-start gap-2">
+                            <Sparkles className="w-4 h-4 text-green-600 mt-0.5" />
+                            <div className="flex-1 text-sm text-green-800">
+                                <p className="font-medium">Kế hoạch được tạo bởi AI</p>
+                                <p className="text-xs mt-1 text-green-700">
+                                    Mục tiêu: {aiInputs.goal} • Thời gian: {aiInputs.totalTime} phút
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                     {/* Title */}
