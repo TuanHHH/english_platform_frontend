@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -16,6 +15,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
   listQuizTypes,
   createQuizType,
   updateQuizType,
@@ -25,18 +33,32 @@ import { toast } from "sonner";
 
 export default function QuizTypesPage() {
   const [list, setList] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ name: "", description: "" });
   const [editingId, setEditingId] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [formDialogOpen, setFormDialogOpen] = useState(false);
+  const unwrapData = (res) => (res?.data ?? res);
+
+  const resetForm = () => {
+    setForm({ name: "", description: "" });
+    setEditingId(null);
+  };
+
+  const handleFormDialogChange = (open) => {
+    setFormDialogOpen(open);
+    if (!open) {
+      resetForm();
+    }
+  };
 
   // Load quiz types from API
   async function load() {
     setLoading(true);
     try {
       const res = await listQuizTypes();
-      const data = res?.data || res;
+      const data = unwrapData(res);
       setList(Array.isArray(data) ? data : []);
     } finally {
       setLoading(false);
@@ -53,24 +75,40 @@ export default function QuizTypesPage() {
     
     // Validate form
     if (!form.name.trim()) {
-      toast.error("Lỗi", { description: "Tên Quiz Type không được để trống" });
+      toast.error("Lỗi", { description: "Tên loại đề thi không được để trống" });
       return;
     }
 
     try {
       if (editingId) {
-        await updateQuizType(editingId, {
+        const result = await updateQuizType(editingId, {
           name: form.name,
           description: form.description,
         });
+        const updatedItem = unwrapData(result);
+        setList((prev) =>
+          prev.map((item) =>
+            item.id === editingId
+              ? {
+                  ...item,
+                  ...(updatedItem?.id ? updatedItem : { name: form.name, description: form.description }),
+                }
+              : item
+          )
+        );
         toast.success("Cập nhật thành công", { description: "QuizType đã được lưu!" });
       } else {
-        await createQuizType(form);
+        const result = await createQuizType(form);
+        const createdItem = unwrapData(result);
+        if (createdItem?.id) {
+          setList((prev) => [createdItem, ...prev]);
+        } else {
+          await load();
+        }
         toast.success("Tạo mới thành công", { description: "QuizType mới đã được thêm!" });
       }
-      setForm({ name: "", description: "" });
-      setEditingId(null);
-      await load();
+      resetForm();
+      setFormDialogOpen(false);
     } catch (error) {
       console.error(error);
       
@@ -91,6 +129,12 @@ export default function QuizTypesPage() {
       name: item.name,
       description: item.description || "",
     });
+    setFormDialogOpen(true);
+  };
+
+  const onCreate = () => {
+    resetForm();
+    setFormDialogOpen(true);
   };
 
   // Trigger delete confirmation dialog
@@ -105,7 +149,7 @@ export default function QuizTypesPage() {
 
     try {
       await deleteQuizType(deleteTargetId);
-      await load();
+      setList((prev) => prev.filter((item) => item.id !== deleteTargetId));
       toast.success("Xóa thành công", { description: "QuizType đã bị xóa." });
     } catch (error) {
       console.error(error);
@@ -126,59 +170,26 @@ export default function QuizTypesPage() {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <div className="flex-1 p-6 md:p-10 space-y-6">
-        <h1 className="text-3xl font-semibold mb-6">Quản lí loại đề thi</h1>
-
-        {/* Form to create or update quiz types */}
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>{editingId ? "Sửa Quiz Type" : "Tạo Quiz Type"}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={onSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <Input
-                placeholder="Name"
-                value={form.name}
-                onChange={(e) =>
-                  setForm({ ...form, name: e.target.value })
-                }
-              />
-              <Input
-                placeholder="Description"
-                value={form.description}
-                onChange={(e) =>
-                  setForm({ ...form, description: e.target.value })
-                }
-              />
-
-              <div className="md:col-span-3 flex gap-2 mt-2">
-                <Button type="submit">
-                  {editingId ? "Cập nhật" : "Thêm mới"}
-                </Button>
-                {editingId && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setEditingId(null);
-                      setForm({ name: "", description: "" });
-                    }}
-                  >
-                    Hủy
-                  </Button>
-                )}
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <h1 className="text-3xl font-semibold">Quản lí loại đề thi</h1>
+          <Button onClick={onCreate}>Thêm loại đề thi</Button>
+        </div>
 
         {/* List of quiz types */}
         <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle>Danh sách Quiz Types</CardTitle>
+            <CardTitle>Danh sách loại đề thi</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div>Đang tải...</div>
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <div key={index} className="border rounded-lg p-3">
+                    <Skeleton className="h-4 w-1/3 mb-2" />
+                    <Skeleton className="h-3 w-2/3" />
+                  </div>
+                ))}
+              </div>
             ) : list.length === 0 ? (
               <div className="text-gray-500 italic">Chưa có dữ liệu</div>
             ) : (
@@ -199,11 +210,7 @@ export default function QuizTypesPage() {
                       )}
                     </div>
                     <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onEdit(it)}
-                      >
+                      <Button size="sm" variant="outline" onClick={() => onEdit(it)}>
                         Sửa
                       </Button>
                       <Button
@@ -228,7 +235,7 @@ export default function QuizTypesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Xác nhận xóa</AlertDialogTitle>
             <AlertDialogDescription>
-              Bạn có chắc chắn muốn xóa Quiz Type này?
+              Bạn có chắc chắn muốn xóa loại đề thi này?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -239,6 +246,36 @@ export default function QuizTypesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Create/Edit Dialog */}
+      <Dialog open={formDialogOpen} onOpenChange={handleFormDialogChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingId ? "Sửa loại đề thi" : "Tạo loại đề thi"}</DialogTitle>
+            <DialogDescription>
+              Điền thông tin cho loại đề thi.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={onSubmit} className="space-y-4">
+            <Input
+              placeholder="Name"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+            />
+            <Input
+              placeholder="Description"
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+            />
+            <DialogFooter className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => handleFormDialogChange(false)}>
+                Hủy
+              </Button>
+              <Button type="submit">{editingId ? "Cập nhật" : "Thêm mới"}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

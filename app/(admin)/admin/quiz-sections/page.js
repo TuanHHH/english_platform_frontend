@@ -17,6 +17,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import { listQuizTypes } from "@/lib/api/quiz/quiz-type";
 import {
@@ -54,6 +61,7 @@ export default function AdminQuizSectionsPage() {
   // State cho delete confirmation dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [sectionToDelete, setSectionToDelete] = useState(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const typeMap = useMemo(
     () => Object.fromEntries(types.map((t) => [String(t.id), t.name])),
@@ -119,9 +127,10 @@ export default function AdminQuizSectionsPage() {
   const onCreate = async (payload) => {
     try {
       await createQuizSection(payload);
-      toast.success("Đã tạo section");
+      toast.success("Đã tạo phần thi");
       setPage(1);
       await load();
+      setCreateDialogOpen(false);
     } catch (e) {
       console.error(e);
       // Lấy message từ API response
@@ -152,7 +161,7 @@ export default function AdminQuizSectionsPage() {
       }
 
       // Xóa thành công
-      toast.success("Đã xóa section thành công");
+      toast.success("Đã xóa phần thi thành công");
       setDeleteDialogOpen(false);
       setSectionToDelete(null);
       await load();
@@ -215,7 +224,7 @@ export default function AdminQuizSectionsPage() {
         )
       );
 
-      toast.success("Đã cập nhập section thành công");
+      toast.success("Đã cập nhật phần thi thành công");
       cancelEdit();
     } catch (e) {
       console.error(e);
@@ -228,22 +237,22 @@ export default function AdminQuizSectionsPage() {
   return (
     <div className="container mx-auto p-4 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Quiz Sections</h1>
+        <h1 className="text-2xl font-semibold">Quản lý phần thi</h1>
       </div>
 
       {/* Filter */}
       <Card>
         <CardHeader>
-          <CardTitle>Filter</CardTitle>
+          <CardTitle>Bộ lọc</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-4 items-center">
           <div className="w-64">
             <Select value={filterType} onValueChange={setFilterType}>
               <SelectTrigger>
-                <SelectValue placeholder="All types" />
+                <SelectValue placeholder="Chọn loại đề" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="all">Tất cả</SelectItem>
                 {types.map((t) => (
                   <SelectItem key={t.id} value={String(t.id)}>
                     {t.name}
@@ -257,7 +266,7 @@ export default function AdminQuizSectionsPage() {
             <Input
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
-              placeholder="Search by name…"
+              placeholder="Tìm kiếm theo tên…"
             />
           </div>
         </CardContent>
@@ -265,18 +274,21 @@ export default function AdminQuizSectionsPage() {
 
       {/* New Section */}
       <Card>
-        <CardHeader>
-          <CardTitle>New Section</CardTitle>
+        <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <CardTitle>Thêm phần thi mới</CardTitle>
+          </div>
+          <Button onClick={() => setCreateDialogOpen(true)}>Tạo phần thi</Button>
         </CardHeader>
-        <CardContent>
-          <QuizSectionForm onSubmit={onCreate} />
+        <CardContent className="text-sm text-muted-foreground">
+          Nhấn nút "Tạo phần thi" để mở biểu mẫu và nhập thông tin chi tiết.
         </CardContent>
       </Card>
 
       {/* List */}
       <Card>
         <CardHeader>
-          <CardTitle>Sections</CardTitle>
+          <CardTitle>Danh sách phần thi</CardTitle>
         </CardHeader>
         <CardContent>
           {items.length === 0 ? (
@@ -298,7 +310,7 @@ export default function AdminQuizSectionsPage() {
                           onChange={(e) =>
                             setEditRow((r) => ({ ...r, name: e.target.value }))
                           }
-                          placeholder="Section name"
+                          placeholder="Tên phần thi"
                         />
 
                         {/* quiz type */}
@@ -328,7 +340,7 @@ export default function AdminQuizSectionsPage() {
                           }
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Chọn skill" />
+                            <SelectValue placeholder="Chọn kỹ năng" />
                           </SelectTrigger>
                           <SelectContent>
                             {SKILLS.map((s) => (
@@ -358,7 +370,7 @@ export default function AdminQuizSectionsPage() {
                         <div>
                           <div className="font-medium">{it.name}</div>
                           <div className="text-sm text-muted-foreground">
-                            Type: {it.quizTypeName} · Skill:{" "}
+                            Loại đề: {it.quizTypeName} · Kỹ năng:{" "}
                             {String(it.skill || it.sectionSkill || it.quizSkill || "")}
                           </div>
                         </div>
@@ -400,14 +412,14 @@ export default function AdminQuizSectionsPage() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Xác nhận xóa quiz section</AlertDialogTitle>
+            <AlertDialogTitle>Xác nhận xóa phần thi</AlertDialogTitle>
             <AlertDialogDescription>
-              Bạn có chắc chắn muốn xóa section{" "}
+              Bạn có chắc chắn muốn xóa phần thi{" "}
               <strong>"{sectionToDelete?.name}"</strong>?
               {sectionToDelete && (
                 <div className="mt-2 text-sm">
-                  <div>Type: {sectionToDelete.quizTypeName}</div>
-                  <div>Skill: {sectionToDelete.skill || sectionToDelete.sectionSkill || sectionToDelete.quizSkill || "N/A"}</div>
+                  <div>Loại đề: {sectionToDelete.quizTypeName}</div>
+                  <div>Kỹ năng: {sectionToDelete.skill || sectionToDelete.sectionSkill || sectionToDelete.quizSkill || "N/A"}</div>
                 </div>
               )}
               <div className="mt-2 text-orange-600 font-medium">
@@ -426,6 +438,18 @@ export default function AdminQuizSectionsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Thêm phần thi mới</DialogTitle>
+            <DialogDescription>
+              Điền đầy đủ thông tin bên dưới để tạo phần thi mới.
+            </DialogDescription>
+          </DialogHeader>
+          <QuizSectionForm onSubmit={onCreate} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
