@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { listPublishedBySection } from "@/lib/api/quiz/quiz";
 import { Pagination } from "@/components/ui/pagination";
 
@@ -41,8 +43,24 @@ export default function SectionQuizzesPage() {
   }, [page, pageParam, router, searchParams]);
 
   return (
-    <div className="container mx-auto p-4 space-y-4">
-      <h1 className="text-2xl font-semibold">Quizzes</h1>
+    <div className="container mx-auto p-4 space-y-6">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => router.back()}
+        className="mb-2"
+      >
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Quay lại
+      </Button>
+      
+      <div className="space-y-2">
+        <h1 className="text-2xl font-semibold">Danh sách bài thi</h1>
+        <p className="text-muted-foreground">
+          Chọn bài thi phù hợp với trình độ và mục tiêu học tập của bạn. 
+          Mỗi bài thi được thiết kế để giúp bạn rèn luyện và cải thiện kỹ năng tiếng Anh.
+        </p>
+      </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
         {items.length > 0 &&
@@ -64,13 +82,15 @@ export default function SectionQuizzesPage() {
         )}
       </div>
 
-      <div className="mt-4">
-        <Pagination
-          currentPage={meta.page || 1} // ✅ Đổi từ 'page' sang 'currentPage'
-          totalPages={meta.pages || 0}
-          onPageChange={setPage} // ✅ Đổi từ 'onChange' sang 'onPageChange'
-        />
-      </div>
+      {meta.pages > 1 && (
+        <div className="mt-4">
+          <Pagination
+            currentPage={meta.page || 1} // ✅ Đổi từ 'page' sang 'currentPage'
+            totalPages={meta.pages || 0}
+            onPageChange={setPage} // ✅ Đổi từ 'onChange' sang 'onPageChange'
+          />
+        </div>
+      )}
     </div>
   );
 }

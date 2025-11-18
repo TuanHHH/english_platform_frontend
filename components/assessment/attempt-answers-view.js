@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { CheckCircle, XCircle } from "lucide-react";
+import { CheckCircle, XCircle, Calendar, Clock } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export default function AttemptAnswersView({ data }) {
   if (!data) return null;
@@ -36,105 +38,160 @@ export default function AttemptAnswersView({ data }) {
     }
   };
 
+  const getStatusVariant = (status) => {
+    if (status === "COMPLETED") return "default";
+    if (status === "IN_PROGRESS") return "secondary";
+    return "outline";
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="rounded-lg border bg-white p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-semibold">{quizName}</h1>
-            <p className="text-sm text-muted-foreground">
-              {quizType} • {quizSection} • {skill}
-            </p>
+      <Card className="shadow-md">
+        <CardHeader>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="space-y-2">
+              <CardTitle className="text-2xl">{quizName}</CardTitle>
+              <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+                <span>{quizType}</span>
+                <span>•</span>
+                <span>{quizSection}</span>
+                <span>•</span>
+                <span>{skill}</span>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant={getStatusVariant(status)}>{status}</Badge>
+              <Badge variant="secondary">
+                {totalCorrect ?? "-"} / {totalQuestions ?? "-"}
+              </Badge>
+              <Badge variant="default">{pct}</Badge>
+            </div>
           </div>
-          <div className="flex items-center gap-3 text-sm">
-            <span className="rounded bg-gray-100 px-2 py-1">{status}</span>
-            <span className="rounded bg-gray-100 px-2 py-1">
-              {totalCorrect ?? "-"} / {totalQuestions ?? "-"}
-            </span>
-            <span className="rounded bg-gray-100 px-2 py-1">{pct}</span>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <span>Bắt đầu: {fmt(startedAt)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span>Nộp bài: {fmt(submittedAt)}</span>
+            </div>
           </div>
-        </div>
-        <div className="mt-3 text-xs text-muted-foreground">
-          <div>Bắt đầu: {fmt(startedAt)}</div>
-          <div>Nộp bài: {fmt(submittedAt)}</div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Context Text for entire attempt */}
       {contextText && (
-        <div
-          className="rounded-lg border bg-white p-4 prose max-w-none"
-          dangerouslySetInnerHTML={{ __html: contextText }}
-        />
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Đoạn văn</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div
+              className="prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: contextText }}
+            />
+          </CardContent>
+        </Card>
       )}
 
       {/* Explanation for entire attempt */}
       {explanation && (
-        <div className="rounded-md bg-amber-50 p-3 text-sm text-amber-900 whitespace-pre-wrap">
-          <div className="mb-1 font-medium">Giải thích</div>
-          {explanation}
-        </div>
+        <Card className="border-amber-200 bg-amber-50">
+          <CardHeader>
+            <CardTitle className="text-lg text-amber-900">Giải thích</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-amber-900 whitespace-pre-wrap">{explanation}</p>
+          </CardContent>
+        </Card>
       )}
 
       {/* Answers */}
       <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Câu hỏi và đáp án</h2>
         {answers?.map((a, idx) => (
-          <div
+          <Card
             key={a.questionId || idx}
-            className="rounded-lg border bg-white p-4"
+            className={`shadow-sm ${
+              a.isCorrect
+                ? "border-green-200 bg-green-50/30"
+                : "border-red-200 bg-red-50/30"
+            }`}
           >
-            {/* Title + Icon */}
-            <div className="mb-2 flex items-start justify-between gap-3">
-              <div className="text-sm">
-                <div className="font-medium">Câu {a.orderIndex ?? idx + 1}</div>
-                <div className="mt-1 text-gray-900 whitespace-pre-wrap">
-                  {a.questionContent}
+            <CardHeader>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant="outline" className="font-medium">
+                      Câu {a.orderIndex ?? idx + 1}
+                    </Badge>
+                    {a.isCorrect ? (
+                      <Badge variant="default" className="bg-green-600">
+                        <CheckCircle className="mr-1 h-3 w-3" />
+                        Đúng
+                      </Badge>
+                    ) : (
+                      <Badge variant="destructive">
+                        <XCircle className="mr-1 h-3 w-3" />
+                        Sai
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-base text-foreground whitespace-pre-wrap">
+                    {a.questionContent}
+                  </p>
                 </div>
               </div>
-              {a.isCorrect ? (
-                <CheckCircle className="h-5 w-5 text-green-600" />
-              ) : (
-                <XCircle className="h-5 w-5 text-red-600" />
-              )}
-            </div>
+            </CardHeader>
 
             {/* Options */}
             {Array.isArray(a.options) && a.options.length > 0 && (
-              <div className="mt-3 text-sm">
-                <div className="text-muted-foreground">Đáp án</div>
-                <ul className="mt-1 space-y-2">
+              <CardContent>
+                <div className="space-y-2">
                   {a.options.map((o) => {
                     const isSelected = !!o.selected;
                     const isCorrect = !!o.correct;
 
                     return (
-                      <li
+                      <div
                         key={o.id}
-                        className={[
-                          "rounded border px-3 py-2",
+                        className={`rounded-lg border p-3 transition-colors ${
                           isCorrect
-                            ? "border-green-300 bg-green-50"
-                            : "border-gray-200 bg-gray-50",
-                          isSelected ? "ring-2 ring-blue-400" : "",
-                        ].join(" ")}
+                            ? "border-green-400 bg-green-50"
+                            : "border-gray-200 bg-background"
+                        } ${isSelected ? "ring-2 ring-primary" : ""}`}
                       >
                         <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="text-gray-900">{o.content}</div>
-                            <div className="mt-0.5 text-xs text-muted-foreground">
-                              {isCorrect ? "Đáp án đúng" : "Đáp án khác"}
-                              {isSelected ? " • Bạn đã chọn" : ""}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-foreground">{o.content}</p>
+                            <div className="mt-1 flex flex-wrap gap-2">
+                              {isCorrect && (
+                                <Badge
+                                  variant="default"
+                                  className="text-xs bg-green-600"
+                                >
+                                  Đáp án đúng
+                                </Badge>
+                              )}
+                              {isSelected && (
+                                <Badge variant="secondary" className="text-xs">
+                                  Bạn đã chọn
+                                </Badge>
+                              )}
                             </div>
                           </div>
                         </div>
-                      </li>
+                      </div>
                     );
                   })}
-                </ul>
-              </div>
+                </div>
+              </CardContent>
             )}
-          </div>
+          </Card>
         ))}
       </div>
     </div>

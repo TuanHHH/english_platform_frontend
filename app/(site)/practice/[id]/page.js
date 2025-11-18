@@ -11,6 +11,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ChevronLeft, ChevronRight, Send, ArrowLeft } from "lucide-react";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { getPublicQuiz } from "@/lib/api/quiz/quiz";
 import { submitOneShot } from "@/lib/api/assessment/attempt";
@@ -133,153 +138,237 @@ export default function PracticePage() {
     }
   };
 
-  if (loading)
-    return <div className="container mx-auto p-6">Đang tải đề thi...</div>;
-  if (error)
-    return <div className="container mx-auto p-6 text-red-600">{error}</div>;
+  if (loading) {
+    return (
+      <div className="container mx-auto max-w-5xl p-4 sm:p-6 space-y-6">
+        <Skeleton className="h-9 w-28" />
+        
+        <Card>
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div className="space-y-3 flex-1">
+                <Skeleton className="h-8 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-6 w-24 rounded" />
+                  <Skeleton className="h-6 w-20 rounded" />
+                  <Skeleton className="h-6 w-28 rounded" />
+                </div>
+              </div>
+              <Skeleton className="h-10 w-24 rounded-md" />
+            </div>
+          </CardHeader>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6 space-y-4">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-32 w-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-12 w-full rounded-lg" />
+              <Skeleton className="h-12 w-full rounded-lg" />
+              <Skeleton className="h-12 w-full rounded-lg" />
+              <Skeleton className="h-12 w-full rounded-lg" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto max-w-5xl p-4 sm:p-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center py-12">
+              <p className="text-destructive text-lg font-medium">{error}</p>
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => router.back()}
+              >
+                Quay lại
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (!quiz) {
     return (
-      <div className="container mx-auto p-6 text-red-600">
-        Không tìm thấy đề thi.
+      <div className="container mx-auto max-w-5xl p-4 sm:p-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center py-12 text-muted-foreground">
+              <p className="text-lg">Không tìm thấy đề thi.</p>
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => router.back()}
+              >
+                Quay lại
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">{quiz.title}</h1>
-          <p className="text-sm text-muted-foreground">{quiz.description}</p>
-          <div className="text-xs mt-2 inline-flex gap-2">
-            <span className="px-2 py-1 border rounded">
-              {quiz.quizTypeName}
-            </span>
-            <span className="px-2 py-1 border rounded">{quiz.skill}</span>
-            {quiz.quizSectionName && (
-              <span className="px-2 py-1 border rounded">
-                {quiz.quizSectionName}
-              </span>
-            )}
-          </div>
-        </div>
+    <div className="container mx-auto max-w-5xl p-4 sm:p-6 space-y-6">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => router.back()}
+      >
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Quay lại
+      </Button>
 
-        <button
-          className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-          onClick={onSubmit}
-        >
-          Nộp bài
-        </button>
-      </div>
+      {/* Header */}
+      <Card className="shadow-md">
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+            <div className="space-y-3 flex-1">
+              <CardTitle className="text-2xl">{quiz.title}</CardTitle>
+              {quiz.description && (
+                <p className="text-sm text-muted-foreground">{quiz.description}</p>
+              )}
+              <div className="text-sm text-muted-foreground bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                <p className="font-medium text-blue-900 dark:text-blue-100 mb-1">Hướng dẫn làm bài:</p>
+                <ul className="list-disc list-inside space-y-1 text-blue-800 dark:text-blue-200">
+                  <li>Đọc kỹ câu hỏi và chọn đáp án phù hợp nhất</li>
+                  <li>Sử dụng nút "Trước" và "Tiếp theo" để di chuyển giữa các câu</li>
+                  <li>Nhấn "Nộp bài" khi hoàn thành để xem kết quả</li>
+                </ul>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {quiz.quizTypeName && (
+                  <Badge variant="secondary">{quiz.quizTypeName}</Badge>
+                )}
+                {quiz.skill && <Badge variant="outline">{quiz.skill}</Badge>}
+                {quiz.quizSectionName && (
+                  <Badge variant="outline">{quiz.quizSectionName}</Badge>
+                )}
+              </div>
+            </div>
+
+            <Button onClick={onSubmit} size="lg">
+              <Send className="mr-2 h-4 w-4" />
+              Nộp bài
+            </Button>
+          </div>
+        </CardHeader>
+      </Card>
 
       {/* Passage (contextText) hiển thị 1 lần */}
       {quiz.contextText && (
-        <article
-          className="prose max-w-none ql-content border rounded p-4 bg-gray-50"
-          dangerouslySetInnerHTML={{ __html: sanitizeHtml(quiz.contextText) }}
-        />
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Đoạn văn</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <article
+              className="prose prose-sm max-w-none ql-content"
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(quiz.contextText) }}
+            />
+          </CardContent>
+        </Card>
       )}
 
       {/* Vùng làm bài */}
-      <>
-        {/* Progress */}
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Câu {Math.min(index + 1, total)}/{total}
+      <Card className="shadow-md">
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Badge variant="default" className="text-base py-1 px-3">
+                Câu {Math.min(index + 1, total)}/{total}
+              </Badge>
+              <span className="text-sm text-muted-foreground">
+                Đã trả lời: {answered}/{total}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => go(-1)}
+                disabled={index === 0}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Trước
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => go(1)}
+                disabled={index >= total - 1}
+              >
+                Tiếp theo
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
           </div>
-          <div className="space-x-2">
-            <button
-              className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={() => go(-1)}
-              disabled={index === 0}
-            >
-              ← Trước
-            </button>
-            <button
-              className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={() => go(1)}
-              disabled={index >= total - 1}
-            >
-              Tiếp theo →
-            </button>
-          </div>
-        </div>
+        </CardHeader>
 
-        {/* Question */}
-        {current && (
-          <>
-            <article
-              className="prose max-w-none ql-content border rounded p-4"
-              dangerouslySetInnerHTML={{
-                __html: sanitizeHtml(current.content || ""),
-              }}
-            />
+        <CardContent className="space-y-6">
+          {/* Question */}
+          {current && (
+            <>
+              <article
+                className="prose prose-sm max-w-none ql-content"
+                dangerouslySetInnerHTML={{
+                  __html: sanitizeHtml(current.content || ""),
+                }}
+              />
 
-            {/* Options / Text answer */}
-            {isMCQ(current) ? (
-              <div className="space-y-2">
-                {(current.options || [])
-                  .slice()
-                  .sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0))
-                  .map((op) => {
-                    const checked = answers[current.id] === op.id;
-                    return (
-                      <label
-                        key={op.id}
-                        className={`flex items-center gap-3 border rounded p-3 cursor-pointer transition-colors ${
-                          checked
-                            ? "border-blue-500 bg-blue-50"
-                            : "hover:bg-gray-50"
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name={`q-${current.id}`}
-                          checked={checked}
-                          onChange={() => onChoose(current.id, op.id)}
-                          className="w-4 h-4"
-                        />
-                        <span>{op.content}</span>
-                      </label>
-                    );
-                  })}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <textarea
-                  className="w-full min-h-[140px] border rounded p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Nhập câu trả lời của bạn..."
-                  value={answers[current.id] || ""}
-                  onChange={(e) => onChoose(current.id, e.target.value)}
-                />
-              </div>
-            )}
-          </>
-        )}
-
-        <div className="flex items-center justify-between pt-2">
-          <div className="text-sm text-muted-foreground">
-            {answered} / {total} câu đã trả lời
-          </div>
-          <div className="space-x-2">
-            <button
-              className="px-3 py-1 border rounded disabled:opacity-50"
-              onClick={() => go(-1)}
-              disabled={index === 0}
-            >
-              ← Trước
-            </button>
-            <button
-              className="px-3 py-1 border rounded disabled:opacity-50"
-              onClick={() => go(1)}
-              disabled={index >= total - 1}
-            >
-              Tiếp theo →
-            </button>
-          </div>
-        </div>
-      </>
+              {/* Options / Text answer */}
+              {isMCQ(current) ? (
+                <div className="space-y-3">
+                  {(current.options || [])
+                    .slice()
+                    .sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0))
+                    .map((op) => {
+                      const checked = answers[current.id] === op.id;
+                      return (
+                        <label
+                          key={op.id}
+                          className={`flex items-start gap-3 border rounded-lg p-4 cursor-pointer transition-all ${
+                            checked
+                              ? "border-primary bg-primary/5 ring-2 ring-primary"
+                              : "hover:bg-muted/50 hover:border-muted-foreground/30"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name={`q-${current.id}`}
+                            checked={checked}
+                            onChange={() => onChoose(current.id, op.id)}
+                            className="w-4 h-4 mt-1"
+                          />
+                          <span className="text-sm flex-1">{op.content}</span>
+                        </label>
+                      );
+                    })}
+                </div>
+              ) : (
+                <div>
+                  <textarea
+                    className="w-full min-h-[140px] border rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                    placeholder="Nhập câu trả lời của bạn..."
+                    value={answers[current.id] || ""}
+                    onChange={(e) => onChoose(current.id, e.target.value)}
+                  />
+                </div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Warning dialog - chỉ hiển thị thông báo */}
       <AlertDialog open={warningDialogOpen} onOpenChange={setWarningDialogOpen}>

@@ -81,11 +81,13 @@ export default function BlogContent() {
               <div className="grid gap-3 md:grid-cols-2 mb-4">
                 {posts?.map((p) => <PostCard key={p.id} post={p} />)}
               </div>
-              <Pagination
-                currentPage={page}
-                totalPages={totalPages}
-                onPageChange={setPage} 
-              />
+              {totalPages > 1 && (
+                <Pagination
+                  currentPage={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage} 
+                />
+              )}
             </>
           )}
         </CardContent>

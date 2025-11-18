@@ -33,7 +33,13 @@ export default function SiteQuizzesPage(){
 
   return (
     <div className="container mx-auto p-4 space-y-4">
-      <h1 className="text-2xl font-semibold">Quizzes</h1>
+      <div className="space-y-2 mb-6">
+        <h1 className="text-2xl font-semibold">Tìm kiếm bài thi</h1>
+        <p className="text-muted-foreground">
+          Khám phá thư viện bài thi phong phú của chúng tôi. Sử dụng bộ lọc bên dưới để tìm bài thi 
+          phù hợp với loại đề thi và kỹ năng bạn muốn luyện tập.
+        </p>
+      </div>
 
       <Card>
         <CardHeader><CardTitle>Filter</CardTitle></CardHeader>
@@ -69,7 +75,9 @@ export default function SiteQuizzesPage(){
         {items.length === 0 && <div>No quizzes</div>}
       </div>
 
-      <Pagination currentPage={meta.page} totalPages={meta.pages} onPageChange={setPage} />
+      {meta.pages > 1 && (
+        <Pagination currentPage={meta.page} totalPages={meta.pages} onPageChange={setPage} />
+      )}
     </div>
   );
 }
