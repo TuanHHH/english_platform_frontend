@@ -81,12 +81,6 @@ const UserCard = ({ user, onToggle }) => {
 
       {/* === Action buttons === */}
       <div className="flex items-center justify-end space-x-2 sm:ml-auto sm:flex-shrink-0">
-        <Button variant="ghost" size="sm" className="flex items-center justify-center">
-          <Mail className="w-4 h-4" />
-        </Button>
-        <Button variant="ghost" size="sm" className="flex items-center justify-center">
-          <Edit className="w-4 h-4" />
-        </Button>
         <Button
           variant="ghost"
           size="sm"

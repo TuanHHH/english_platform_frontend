@@ -13,8 +13,8 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner"; 
-import { searchQuizzes ,updateQuiz } from "@/lib/api/quiz/quiz";
+import { toast } from "sonner";
+import { searchQuizzes, updateQuiz, deleteQuiz } from "@/lib/api/quiz/quiz";
 import { listQuizTypes } from "@/lib/api/quiz/quiz-type";
 import { listPublicQuizSectionsByType } from "@/lib/api/quiz/quiz-section";
 
@@ -42,7 +42,7 @@ export default function AdminQuizzesPage() {
   const [total, setTotal] = useState(0);
   const [items, setItems] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
-  
+
   const handleStatusChange = async (id, nextStatus) => {
     try {
       await updateQuiz(id, { status: nextStatus });
@@ -86,8 +86,8 @@ export default function AdminQuizzesPage() {
     }
   }
 
-  useEffect(() => { 
-    load(); 
+  useEffect(() => {
+    load();
   }, [page, pageSize]);
 
   // load quiz types once
@@ -174,6 +174,20 @@ export default function AdminQuizzesPage() {
       setLoading(false);
     }
   };
+
+  const onDelete = async (id) => {
+    if (!confirm("Xóa quiz này?")) return;
+    try {
+      await deleteQuiz(id);
+      await load();
+      toast.success("Đã xóa quiz");
+    } catch (err) {
+      console.error(err);
+      toast.error("Lỗi khi xóa quiz");
+    }
+  };
+
+
 
   useEffect(() => {
     search({ page: 1 });
@@ -338,13 +352,11 @@ export default function AdminQuizzesPage() {
                     <Button variant="outline" asChild>
                       <a href={`/admin/quizzes/${q.id}`}>Sửa</a>
                     </Button>
-                    <Button variant="destructive" asChild>
-                      <a href={`/admin/quizzes/${q.id}/delete`}>Xóa</a>
-                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => onDelete(q.id)}>Xóa</Button>
                     <Button variant="secondary" asChild>
                       <a href={`/admin/quizzes/${q.id}/questions`}>Câu hỏi</a>
                     </Button>
-                    <Select value={q.status} onValueChange={(v)=>handleStatusChange(q.id, v)}>
+                    <Select value={q.status} onValueChange={(v) => handleStatusChange(q.id, v)}>
                       <SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue placeholder="Trạng thái" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="DRAFT">DRAFT</SelectItem>

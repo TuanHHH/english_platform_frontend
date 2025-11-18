@@ -3,7 +3,19 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  BarChart3, FileText, Users, MessageSquare, Flag, BookOpen, ShoppingBag, GraduationCap, ListChecks, HelpCircle
+  BarChart3,
+  BookOpen,
+  ClipboardSignature,
+  ClipboardType,
+  Flag,
+  FilePenLine,
+  LayoutList,
+  Layers,
+  ListChecks,
+  MessageSquare,
+  ShoppingBag,
+  GraduationCap,
+  Users,
 } from "lucide-react";
 
 const AdminSidebar = () => {
@@ -19,19 +31,17 @@ const AdminSidebar = () => {
     { title: "Quản lí người dùng", path: "/admin/users", icon: Users },
     { title: "Quản lí giảng viên", path: "/admin/instructors", icon: GraduationCap },
     { title: "Quản lí khóa học", path: "/admin/courses", icon: BookOpen },
-    { title: "Quản lí đề thi", path: "/admin/exams", icon: FileText },
-    { title: "Quản lí blog", path: "/admin/blogs", icon: MessageSquare },
-    { title: "Quản lí phân loại forum", path: "/admin/forum/categories", icon: Flag },
+    { title: "Quản lí phân loại forum", path: "/admin/forum/categories", icon: Layers },
     { title: "Quản lí report forum", path: "/admin/forum/reports", icon: Flag },
     {
       title: "Quản lí danh mục blog",
       path: "/admin/content/categories",
-      icon: FileText,
+      icon: Layers,
     },
     {
       title: "Quản lí blog",
       path: "/admin/content/posts",
-      icon: MessageSquare,
+      icon: FilePenLine,
     },
     {
       title: "Quản lí bình luận",
@@ -46,12 +56,12 @@ const AdminSidebar = () => {
     {
       title: "Quản lí phần thi",
       path: "/admin/quiz-sections",
-      icon: ListChecks,
+      icon: LayoutList,
     },
     {
       title: "Quản lí đề thi",
       path: "/admin/quizzes",
-      icon: MessageSquare,
+      icon: ClipboardSignature,
     },
     { title: "Quản lí đơn hàng", path: "/admin/orders", icon: ShoppingBag },
   ];

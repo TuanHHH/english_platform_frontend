@@ -1,12 +1,23 @@
 import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Pagination } from "@/components/ui/pagination";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const InstructorListSection = ({ instructors, loading, currentPage, totalPages, onPageChange }) => {
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+      <div className="space-y-4">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <div key={index} className="border rounded-lg p-4 flex items-center gap-4">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="flex-1 grid grid-cols-4 gap-4">
+              <Skeleton className="h-4 w-full col-span-1" />
+              <Skeleton className="h-4 w-full col-span-1" />
+              <Skeleton className="h-4 w-full col-span-1" />
+              <Skeleton className="h-4 w-full col-span-1" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
