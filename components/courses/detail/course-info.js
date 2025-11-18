@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { BookOpen, FileText, User, Calendar } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 
@@ -11,6 +12,10 @@ export function CourseInfo({ course }) {
       day: "numeric",
     })
   }
+
+  
+  const instructorName = course.createdBy || "Chưa cập nhật";
+  const instructorId = course.instructorId;
 
   const infoItems = [
     {
@@ -26,7 +31,7 @@ export function CourseInfo({ course }) {
     {
       icon: User,
       label: "Giảng viên",
-      value: course.createdBy || "Chưa cập nhật",
+      value: instructorId ? (<Link href={`/instructors/${instructorId}`} className="text-primary hover:underline">{instructorName}</Link>) : instructorName,
     },
     {
       icon: Calendar,

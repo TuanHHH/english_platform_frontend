@@ -4,6 +4,16 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAuthStore } from "@/store/auth-store";
 import { appCreateComment, appDeleteComment } from "@/lib/api/content/comments";
 
@@ -41,7 +51,7 @@ function initials(name) {
 function CommentItem({ c, isOwner, onDelete, children, onReplyClick, canReply }) {
   const name = displayNameOf(c);
   const avatar = avatarOf(c);
-  const createdAt = c.createdAt ? new Date(c.createdAt).toLocaleString() : "";
+  const createdAt = c.createdAt ? new Date(c.createdAt).toLocaleString("vi-VN") : "";
 
   return (
     <div className="flex gap-3 py-3">
@@ -56,7 +66,7 @@ function CommentItem({ c, isOwner, onDelete, children, onReplyClick, canReply })
           <div className="ml-auto flex items-center gap-2">
             {canReply && (
               <button
-                className="text-xs underline"
+                className="text-xs underline hover:no-underline"
                 onClick={onReplyClick}
               >
                 Trả lời
@@ -64,7 +74,7 @@ function CommentItem({ c, isOwner, onDelete, children, onReplyClick, canReply })
             )}
             {isOwner && (
               <button
-                className="text-xs text-red-600 underline"
+                className="text-xs text-red-600 underline hover:no-underline"
                 onClick={() => onDelete?.(c)}
               >
                 Xóa
@@ -99,8 +109,10 @@ function InlineReplyForm({ onSubmit, onCancel, loading }) {
         rows={3}
       />
       <div className="flex gap-2">
-        <Button type="submit" disabled={loading}>Gửi</Button>
-        <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
+        <Button type="submit" disabled={loading} size="sm">
+          Gửi
+        </Button>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={loading} size="sm">
           Hủy
         </Button>
       </div>
@@ -118,6 +130,11 @@ export default function CommentList({ postId, initial = [], onCreate }) {
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyLoading, setReplyLoading] = useState(false);
   const myId = user?.id;
+
+  // ✅ State cho confirm dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Cập nhật items khi initial thay đổi (từ pagination)
   useEffect(() => {
@@ -143,17 +160,36 @@ export default function CommentList({ postId, initial = [], onCreate }) {
     return { topLevel: tops, childrenMap: map };
   }, [items]);
 
-  async function handleDelete(comment) {
+  // ✅ Mở dialog xác nhận xóa
+  function openDeleteDialog(comment) {
     if (!comment?.id) return;
-    const ok = typeof window !== "undefined" ? window.confirm("Bạn có chắc muốn xóa bình luận này?") : true;
-    if (!ok) return;
+    setCommentToDelete(comment);
+    setDeleteDialogOpen(true);
+  }
+
+  // ✅ Xác nhận xóa từ dialog
+  async function confirmDelete() {
+    if (!commentToDelete?.id) return;
+    
+    setDeleting(true);
     try {
-      await appDeleteComment(comment.id);
-      setItems(prev => prev.filter(x => x.id !== comment.id));
+      await appDeleteComment(commentToDelete.id);
+      setItems(prev => prev.filter(x => x.id !== commentToDelete.id));
+      toast.success("Đã xóa bình luận");
+      setDeleteDialogOpen(false);
+      setCommentToDelete(null);
     } catch (e) {
       console.error(e);
       toast.error("Xóa bình luận thất bại.");
+    } finally {
+      setDeleting(false);
     }
+  }
+
+  // ✅ Hủy xóa
+  function cancelDelete() {
+    setDeleteDialogOpen(false);
+    setCommentToDelete(null);
   }
 
   async function handleReply(parent, body) {
@@ -164,6 +200,7 @@ export default function CommentList({ postId, initial = [], onCreate }) {
       const created = await appCreateComment(postId, payload);
       setItems(prev => [...prev, created]);
       setReplyingTo(null);
+      toast.success("Đã gửi phản hồi");
     } catch (e) {
       console.error(e);
       toast.error("Gửi phản hồi thất bại. Vui lòng thử lại.");
@@ -185,70 +222,105 @@ export default function CommentList({ postId, initial = [], onCreate }) {
         setItems(prev => [...prev, created]);
       }
       setBody("");
+      toast.success("Đã gửi bình luận");
     } catch (e) {
       console.error(e);
-      toast.error("Gửi phản hồi thất bại");
+      toast.error("Gửi bình luận thất bại");
     } finally {
       setCreatingTop(false);
     }
   }
 
   return (
-    <div className="space-y-2">
-      {/* Existing comments */}
-      {topLevel.map((c) => {
-        const isOwner = myId && authorIdOf(c) && String(authorIdOf(c)) === String(myId);
-        const replies = childrenMap[c.id] || [];
-        const canReply = isLoggedIn;
-        return (
-          <div key={c.id || Math.random()} className="border-b pb-3">
-            <CommentItem
-              c={c}
-              isOwner={!!isOwner}
-              onDelete={handleDelete}
-              canReply={canReply}
-              onReplyClick={() => setReplyingTo(c)}
-            >
-              {/* Level-2 list */}
-              {replies.length > 0 && (
-                <div className="mt-2 ml-8 space-y-2">
-                  {replies.map((r) => {
-                    const rOwner = myId && authorIdOf(r) && String(authorIdOf(r)) === String(myId);
-                    return (
-                      <CommentItem
-                        key={r.id || Math.random()}
-                        c={r}
-                        isOwner={!!rOwner}
-                        onDelete={handleDelete}
-                        canReply={false}
-                      />
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Inline reply form (only for level-1) */}
-              {replyingTo?.id === c.id && (
-                <div className="mt-2 ml-8">
-                  <InlineReplyForm
-                    loading={replyLoading}
-                    onCancel={() => setReplyingTo(null)}
-                    onSubmit={(body) => handleReply(c, body)}
-                  />
-                </div>
-              )}
-            </CommentItem>
+    <>
+      <div className="space-y-2">
+        {/* Existing comments */}
+        {topLevel.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <p>Chưa có bình luận nào. Hãy là người đầu tiên bình luận!</p>
           </div>
-        );
-      })}
+        ) : (
+          topLevel.map((c) => {
+            const isOwner = myId && authorIdOf(c) && String(authorIdOf(c)) === String(myId);
+            const replies = childrenMap[c.id] || [];
+            const canReply = isLoggedIn;
+            return (
+              <div key={c.id || Math.random()} className="border-b pb-3 last:border-b-0">
+                <CommentItem
+                  c={c}
+                  isOwner={!!isOwner}
+                  onDelete={openDeleteDialog}
+                  canReply={canReply}
+                  onReplyClick={() => setReplyingTo(c)}
+                >
+                  {/* Level-2 list */}
+                  {replies.length > 0 && (
+                    <div className="mt-2 ml-8 space-y-2">
+                      {replies.map((r) => {
+                        const rOwner = myId && authorIdOf(r) && String(authorIdOf(r)) === String(myId);
+                        return (
+                          <CommentItem
+                            key={r.id || Math.random()}
+                            c={r}
+                            isOwner={!!rOwner}
+                            onDelete={openDeleteDialog}
+                            canReply={false}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
 
-      {/* Top-level create form */}
-      {isLoggedIn ? (
-        <TopLevelCreateForm onSubmit={handleCreateTop} creating={creatingTop} />
-      ) : (
-        <div className="text-sm text-muted-foreground">Bạn cần đăng nhập để bình luận.</div>
-      )}
-    </div>
+                  {/* Inline reply form (only for level-1) */}
+                  {replyingTo?.id === c.id && (
+                    <div className="mt-2 ml-8">
+                      <InlineReplyForm
+                        loading={replyLoading}
+                        onCancel={() => setReplyingTo(null)}
+                        onSubmit={(body) => handleReply(c, body)}
+                      />
+                    </div>
+                  )}
+                </CommentItem>
+              </div>
+            );
+          })
+        )}
+
+        {/* Top-level create form */}
+        {isLoggedIn ? (
+          <TopLevelCreateForm onSubmit={handleCreateTop} creating={creatingTop} />
+        ) : (
+          <div className="text-sm text-muted-foreground text-center py-4 border rounded-lg bg-muted/30">
+            Bạn cần đăng nhập để bình luận.
+          </div>
+        )}
+      </div>
+
+      {/* ✅ Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa bình luận</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa bình luận này không? Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelDelete} disabled={deleting}>
+              Hủy
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Đang xóa..." : "Xóa"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
@@ -256,15 +328,18 @@ export default function CommentList({ postId, initial = [], onCreate }) {
 function TopLevelCreateForm({ onSubmit, creating }) {
   const [body, setBody] = useState("");
   return (
-    <form className="mt-2 flex flex-col gap-2" onSubmit={(e) => onSubmit(e, body, setBody)}>
+    <form className="mt-4 flex flex-col gap-2" onSubmit={(e) => onSubmit(e, body, setBody)}>
       <Textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
-        placeholder="Viết bình luận..."
+        placeholder="Viết bình luận của bạn..."
         rows={3}
+        className="resize-none"
       />
-      <div>
-        <Button type="submit" disabled={creating}>Gửi bình luận</Button>
+      <div className="flex justify-end">
+        <Button type="submit" disabled={creating || !body.trim()}>
+          {creating ? "Đang gửi..." : "Gửi bình luận"}
+        </Button>
       </div>
     </form>
   );
