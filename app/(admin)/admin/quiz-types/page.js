@@ -2,27 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   listQuizTypes,
   createQuizType,
@@ -30,6 +9,9 @@ import {
   deleteQuizType,
 } from "@/lib/api/quiz/quiz-type";
 import { toast } from "sonner";
+import QuizTypeList from "@/components/admin/quiz-type/quiz-type-list";
+import QuizTypeFormDialog from "@/components/admin/quiz-type/quiz-type-form-dialog";
+import QuizTypeDeleteDialog from "@/components/admin/quiz-type/quiz-type-delete-dialog";
 
 export default function QuizTypesPage() {
   const [list, setList] = useState([]);
@@ -176,106 +158,30 @@ export default function QuizTypesPage() {
         </div>
 
         {/* List of quiz types */}
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Danh sách loại đề thi</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <div key={index} className="border rounded-lg p-3">
-                    <Skeleton className="h-4 w-1/3 mb-2" />
-                    <Skeleton className="h-3 w-2/3" />
-                  </div>
-                ))}
-              </div>
-            ) : list.length === 0 ? (
-              <div className="text-gray-500 italic">Chưa có dữ liệu</div>
-            ) : (
-              <div className="space-y-3">
-                {list.map((it) => (
-                  <div
-                    key={it.id}
-                    className="flex items-center justify-between border rounded-lg p-3 hover:bg-gray-50 transition"
-                  >
-                    <div>
-                      <div className="font-medium">
-                        {it.name}{" "}
-                      </div>
-                      {it.description && (
-                        <div className="text-sm text-muted-foreground">
-                          {it.description}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => onEdit(it)}>
-                        Sửa
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => openDeleteDialog(it.id)}
-                      >
-                        Xóa
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <QuizTypeList
+          list={list}
+          loading={loading}
+          onEdit={onEdit}
+          onDelete={openDeleteDialog}
+        />
       </div>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Xác nhận xóa</AlertDialogTitle>
-            <AlertDialogDescription>
-              Bạn có chắc chắn muốn xóa loại đề thi này?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={onConfirmDelete} className="bg-red-600 hover:bg-red-700">
-              Xóa
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <QuizTypeDeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={onConfirmDelete}
+      />
 
       {/* Create/Edit Dialog */}
-      <Dialog open={formDialogOpen} onOpenChange={handleFormDialogChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingId ? "Sửa loại đề thi" : "Tạo loại đề thi"}</DialogTitle>
-            <DialogDescription>
-              Điền thông tin cho loại đề thi.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={onSubmit} className="space-y-4">
-            <Input
-              placeholder="Name"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
-            <Input
-              placeholder="Description"
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-            />
-            <DialogFooter className="flex gap-2">
-              <Button type="button" variant="outline" onClick={() => handleFormDialogChange(false)}>
-                Hủy
-              </Button>
-              <Button type="submit">{editingId ? "Cập nhật" : "Thêm mới"}</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <QuizTypeFormDialog
+        open={formDialogOpen}
+        onOpenChange={handleFormDialogChange}
+        form={form}
+        setForm={setForm}
+        onSubmit={onSubmit}
+        editingId={editingId}
+      />
     </div>
   );
 }

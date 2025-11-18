@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { Pagination } from "@/components/ui/pagination"
 import { getPublishedCourses } from "@/lib/api/course"
-import { FullPageLoader } from "@/components/ui/full-page-loader"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   CoursesHeader,
   SkillFilters,
@@ -77,7 +77,22 @@ export default function Courses() {
         />
 
         {loading ? (
-          <FullPageLoader />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(12)].map((_, i) => (
+              <div key={i} className="border rounded-lg overflow-hidden">
+                <Skeleton className="w-full h-48" />
+                <div className="p-4 space-y-3">
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-5/6" />
+                  <div className="flex gap-2 pt-2">
+                    <Skeleton className="h-6 w-16 rounded-full" />
+                    <Skeleton className="h-6 w-16 rounded-full" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : courses.length === 0 ? (
           <EmptyState />
         ) : (
