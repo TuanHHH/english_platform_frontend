@@ -42,7 +42,13 @@ export default function SiteQuizTypeSectionsPage() {
 
   return (
     <div className="container mx-auto p-4 space-y-6">
-      <h1 className="text-2xl font-semibold">Chọn kỹ năng</h1>
+      <div className="space-y-2">
+        <h1 className="text-2xl font-semibold">Chọn kỹ năng luyện tập</h1>
+        <p className="text-muted-foreground">
+          Hãy chọn kỹ năng bạn muốn rèn luyện. Mỗi kỹ năng có các bài tập và đề thi được thiết kế riêng 
+          để giúp bạn cải thiện từng khía cạnh của việc học tiếng Anh.
+        </p>
+      </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl">
         {SKILLS.map((s) => (

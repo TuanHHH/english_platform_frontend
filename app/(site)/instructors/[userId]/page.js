@@ -124,9 +124,11 @@ export default function InstructorPublicPage() {
           {courses?.length ? <CoursesGrid courses={courses} /> : <div className="text-muted-foreground">Chưa có khóa học nào.</div>}
         </div>
 
-        <div className="mt-6 flex justify-center">
-          <Pagination totalPages={meta.pages || 1} currentPage={meta.page || 1} onPageChange={handlePageChange} />
-        </div>
+        {meta.pages > 1 && (
+          <div className="mt-6 flex justify-center">
+            <Pagination totalPages={meta.pages || 1} currentPage={meta.page || 1} onPageChange={handlePageChange} />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -11,7 +11,7 @@ import {
   adminUnlockThread,
   adminDeleteThread,
   forumListCategories,
-} from "@/lib/api/forum/forum";
+} from "@/lib/api/forum";
 import { toast } from "sonner";
 
 // Reuse alert-dialog confirm

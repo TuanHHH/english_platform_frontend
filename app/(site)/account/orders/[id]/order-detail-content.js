@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import { getMyOrderById, cancelOrder } from "@/lib/api/order"
+import { getMyOrderById, cancelOrder, getOrderInvoice } from "@/lib/api/order"
 import { OrderHeader } from "@/components/account/orders/order-detail/order-header"
 import { OrderInfo } from "@/components/account/orders/order-detail/order-info"
 import { OrderItems } from "@/components/account/orders/order-detail/order-items"
@@ -106,9 +106,18 @@ export default function OrderDetailContent({ orderId }) {
     })
   }
 
-  const handleViewInvoice = () => {
-    // Navigate to invoice page
-    router.push(`/account/invoices/INV${orderDetails.id}`)
+  const handleViewInvoice = async () => {
+    try {
+      const result = await getOrderInvoice(orderDetails.id)
+      if (result.success && result.data?.fileUrl) {
+        window.open(result.data.fileUrl, '_blank')
+      } else {
+        toast.error(result.error || "Không thể tải hóa đơn")
+      }
+    } catch (error) {
+      console.error("Error fetching invoice:", error)
+      toast.error("Có lỗi xảy ra khi tải hóa đơn")
+    }
   }
 
   const handleRequestRefund = () => {

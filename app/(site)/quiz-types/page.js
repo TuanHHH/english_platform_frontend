@@ -23,7 +23,13 @@ export default function QuizTypes() {
 
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-semibold mb-6">Các loại bài thi</h1>
+      <div className="space-y-3 mb-6">
+        <h1 className="text-2xl font-semibold">Các loại bài thi</h1>
+        <p className="text-muted-foreground max-w-3xl">
+          Chọn loại bài thi phù hợp với mục tiêu của bạn. Chúng tôi cung cấp đa dạng các loại đề thi 
+          từ IELTS, TOEIC đến các bài kiểm tra tiếng Anh cơ bản, giúp bạn luyện tập và đánh giá năng lực một cách toàn diện.
+        </p>
+      </div>
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         {quizTypes.map((qt) => (
           <Link key={qt.id} href={`/quiz-types/${qt.id}/sections`}>
