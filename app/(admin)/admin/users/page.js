@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Search, ArrowUpDown } from "lucide-react";
+import { Search, UserPlus, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import AdminSidebar from "@/components/admin/admin-sidebar";
 import { getUsers, toggleUserStatus } from "@/lib/api/user";
 import { Pagination } from "@/components/ui/pagination";
 import ConfirmModal from "@/components/admin/users/confirm-modal";
@@ -32,7 +32,7 @@ const UserManagement = () => {
   };
   const [pageSize] = useState(5);
   const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [modalUser, setModalUser] = useState(null);
 
   const isMounted = useRef(false);
@@ -162,17 +162,8 @@ const UserManagement = () => {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="space-y-4">
-                {[...Array(5)].map((_, index) => (
-                  <div key={index} className="border rounded-lg p-4 flex items-center gap-4">
-                    <Skeleton className="h-10 w-10 rounded-full" />
-                    <div className="flex-1 space-y-2">
-                      <Skeleton className="h-4 w-1/3" />
-                      <Skeleton className="h-3 w-1/2" />
-                    </div>
-                    <Skeleton className="h-4 w-24" />
-                  </div>
-                ))}
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Đang tải...</p>
               </div>
             ) : filteredUsers.length === 0 ? (
               <div className="text-center py-8">

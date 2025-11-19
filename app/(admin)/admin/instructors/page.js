@@ -30,7 +30,7 @@ const InstructorManagement = () => {
 
   const [pageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   // Instructor list states
   const [instructors, setInstructors] = useState([]);
@@ -49,7 +49,7 @@ const InstructorManagement = () => {
   const [instructorSortDir, setInstructorSortDir] = useState("asc");
   const [instructorSearch, setInstructorSearch] = useState("");
   const [instructorDebouncedSearch, setInstructorDebouncedSearch] = useState("");
-  const [instructorLoading, setInstructorLoading] = useState(true);
+  const [instructorLoading, setInstructorLoading] = useState(false);
   const [showInstructorList, setShowInstructorList] = useState(false);
 
   const isMounted = useRef(false);

@@ -3,8 +3,6 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import ProfileCard from '@/components/account/profile';
 import TestHistory from '@/components/account/test-history';
-import GoogleLinkCard from '@/components/account/google-link-card';
-// import NotificationSettingsWrapper from '@/components/account/notification-setting-wrapper';
 
 export default function AccountContent() {
   return (
@@ -26,7 +24,6 @@ export default function AccountContent() {
             <TabsContent value="profile">
               <div className="grid md:grid-cols-1 gap-6">
                 <ProfileCard />
-                <GoogleLinkCard />
                 <div className="bg-white rounded-lg shadow p-6">
                   <div className="flex items-center justify-between">
                     <div>

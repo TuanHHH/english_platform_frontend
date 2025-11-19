@@ -10,16 +10,15 @@ import AuthSection from "@/components/common/auth-section/auth-section"
 import AuthSectionMobile from "@/components/common/auth-section/auth-section-mobile"
 import { useCartStore } from "@/store/cart-store"
 import { useEffect, useState } from "react"
+import NotificationBell from "@/components/notification/notification-bell" // Import mới
 
 function CartBadge({ count }) {
-  // Prevent hydration issues by only rendering after component mounts
   const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
     setIsMounted(true)
   }, [])
 
-  // Don't render anything during SSR or before mount or if count is 0/undefined
   if (!isMounted || count === 0 || count === undefined) {
     return <span className="sr-only">No items in cart</span>
   }
@@ -60,13 +59,19 @@ export default function Header() {
             <SearchContainer />
           </div>
 
-          <div className="hidden md:flex items-center space-x-3">
+          <div className="hidden md:flex items-center space-x-2">
+            {/* Thêm Notification Bell vào đây */}
+            <NotificationBell />
+            
             <Link href="/cart" className="relative p-2 text-gray-600 hover:text-blue-600 transition-colors">
               <ShoppingCart className="h-6 w-6" />
               <span className="sr-only">Shopping cart</span>
               <CartBadge count={cartItemCount} />
             </Link>
-            <AuthSection />
+            
+            <div className="ml-2">
+                <AuthSection />
+            </div>
           </div>
 
           <Sheet>
@@ -86,6 +91,15 @@ export default function Header() {
                     {item.name}
                   </Link>
                 ))}
+                
+                {/* Mobile Notification Link */}
+                <Link
+                    href="/account/notifications"
+                    className="text-lg font-medium transition-colors hover:text-blue-600 flex items-center gap-2"
+                >
+                    Thông báo
+                </Link>
+
                 <Link
                   href="/cart"
                   className="flex items-center space-x-3 text-lg font-medium transition-colors hover:text-blue-600 relative"

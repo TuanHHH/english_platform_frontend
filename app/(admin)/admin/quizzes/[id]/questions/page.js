@@ -212,6 +212,11 @@ export default function QuizQuestionsWithContextPage() {
                       </li>
                     </ul>
                   </div>
+
+                  <p className="text-xs text-muted-foreground mt-3 italic">
+                    * Editor sử dụng AWS S3 để lưu trữ media, đảm bảo hiệu suất
+                    và khả năng mở rộng tốt.
+                  </p>
                 </>
               )}
             </CardContent>

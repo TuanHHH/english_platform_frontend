@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { listPublicQuizSectionsByType } from "@/lib/api/quiz/quiz-section";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 
 const SKILLS = ["LISTENING", "READING", "SPEAKING", "WRITING"];
 
@@ -58,14 +57,8 @@ export default function SiteQuizTypeSectionsPage() {
       </div>
 
       {loading ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="border rounded-xl p-4">
-              <Skeleton className="h-4 w-20 mb-2" />
-              <Skeleton className="h-6 w-3/4 mb-2" />
-              <Skeleton className="h-4 w-full" />
-            </div>
-          ))}
+        <div className="text-muted-foreground py-12 text-center">
+          Đang tải...
         </div>
       ) : sections.length === 0 ? (
         <div className="text-muted-foreground py-12 text-center">

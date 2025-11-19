@@ -20,7 +20,7 @@ export default function QuizSectionForm({ initial = null, onSubmit, submitting =
         const typesList = result?.data || result || [];
         setTypes(Array.isArray(typesList) ? typesList : []);
       } catch (error) {
-        console.error("Không thể tải danh sách loại quiz:", error);
+        console.error("Failed to load quiz types:", error);
         setTypes([]);
       }
     })(); 
@@ -43,33 +43,33 @@ export default function QuizSectionForm({ initial = null, onSubmit, submitting =
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{initial ? "Cập nhật" : "Tạo phần luyện tập"}</CardTitle>
+        <CardTitle>{initial ? "Update Quiz Section" : "Create Quiz Section"}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="flex gap-4 items-end">
-          {/* Ô nhập tên */}
+          {/* Name Input */}
           <div className="flex-1">
-            <label className="block text-sm mb-1">Tên phần</label>
+            <label className="block text-sm mb-1">Name</label>
             <Input 
               value={name} 
               onChange={(e) => setName(e.target.value)} 
-              placeholder="ví dụ: WRITING TASK 1 - Biểu đồ cột" 
+              placeholder="e.g. WRITING TASK 1: Bar Chart" 
             />
           </div>
           
-          {/* Chọn loại quiz - hiển thị khi đã có tên */}
+          {/* Quiz Type Select - hiển thị khi có name */}
           {name && (
             <div className="flex-1">
-              <label className="block text-sm mb-1">Loại đề</label>
+              <label className="block text-sm mb-1">Quiz Type</label>
               <Select 
                 value={quizTypeId} 
                 onValueChange={(value) => setQuizTypeId(value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Chọn loại đề" />
+                  <SelectValue placeholder="Select quiz type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">-- Chọn loại đề --</SelectItem>
+                  <SelectItem value="none">-- Select quiz type --</SelectItem>
                   {types.map(t => (
                     <SelectItem key={t.id} value={t.id}>
                       {t.name}
@@ -80,27 +80,22 @@ export default function QuizSectionForm({ initial = null, onSubmit, submitting =
             </div>
           )}
           
-          {/* Chọn kỹ năng - hiển thị khi đã chọn loại quiz */}
+          {/* Skill Select - hiển thị khi có name và quizTypeId */}
           {name && quizTypeId !== "none" && (
             <div className="flex-1">
-              <label className="block text-sm mb-1">Kỹ năng</label>
+              <label className="block text-sm mb-1">Skill</label>
               <Select 
                 value={skill} 
                 onValueChange={(value) => setSkill(value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Chọn kỹ năng" />
+                  <SelectValue placeholder="Select skill" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">-- Chọn kỹ năng --</SelectItem>
-                  {[
-                    { key: "LISTENING", label: "Nghe" },
-                    { key: "READING", label: "Đọc" },
-                    { key: "SPEAKING", label: "Nói" },
-                    { key: "WRITING", label: "Viết" }
-                  ].map(s => (
-                    <SelectItem key={s.key} value={s.key}>
-                      {s.label}
+                  <SelectItem value="none">-- Select skill --</SelectItem>
+                  {["LISTENING", "READING", "SPEAKING", "WRITING"].map(s => (
+                    <SelectItem key={s} value={s}>
+                      {s}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -108,10 +103,10 @@ export default function QuizSectionForm({ initial = null, onSubmit, submitting =
             </div>
           )}
           
-          {/* Nút lưu - hiển thị khi đã đầy đủ thông tin */}
+          {/* Save Button - hiển thị khi tất cả field đã chọn */}
           {name && quizTypeId !== "none" && skill !== "none" && (
             <Button type="submit" disabled={submitting}>
-              {submitting ? "Đang lưu..." : "Lưu"}
+              {submitting ? "Saving..." : "Save"}
             </Button>
           )}
         </form>
