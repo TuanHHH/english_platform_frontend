@@ -8,7 +8,7 @@ import { PaymentMethods } from "@/components/payment/payment-methods"
 import { ArrowLeft, Loader2, CreditCard } from "lucide-react"
 import { toast } from "sonner"
 import { getMyOrderById } from "@/lib/api/order"
-import { createStripeCheckout, createPayOSCheckout } from "@/lib/api/payment"
+import { createPayPalCheckout, createPayOSCheckout } from "@/lib/api/payment"
 import { formatCurrency } from "@/lib/utils"
 
 export default function OrderPaymentPage() {
@@ -58,20 +58,20 @@ export default function OrderPaymentPage() {
 
         try {
             let paymentResult
-            if (selectedPayment === "stripe") {
-                paymentResult = await createStripeCheckout(orderData.id)
+            if (selectedPayment === "paypal") {
+                paymentResult = await createPayPalCheckout(orderData.id)
 
                 if (!paymentResult.success) {
-                    toast.error(paymentResult.error || "Không thể tạo thanh toán Stripe")
+                    toast.error(paymentResult.error || "Không thể tạo thanh toán PayPal")
                     return
                 }
 
                 const paymentData = paymentResult.data
 
-                if (paymentData.checkoutUrl) {
-                    window.location.href = paymentData.checkoutUrl
+                if (paymentData.approvalUrl) {
+                    window.location.href = paymentData.approvalUrl
                 } else {
-                    toast.error("Không nhận được link thanh toán từ Stripe")
+                    toast.error("Không nhận được link thanh toán từ PayPal")
                 }
             } else if (selectedPayment === "payOS") {
                 paymentResult = await createPayOSCheckout(orderData.id)
