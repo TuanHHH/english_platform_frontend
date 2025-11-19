@@ -10,6 +10,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, ChevronRight, Send, ArrowLeft } from "lucide-react";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { getPublicQuiz } from "@/lib/api/quiz/quiz";
-import { submitOneShot } from "@/lib/api/assessment/attempt";
+import { submitOneShot } from "@/lib/api/attempt";
+import SpeakingRecorder from "@/components/practice/speaking-recorder";
 
 export default function PracticePage() {
   const router = useRouter();
@@ -36,7 +38,6 @@ export default function PracticePage() {
   const [warningDialogOpen, setWarningDialogOpen] = useState(false);
   const [warningMessage, setWarningMessage] = useState("");
 
-  // để cuộn về kết quả nếu bạn muốn giữ lại flow xem tại chỗ (ở bản này sẽ redirect)
   const resultRef = useRef(null);
 
   // Load đề (PUBLIC)
@@ -73,6 +74,7 @@ export default function PracticePage() {
   const total = questions.length;
   const current = useMemo(() => questions?.[index] || null, [questions, index]);
   const isMCQ = (q) => Array.isArray(q?.options) && q.options.length > 0;
+  const isSpeaking = (q) => quiz?.skill?.toUpperCase() === "SPEAKING" && !isMCQ(q);
 
   const answered = useMemo(() => Object.keys(answers).length, [answers]);
 
@@ -355,6 +357,8 @@ export default function PracticePage() {
                       );
                     })}
                 </div>
+              ) : isSpeaking(current) ? (
+                <SpeakingRecorder questionId={current.id} onAnswer={onChoose} />
               ) : (
                 <div>
                   <textarea
@@ -380,9 +384,16 @@ export default function PracticePage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setWarningDialogOpen(false)}>
-              Đồng ý
-            </AlertDialogAction>
+            {warningMessage.includes("Vẫn nộp bài") ? (
+              <>
+                <AlertDialogCancel>Hủy</AlertDialogCancel>
+                <AlertDialogAction onClick={handleSubmit}>Nộp bài</AlertDialogAction>
+              </>
+            ) : (
+              <AlertDialogAction onClick={() => setWarningDialogOpen(false)}>
+                Đồng ý
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

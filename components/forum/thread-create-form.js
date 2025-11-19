@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { forumListCategories } from "@/lib/api/forum/forum";
-import { appCreateThread } from "@/lib/api/forum/forum";
+import { forumListCategories } from "@/lib/api/forum";
+import { appCreateThread } from "@/lib/api/forum";
 import Editor from "@/components/content/editor";
 
 export default function ThreadCreateForm() {

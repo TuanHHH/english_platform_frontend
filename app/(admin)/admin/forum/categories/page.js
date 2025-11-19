@@ -9,7 +9,7 @@ import {
   adminForumCreateCategory,
   adminForumUpdateCategory,
   adminForumDeleteCategory,
-} from "@/lib/api/forum/forum";
+} from "@/lib/api/forum";
 
 export default function AdminForumCategoriesPage() {
   const [items, setItems] = useState([]);

@@ -19,7 +19,7 @@ import {
   adminHidePost,
   adminUnhidePost,
   adminDeletePost,
-} from "@/lib/api/forum/forum";
+} from "@/lib/api/forum";
 
 export default function AdminForumReportsPage() {
   const [items, setItems] = useState([]);

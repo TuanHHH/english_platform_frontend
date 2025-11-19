@@ -21,15 +21,17 @@ export default function SectionQuizzesPage() {
     meta: { page: 1, pageSize: 12, pages: 0, total: 0 },
     result: [],
   });
+  const [loading, setLoading] = useState(true);
 
-  // ✅ luôn không lỗi
   const { meta = {}, result: items = [] } = data || {};
 
   useEffect(() => {
     if (!sectionId) return;
     (async () => {
+      setLoading(true);
       const res = await listPublishedBySection(sectionId, { page, pageSize });
       setData(res.data);
+      setLoading(false);
     })();
   }, [sectionId, page]);
 
@@ -63,7 +65,14 @@ export default function SectionQuizzesPage() {
       </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {items.length > 0 &&
+        {loading && Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="border rounded-xl p-4 animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
+            <div className="h-6 bg-gray-200 rounded w-2/3"></div>
+          </div>
+        ))}
+
+        {!loading && items.length > 0 &&
           items.map((q) => (
             <Link
               key={q.id}
@@ -77,17 +86,19 @@ export default function SectionQuizzesPage() {
             </Link>
           ))}
 
-        {items.length === 0 && (
-          <div className="text-muted-foreground">No quizzes</div>
+        {!loading && items.length === 0 && (
+          <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
+            <p className="text-muted-foreground text-lg">Chưa có bài thi nào</p>
+          </div>
         )}
       </div>
 
       {meta.pages > 1 && (
         <div className="mt-4">
           <Pagination
-            currentPage={meta.page || 1} // ✅ Đổi từ 'page' sang 'currentPage'
+            currentPage={meta.page || 1}
             totalPages={meta.pages || 0}
-            onPageChange={setPage} // ✅ Đổi từ 'onChange' sang 'onPageChange'
+            onPageChange={setPage}
           />
         </div>
       )}

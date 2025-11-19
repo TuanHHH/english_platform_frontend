@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import ThreadListFilters from "@/components/forum/thread-list-filters";
-import { forumListThreads, forumListCategories } from "@/lib/api/forum/forum";
+import { forumListThreads, forumListCategories } from "@/lib/api/forum";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 

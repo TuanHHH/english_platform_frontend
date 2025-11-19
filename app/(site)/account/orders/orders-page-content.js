@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Pagination } from "@/components/ui/pagination"
+import { Skeleton } from "@/components/ui/skeleton"
 import { getMyOrders } from "@/lib/api/order"
 import { toast } from "sonner"
 import Link from "next/link"
@@ -109,7 +110,7 @@ export default function OrdersPage() {
               {/* Results count */}
               <div className="mt-4 text-sm text-gray-600">
                 {loading ? (
-                  "Đang tải..."
+                  <Skeleton className="h-4 w-48" />
                 ) : (
                   `Hiển thị ${paginatedOrders.length} trên ${paginationMeta.total} đơn hàng`
                 )}
@@ -121,8 +122,13 @@ export default function OrdersPage() {
           <Card>
             <CardContent className="p-0">
               {loading ? (
-                <div className="text-center py-12">
-                  <div className="text-gray-500">Đang tải đơn hàng...</div>
+                <div className="p-6 space-y-4">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="space-y-3">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                  ))}
                 </div>
               ) : paginatedOrders.length > 0 ? (
                 <>

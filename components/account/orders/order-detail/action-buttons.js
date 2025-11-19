@@ -1,12 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Receipt, RefreshCw, XCircle, CreditCard } from "lucide-react"
+import { Receipt, XCircle, CreditCard } from "lucide-react"
 
 export function ActionButtons({
   orderDetails,
   isProcessing,
   onViewInvoice,
-  onRequestRefund,
   onCancelOrder,
   onPayAgain
 }) {
@@ -45,18 +44,6 @@ export function ActionButtons({
               {isProcessing ? "Đang xử lý..." : "Hủy đơn hàng"}
             </Button>
           </>
-        )}
-
-        {orderDetails.status === "PAID" && (
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={onRequestRefund}
-            disabled={isProcessing}
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isProcessing ? 'animate-spin' : ''}`} />
-            {isProcessing ? "Đang xử lý..." : "Yêu cầu hoàn tiền"}
-          </Button>
         )}
       </CardContent>
     </Card>

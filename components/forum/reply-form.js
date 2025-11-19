@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { appReplyThread } from "@/lib/api/forum/forum";
+import { appReplyThread } from "@/lib/api/forum";
 
 export default function ReplyForm({ threadId, onDone }) {
   const [body, setBody] = useState("");

@@ -85,13 +85,6 @@ const OrdersTable = ({ orders }) => {
                   <Badge variant={getStatusVariant(order.status)}>
                     {getStatusText(order.status)}
                   </Badge>
-                  {order.status === 'PAID' && (
-                    <Link href={`/account/invoices/INV${order.id}`}>
-                      <Button variant="outline" size="sm" title="Xem hóa đơn">
-                        <Receipt className="w-3 h-3" />
-                      </Button>
-                    </Link>
-                  )}
                 </div>
               </TableCell>
               <TableCell className="text-center">

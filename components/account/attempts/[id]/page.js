@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, RotateCcw } from "lucide-react";
 import AttemptAnswersView from "@/components/assessment/attempt-answers-view";
-import { getAttemptAnswers } from "@/lib/api/assessment/attempt";
+import { getAttemptAnswers } from "@/lib/api/attempt";
 import { useParams } from "next/navigation";
 
 export default function AttemptDetailPage({ params }) {

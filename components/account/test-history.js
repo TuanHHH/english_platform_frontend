@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { CalendarIcon, ExternalLink } from 'lucide-react'
-import { listMyAttempts } from '@/lib/api/assessment/attempt'
+import { listMyAttempts } from '@/lib/api/attempt'
 import { Pagination } from '@/components/ui/pagination'
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -231,7 +231,7 @@ export default function TestHistory() {
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       {/* Left: Date and Status */}
                       <div className="flex min-w-0 items-center gap-3 text-sm text-muted-foreground">
-                        <CalendarIcon className="h-4 w-4 flex-shrink-0" />
+                        <CalendarIcon className="h-4 w-4 shrink-0" />
                         <span className="truncate">
                           {fmtDate(a.submittedAt || a.startedAt)}
                         </span>
