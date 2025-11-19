@@ -10,7 +10,7 @@ import { ShoppingCart, ArrowLeft, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { getCartCheckout } from "@/lib/api/cart"
 import { createOrder } from "@/lib/api/order"
-import { createStripeCheckout, createPayOSCheckout } from "@/lib/api/payment"
+import { createPayPalCheckout, createPayOSCheckout } from "@/lib/api/payment"
 
 export default function CheckoutPage() {
   const [selectedPayment, setSelectedPayment] = useState("payOS")
@@ -74,21 +74,21 @@ export default function CheckoutPage() {
 
       // Step 2: Create payment checkout based on selected method
       let paymentResult
-      if (selectedPayment === "stripe") {
-        paymentResult = await createStripeCheckout(order.id)
+      if (selectedPayment === "paypal") {
+        paymentResult = await createPayPalCheckout(order.id)
 
         if (!paymentResult.success) {
-          toast.error(paymentResult.error || "Không thể tạo thanh toán Stripe")
+          toast.error(paymentResult.error || "Không thể tạo thanh toán PayPal")
           return
         }
 
         const paymentData = paymentResult.data
 
-        // Step 3: Open Stripe checkout URL directly on this page
-        if (paymentData.checkoutUrl) {
-          window.location.href = paymentData.checkoutUrl
+        // Step 3: Open PayPal approval URL directly on this page
+        if (paymentData.approvalUrl) {
+          window.location.href = paymentData.approvalUrl
         } else {
-          toast.error("Không nhận được link thanh toán từ Stripe")
+          toast.error("Không nhận được link thanh toán từ PayPal")
         }
       } else if (selectedPayment === "payOS") {
         paymentResult = await createPayOSCheckout(order.id)

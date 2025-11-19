@@ -15,11 +15,11 @@ export function PaymentMethods({ selected, onSelect }) {
       bg: "bg-green-50 border-green-200",
     },
     {
-      id: "stripe",
-      name: "Stripe",
-      description: "Thanh toán bằng thẻ quốc tế",
-      logo: "/stripe.png",
-      bg: "bg-indigo-50 border-indigo-200",
+      id: "paypal",
+      name: "PayPal",
+      description: "Thanh toán quốc tế qua PayPal",
+      logo: "/paypal.png",
+      bg: "bg-blue-50 border-blue-200",
     },
   ]
 

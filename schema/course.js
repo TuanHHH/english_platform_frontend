@@ -32,7 +32,9 @@ export const courseSchema = z.object({
   currency: z
     .string()
     .min(1, "Tiền tệ là bắt buộc")
-    .regex(/^[A-Z]{3}$/, "Tiền tệ phải gồm 3 chữ in hoa (VD: VND, USD)"),
+    // Temporarily only allow VND currency
+    .refine((val) => val === "VND", "Hiện tại chỉ hỗ trợ tiền tệ VND"),
+    // .regex(/^[A-Z]{3}$/, "Tiền tệ phải gồm 3 chữ in hoa (VD: VND, USD)"),
 })
 
 
