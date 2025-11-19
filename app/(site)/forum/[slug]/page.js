@@ -20,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { forumGetThreadBySlug, forumListThreadPosts } from "@/lib/api/forum/forum";
+import { forumGetThreadBySlug, forumListThreadPosts } from "@/lib/api/forum";
 import { Pagination } from "@/components/ui/pagination";
 import ReplyForm from "@/components/forum/reply-form";
 import ReplyToPostForm from "@/components/forum/reply-to-post-form";
@@ -31,7 +31,7 @@ import {
   appLockThread,
   appUnlockThread,
   appDeleteOwnPost,
-} from "@/lib/api/forum/forum";
+} from "@/lib/api/forum";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth-store";
 

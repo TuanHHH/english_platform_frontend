@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { CalendarIcon, ExternalLink } from 'lucide-react'
-import { listMyAttempts } from '@/lib/api/assessment/attempt'
+import { listMyAttempts } from '@/lib/api/attempt'
 import { Pagination } from '@/components/ui/pagination'
+import { Skeleton } from '@/components/ui/skeleton'
 
 function fmtDate(iso) {
   if (!iso) return ''
@@ -127,8 +128,48 @@ export default function TestHistory() {
       </header>
 
       {loading ? (
-        <div className="rounded-md border p-6 text-sm text-muted-foreground">
-          Đang tải...
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <article 
+              key={i} 
+              className="overflow-hidden rounded-lg border bg-white shadow-sm"
+            >
+              {/* Header Skeleton */}
+              <header className="border-b bg-gray-50 px-6 py-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1 space-y-3">
+                    <Skeleton className="h-6 w-2/3" />
+                    <div className="flex flex-wrap gap-2">
+                      <Skeleton className="h-6 w-20 rounded" />
+                      <Skeleton className="h-6 w-24 rounded" />
+                      <Skeleton className="h-6 w-28 rounded" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-10 w-24 rounded-md" />
+                </div>
+              </header>
+
+              {/* Attempts list Skeleton */}
+              <ul className="divide-y">
+                {[...Array(2)].map((_, j) => (
+                  <li key={j} className="px-6 py-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-4 w-4 rounded" />
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-5 w-16 rounded" />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-4 w-12" />
+                        <Skeleton className="h-5 w-12 rounded" />
+                      </div>
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </article>
+          ))}
         </div>
       ) : grouped.length === 0 ? (
         <div className="rounded-md border p-6 text-center">
@@ -190,7 +231,7 @@ export default function TestHistory() {
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       {/* Left: Date and Status */}
                       <div className="flex min-w-0 items-center gap-3 text-sm text-muted-foreground">
-                        <CalendarIcon className="h-4 w-4 flex-shrink-0" />
+                        <CalendarIcon className="h-4 w-4 shrink-0" />
                         <span className="truncate">
                           {fmtDate(a.submittedAt || a.startedAt)}
                         </span>
