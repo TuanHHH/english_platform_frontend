@@ -53,6 +53,23 @@ export default function AccountContent() {
                     </Link>
                   </div>
                 </div>
+
+                <div className="bg-white rounded-lg shadow p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900">
+                        Bài viết diễn đàn
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Xem và quản lý các chủ đề bạn đã đăng
+                      </p>
+                    </div>
+                    <Link href="/account/forum">
+                      <Button variant="outline">Xem bài viết</Button>
+                    </Link>
+                  </div>
+                </div>
+
               </div>
             </TabsContent>
 

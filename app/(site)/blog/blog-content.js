@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { publicListPostsPaged } from "@/lib/api/content/posts";
-import { listCategories } from "@/lib/api/content/categories";
+import { listPublicCategories } from "@/lib/api/content/categories";
 import PostCard from "@/components/content/post-card";
 import FiltersBar from "@/components/content/filters-bar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -28,7 +28,7 @@ export default function BlogContent() {
     try {
       const parsedFilters = key ? JSON.parse(key) : {};
       const [catsData, paged] = await Promise.all([
-        listCategories(),
+        listPublicCategories(),
         publicListPostsPaged({ ...parsedFilters, page: p, pageSize }),
       ]);
       setCats(catsData);
