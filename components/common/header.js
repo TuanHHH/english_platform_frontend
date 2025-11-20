@@ -55,9 +55,9 @@ export default function Header() {
             ))}
           </nav>
 
-          <div className="hidden lg:flex items-center space-x-4">
+          {/* <div className="hidden lg:flex items-center space-x-4">
             <SearchContainer />
-          </div>
+          </div> */}
 
           <div className="hidden md:flex items-center space-x-2">
 
@@ -118,9 +118,9 @@ export default function Header() {
           </Sheet>
         </div>
 
-        <div className="lg:hidden pb-4">
+        {/* <div className="lg:hidden pb-4">
           <SearchContainer isMobile />
-        </div>
+        </div> */}
       </div>
     </header>
   )

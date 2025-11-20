@@ -12,8 +12,9 @@ export const useNotificationStore = create((set, get) => ({
   notifications: [],
   unreadCount: 0,
   loading: false,
+  lastFetchTime: null,
   pagination: {
-    page: 0,
+    page: 1,
     totalPages: 1,
     totalItems: 0
   },
@@ -24,11 +25,18 @@ export const useNotificationStore = create((set, get) => ({
   },
 
   // Lấy dữ liệu (merge, dedupe)
-  fetchNotifications: async (page = 0, size = 20) => {
-    set({ loading: true });
+  fetchNotifications: async (page = 1, size = 20) => {
+    const state = get();
+    const now = Date.now();
+    
+    // Nếu đang loading hoặc vừa fetch trong vòng 1 giây, bỏ qua
+    if (state.loading || (state.lastFetchTime && now - state.lastFetchTime < 1000)) {
+      return;
+    }
+    
+    set({ loading: true, lastFetchTime: now });
     try {
-      const apiPageIndex = page > 0 ? page - 1 : 0;
-      const res = await getNotifications({ page: apiPageIndex, size });
+      const res = await getNotifications({ page, size });
 
       if (res.success) {
         const items = res.data?.result || [];
@@ -53,7 +61,7 @@ export const useNotificationStore = create((set, get) => ({
               notifications: merged,
               unreadCount: meta.totalUnread,
               pagination: {
-                page: meta.page ?? apiPageIndex,
+                page: page,
                 totalPages: meta.pages ?? state.pagination.totalPages,
                 totalItems: meta.total ?? state.pagination.totalItems
               },
@@ -80,7 +88,7 @@ export const useNotificationStore = create((set, get) => ({
               notifications: merged,
               unreadCount: unread,
               pagination: {
-                page: meta.page ?? apiPageIndex,
+                page: page,
                 totalPages: meta.pages ?? state.pagination.totalPages,
                 totalItems: meta.total ?? state.pagination.totalItems
               },
