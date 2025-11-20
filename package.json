@@ -32,6 +32,7 @@
     "axios": "^1.12.2",
     "class-variance-authority": "^0.7.1",
     "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
     "dayjs": "^1.11.18",
     "input-otp": "^1.4.2",
     "isomorphic-dompurify": "^2.32.0",

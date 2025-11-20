@@ -31,7 +31,7 @@ export default function NotificationBell() {
   // Fetch khi component mount nếu đã login
   useEffect(() => {
     if (user) {
-      fetchNotifications();
+      fetchNotifications(1);
     }
   }, [user]);
 

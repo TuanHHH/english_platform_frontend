@@ -7,6 +7,12 @@ import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 
 export default function NotificationItem({ item, onRead, onDelete, compact = false }) {
+  const getVietnamTime = (utcDate) => {
+    if (!utcDate) return null;
+    const date = new Date(utcDate);
+    return new Date(date.getTime() + 7 * 60 * 60 * 1000);
+  };
+
   return (
     <div className={cn(
       "group flex gap-3 p-4 transition-colors hover:bg-accent/50 border-b last:border-0",
@@ -25,7 +31,7 @@ export default function NotificationItem({ item, onRead, onDelete, compact = fal
             {item.title}
           </p>
           <span className="text-xs text-muted-foreground whitespace-nowrap">
-            {item.createdAt && formatDistanceToNow(new Date(item.createdAt), { addSuffix: true, locale: vi })}
+            {item.createdAt && formatDistanceToNow(getVietnamTime(item.createdAt), { addSuffix: true, locale: vi })}
           </span>
         </div>
         <p className={cn("text-sm text-muted-foreground", compact && "line-clamp-2")}>
