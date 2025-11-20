@@ -7,7 +7,9 @@ import ThreadListFilters from "@/components/forum/thread-list-filters";
 import { forumListThreads, forumListCategories } from "@/lib/api/forum";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-
+import { useAuthStore } from "@/store/auth-store"; 
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function ForumContent() {
   const [items, setItems] = useState([]);
@@ -18,6 +20,10 @@ export default function ForumContent() {
   const [isInitialMount, setIsInitialMount] = useState(true);
   const [loading, setLoading] = useState(true);
   const pageSize = 20;
+
+  const user = useAuthStore((state) => state.user);
+  const router = useRouter();
+
 
   async function load(p = page, f = filters) {
     setLoading(true);
@@ -53,16 +59,35 @@ export default function ForumContent() {
           <h1 className="text-3xl sm:text-4xl font-bold">
             Diễn đàn
           </h1>
-          <Link href="/forum/new">
+          
+          <Link
+            href={user ? "/forum/new" : "/login"}
+            onClick={(e) => {
+              if (
+                e.ctrlKey ||
+                e.metaKey ||
+                e.button === 1
+              ) {
+                return;
+              }
+
+              if (!user) {
+                e.preventDefault();
+                toast.error("Vui lòng đăng nhập để tạo chủ đề mới");
+                router.push("/login");
+              }
+            }}
+          >
             <Button size="lg" className="w-full sm:w-auto shadow-lg hover:shadow-xl transition-shadow">
               Tạo chủ đề
             </Button>
           </Link>
+          
         </div>
 
         <Card className="shadow-md hover:shadow-lg transition-shadow">
           <CardHeader>
-            <CardTitle className="text-lg sm:text-xl">Bộ lọc</CardTitle>
+             <CardTitle className="text-lg sm:text-xl">Bộ lọc</CardTitle>
           </CardHeader>
           <CardContent>
             <ThreadListFilters categories={cats} onChange={setFilters} />
@@ -79,7 +104,7 @@ export default function ForumContent() {
               <>
                 {[...Array(5)].map((_, i) => (
                   <div key={i} className="border rounded-lg p-4 space-y-3">
-                    <Skeleton className="h-6 w-3/4" />
+                     <Skeleton className="h-6 w-3/4" />
                     <div className="flex items-center gap-2">
                       <Skeleton className="h-7 w-7 rounded-full" />
                       <Skeleton className="h-4 w-24" />
@@ -118,7 +143,7 @@ export default function ForumContent() {
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1">
-                        <span className="font-medium text-primary">{t.replyCount}</span> trả lời
+                         <span className="font-medium text-primary">{t.replyCount}</span> trả lời
                       </span>
                       <span>•</span>
                       <span className="flex items-center gap-1">
@@ -126,7 +151,7 @@ export default function ForumContent() {
                       </span>
                       <span>•</span>
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${t.locked ? 'bg-destructive/10 text-destructive' : 'bg-green-500/10 text-green-600 dark:text-green-400'}`}>
-                        {t.locked ? "Đã khóa" : "Đang mở"}
+                         {t.locked ? "Đã khóa" : "Đang mở"}
                       </span>
                     </div>
                   </Link>
@@ -138,7 +163,7 @@ export default function ForumContent() {
                 )}
 
                 {meta?.pages > 1 && (
-                  <div className="mt-4">
+                   <div className="mt-4">
                     <Pagination currentPage={page} totalPages={meta?.pages ?? 0} onPageChange={(p) => setPage(p)} />
                   </div>
                 )}
