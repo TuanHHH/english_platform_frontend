@@ -16,6 +16,7 @@ import {
   ShoppingBag,
   GraduationCap,
   Users,
+  Wallet,
 } from "lucide-react";
 
 const AdminSidebar = () => {
@@ -64,6 +65,7 @@ const AdminSidebar = () => {
       icon: ClipboardSignature,
     },
     { title: "Quản lí đơn hàng", path: "/admin/orders", icon: ShoppingBag },
+    { title: "Quản lí rút tiền", path: "/admin/withdrawals", icon: Wallet },
   ];
 
   return (
