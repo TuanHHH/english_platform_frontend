@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -49,6 +50,7 @@ export default function AdminQuizSectionsPage() {
   const [meta, setMeta] = useState({ page: 1, pageSize: 20, pages: 1, total: 0 });
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
+  const [loading, setLoading] = useState(true);
 
   const [types, setTypes] = useState([]);
   const [filterType, setFilterType] = useState("all");
@@ -80,6 +82,7 @@ export default function AdminQuizSectionsPage() {
 
   const load = async () => {
     try {
+      setLoading(true);
       let response;
       if (filterType && filterType !== "all") {
         response = await pageQuizSectionsByType(filterType, { page, pageSize, keyword });
@@ -100,6 +103,8 @@ export default function AdminQuizSectionsPage() {
     } catch (e) {
       console.error("Load quiz sections failed:", e);
       toast.error("Không thể tải dữ liệu phần thi");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -291,7 +296,27 @@ export default function AdminQuizSectionsPage() {
           <CardTitle>Danh sách phần thi</CardTitle>
         </CardHeader>
         <CardContent>
-          {items.length === 0 ? (
+          {loading ? (
+            <div className="space-y-3">
+              {[...Array(5)].map((_, idx) => (
+                <div
+                  key={idx}
+                  className="border rounded-lg p-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <Skeleton className="h-5 w-64 mb-2" />
+                      <Skeleton className="h-4 w-96" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Skeleton className="h-9 w-16" />
+                      <Skeleton className="h-9 w-16" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : items.length === 0 ? (
             <div className="text-red-500">Không tìm thấy dữ liệu phần thi.</div>
           ) : (
             <div className="space-y-3">

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import CategoryForm from "@/components/content/category-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import DeleteItemDialog from "@/components/content/delete-content-dialog";
 import { toast } from "sonner";
 import {
@@ -106,7 +107,20 @@ export default function AdminCategoriesPage() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              "Đang tải..."
+              <div className="grid gap-2">
+                {[...Array(5)].map((_, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between border rounded-md p-3"
+                  >
+                    <div className="flex-1">
+                      <Skeleton className="h-5 w-48 mb-2" />
+                      <Skeleton className="h-4 w-64" />
+                    </div>
+                    <Skeleton className="h-9 w-16" />
+                  </div>
+                ))}
+              </div>
             ) : (
               <div className="grid gap-2">
                 {items?.map((c) => (

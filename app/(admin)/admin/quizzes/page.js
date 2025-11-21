@@ -6,6 +6,7 @@ import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectTrigger,
@@ -319,7 +320,25 @@ export default function AdminQuizzesPage() {
           Kết quả ({total} tổng cộng)
         </div> */}
         {loading ? (
-          <div>Đang tải...</div>
+          <div className="space-y-3">
+            {[...Array(5)].map((_, idx) => (
+              <div
+                key={idx}
+                className="flex items-center justify-between rounded-lg border p-3"
+              >
+                <div className="space-y-1 flex-1">
+                  <Skeleton className="h-6 w-80" />
+                  <Skeleton className="h-4 w-96" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-9 w-16" />
+                  <Skeleton className="h-8 w-12" />
+                  <Skeleton className="h-9 w-20" />
+                  <Skeleton className="h-8 w-[140px]" />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="space-y-3">
             {items?.length === 0 && <div>Không có dữ liệu</div>}

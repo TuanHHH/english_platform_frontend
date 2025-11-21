@@ -176,20 +176,13 @@ export default function QuizQuestionsWithContextPage() {
 
                   <div className="mt-4 flex gap-2">
                     <Button onClick={saveContext} disabled={saving}>
-                      {saving ? (
-                        <>
-                          <span className="animate-spin mr-2">⏳</span>
-                          Đang lưu...
-                        </>
-                      ) : (
-                        "💾 Lưu contextText"
-                      )}
+                      {saving ? "Đang lưu..." : "Lưu contextText"}
                     </Button>
                   </div>
 
                   <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
                     <p className="text-xs text-blue-800 font-medium mb-1">
-                      ℹ️ Hướng dẫn sử dụng Editor:
+                      Hướng dẫn sử dụng Editor:
                     </p>
                     <ul className="text-xs text-blue-700 space-y-1 list-disc list-inside">
                       <li>
@@ -197,7 +190,7 @@ export default function QuizQuestionsWithContextPage() {
                         động upload lên S3
                       </li>
                       <li>
-                        <strong>Audio:</strong> Click nút 🎵 → Chọn file audio →
+                        <strong>Audio:</strong> Click nút Audio → Chọn file audio →
                         Upload lên S3
                       </li>
                       <li>
@@ -235,11 +228,10 @@ export default function QuizQuestionsWithContextPage() {
                 </div>
               ) : error ? (
                 <div className="text-red-600 p-4 bg-red-50 rounded-lg border border-red-200">
-                  ❌ {error}
+                  {error}
                 </div>
               ) : !questions || questions.length === 0 ? (
                 <div className="text-center py-8">
-                  <div className="text-4xl mb-2">📝</div>
                   <div className="text-gray-500 italic">Chưa có câu hỏi.</div>
                   <Link
                     href={`/admin/questions/new?quizId=${quizId}&nextOrderIndex=1`}
@@ -271,7 +263,7 @@ export default function QuizQuestionsWithContextPage() {
                             href={`/admin/questions/${q.id}?quizId=${quizId}`}
                           >
                             <Button size="sm" variant="outline">
-                              ✏️ Sửa
+                              Sửa
                             </Button>
                           </Link>
                           <Button
@@ -279,7 +271,7 @@ export default function QuizQuestionsWithContextPage() {
                             variant="destructive"
                             onClick={() => openDeleteDialog(q)}
                           >
-                            🗑️ Xóa
+                            Xóa
                           </Button>
                         </div>
                       </div>
@@ -322,7 +314,7 @@ export default function QuizQuestionsWithContextPage() {
                                   </span>
                                   <span className="flex-1">{opt.content}</span>
                                   {opt.correct && (
-                                    <span className="flex-shrink-0">✅</span>
+                                    <span className="flex-shrink-0 text-green-600 font-bold">✓</span>
                                   )}
                                 </li>
                               ))}
@@ -360,7 +352,7 @@ export default function QuizQuestionsWithContextPage() {
             <AlertDialogDescription>
               Bạn có chắc chắn muốn xóa câu hỏi{" "}
               <strong>
-                #{questionToDelete?.orderIndex || ""} 
+                #{questionToDelete?.orderIndex || ""}
               </strong>
               ? Hành động này không thể hoàn tác và sẽ xóa cả các đáp án liên quan.
             </AlertDialogDescription>

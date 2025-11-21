@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 
-const DEFAULT_LIST_EXTENSIONS = [ "jpg","jpeg","png","gif","webp","mp3","wav","m4a","ogg","mp4","webm","mkv" ];
+const DEFAULT_LIST_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp", "mp3", "wav", "m4a", "ogg", "mp4", "webm", "mkv"];
 
 
 function normalizeItem(entry) {
@@ -17,10 +17,10 @@ function normalizeItem(entry) {
   const size = entry?.fileSize || entry?.size;
   const lower = (filename || url || "").toLowerCase();
   const ext = lower.split(".").pop() || "";
-  const kind = contentType.startsWith("image/") || ["jpg","jpeg","png","gif","webp"].includes(ext) ? "image"
-    : contentType.startsWith("audio/") || ["mp3","wav","m4a","ogg"].includes(ext) ? "audio"
-    : contentType.startsWith("video/") || ["mp4","webm","mkv"].includes(ext) ? "video"
-    : "file";
+  const kind = contentType.startsWith("image/") || ["jpg", "jpeg", "png", "gif", "webp"].includes(ext) ? "image"
+    : contentType.startsWith("audio/") || ["mp3", "wav", "m4a", "ogg"].includes(ext) ? "audio"
+      : contentType.startsWith("video/") || ["mp4", "webm", "mkv"].includes(ext) ? "video"
+        : "file";
   return { url, name: filename || url, size, contentType, kind };
 }
 
@@ -137,10 +137,9 @@ export default function MediaManager({ folder = "uploads", initial = [] }) {
           <div className="flex items-center gap-3">
             <div>
               <div className="font-semibold text-left">Media Uploader</div>
-              <div className="text-sm text-gray-600 text-left">Upload ảnh/âm thanh → nhận URL → chèn vào bài viết</div>
             </div>
           </div>
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             {isExpanded ? (
               <ChevronUp className="w-5 h-5" />
             ) : (

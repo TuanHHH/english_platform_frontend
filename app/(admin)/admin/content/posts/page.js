@@ -4,6 +4,7 @@ import Link from "next/link";
 import { toast } from "sonner"; // NEW: toast
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -190,7 +191,24 @@ export default function AdminPostsPage() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              "Đang tải..."
+              <div className="grid gap-2 mb-4">
+                {[...Array(5)].map((_, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between border rounded-md p-3"
+                  >
+                    <div className="flex-1">
+                      <Skeleton className="h-5 w-80 mb-2" />
+                      <Skeleton className="h-4 w-96" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Skeleton className="h-9 w-16" />
+                      <Skeleton className="h-9 w-24" />
+                      <Skeleton className="h-9 w-16" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : (
               <>
                 <div className="grid gap-2 mb-4">

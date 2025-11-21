@@ -4,6 +4,10 @@ import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   getQuestion,
   createQuestion,
@@ -132,140 +136,185 @@ export default function QuestionEditor() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <main className="flex-1 p-6 md:p-10">Đang tải...</main>
+      <div className="container mx-auto p-4">
+        <div>Đang tải...</div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="container mx-auto p-4 space-y-6">
       <Toaster position="top-right" richColors />
-      <main className="flex-1 p-6 md:p-10 space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold">
-            {isNew ? "Thêm Question" : "Sửa Question"}
-          </h1>
-          <Link
-            href={`/admin/quizzes/${form.quizId}/questions`}
-            className="inline-block"
-          >
-            <span className="inline-flex items-center px-3 py-2 text-sm rounded border hover:bg-gray-50">
-              ← Quay lại
-            </span>
+      
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">
+          {isNew ? "Thêm câu hỏi" : "Sửa câu hỏi"}
+        </h1>
+        <Button variant="outline" asChild>
+          <Link href={`/admin/quizzes/${form.quizId}/questions`}>
+            Quay lại
           </Link>
+        </Button>
+      </div>
+
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
+          {error}
         </div>
+      )}
 
-        {error && <div className="text-red-600">{error}</div>}
-
-        <div className="bg-white rounded border p-4 space-y-4">
-          <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Thông tin câu hỏi</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={onSubmit} className="space-y-6">
             <input
-              className="border rounded px-3 py-2 bg-gray-50"
-              placeholder="Quiz ID (UUID)"
+              type="hidden"
               value={form.quizId}
               onChange={(e) => setForm({ ...form, quizId: e.target.value })}
-              readOnly={!isNew}
             />
-            <textarea
-              className="border rounded px-3 py-2 min-h-[120px]"
-              placeholder="Nội dung câu hỏi"
-              value={form.content}
-              onChange={(e) => setForm({ ...form, content: e.target.value })}
-            />
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium">Thứ tự:</label>
-              <input
-                type="number"
-                className="border rounded px-3 py-2 w-24 bg-yellow-50 font-semibold"
-                placeholder="Thứ tự"
-                value={form.orderIndex}
-                onChange={(e) =>
-                  setForm({ ...form, orderIndex: e.target.value })
-                }
-                readOnly={isNew}
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Nội dung câu hỏi</label>
+              <Textarea
+                placeholder="Nhập nội dung câu hỏi..."
+                value={form.content}
+                onChange={(e) => setForm({ ...form, content: e.target.value })}
+                rows={5}
               />
-              {isNew && (
-                <span className="text-xs text-muted-foreground">
-                  (Tự động tăng từ câu hỏi cuối cùng)
-                </span>
-              )}
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-medium">Phương án trả lời</div>
-              <button
-                type="button"
-                onClick={addOption}
-                className="px-3 py-2 text-sm rounded border bg-gray-50 hover:bg-gray-100"
-              >
-                + Thêm phương án
-              </button>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Thứ tự</label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  className="w-32"
+                  placeholder="Thứ tự"
+                  value={form.orderIndex}
+                  onChange={(e) =>
+                    setForm({ ...form, orderIndex: e.target.value })
+                  }
+                  readOnly={isNew}
+                />
+                {isNew && (
+                  <span className="text-xs text-muted-foreground">
+                    (Tự động tăng từ câu hỏi cuối cùng)
+                  </span>
+                )}
+              </div>
             </div>
 
-            <div className="space-y-3">
-              {form.options.map((op, idx) => (
-                <div
-                  key={idx}
-                  className="grid grid-cols-1 md:grid-cols-6 gap-2 border rounded p-3"
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-medium">Phương án trả lời</div>
+                <Button
+                  type="button"
+                  onClick={addOption}
+                  variant="outline"
+                  size="sm"
                 >
-                  <input
-                    className="md:col-span-3 border rounded px-3 py-2"
-                    placeholder={`Option ${idx + 1}`}
-                    value={op.content}
-                    onChange={(e) =>
-                      setOption(idx, { content: e.target.value })
-                    }
-                  />
-                  <input
-                    type="number"
-                    className="border rounded px-3 py-2"
-                    placeholder="Order"
-                    value={op.orderIndex}
-                    onChange={(e) =>
-                      setOption(idx, { orderIndex: Number(e.target.value) })
-                    }
-                  />
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={op.correct}
-                      onChange={(e) =>
-                        setOption(idx, { correct: e.target.checked })
-                      }
-                    />
-                    Correct
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => removeOption(idx)}
-                    className="px-3 py-2 text-sm rounded border bg-red-50 hover:bg-red-100 text-red-600"
+                  + Thêm phương án
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                {form.options.map((op, idx) => (
+                  <div
+                    key={idx}
+                    className="border rounded-lg p-4 space-y-3 bg-gray-50"
                   >
-                    Xóa
-                  </button>
-                  <input
-                    className="md:col-span-6 border rounded px-3 py-2"
-                    placeholder="Giải thích (optional)"
-                    value={op.explanation}
-                    onChange={(e) =>
-                      setOption(idx, { explanation: e.target.value })
-                    }
-                  />
-                </div>
-              ))}
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-600">
+                        Phương án {idx + 1}
+                      </span>
+                      <Button
+                        type="button"
+                        onClick={() => removeOption(idx)}
+                        variant="destructive"
+                        size="sm"
+                      >
+                        Xóa
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                      <div className="md:col-span-3 space-y-2">
+                        <label className="text-xs font-medium text-gray-600">
+                          Nội dung
+                        </label>
+                        <Input
+                          placeholder={`Nhập phương án ${idx + 1}...`}
+                          value={op.content}
+                          onChange={(e) =>
+                            setOption(idx, { content: e.target.value })
+                          }
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-gray-600">
+                          Thứ tự
+                        </label>
+                        <Input
+                          type="number"
+                          placeholder="Thứ tự"
+                          value={op.orderIndex}
+                          onChange={(e) =>
+                            setOption(idx, { orderIndex: Number(e.target.value) })
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id={`correct-${idx}`}
+                        checked={op.correct}
+                        onChange={(e) =>
+                          setOption(idx, { correct: e.target.checked })
+                        }
+                        className="rounded border-gray-300"
+                      />
+                      <label htmlFor={`correct-${idx}`} className="text-sm font-medium">
+                        Đáp án đúng
+                      </label>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-gray-600">
+                        Giải thích (tùy chọn)
+                      </label>
+                      <Input
+                        placeholder="Nhập giải thích cho phương án này..."
+                        value={op.explanation}
+                        onChange={(e) =>
+                          setOption(idx, { explanation: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div>
-              <button
-                type="submit"
-                className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-              >
+            <div className="flex gap-2 pt-4">
+              <Button type="submit">
                 {isNew ? "Tạo mới" : "Cập nhật"}
-              </button>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push(`/admin/quizzes/${form.quizId}/questions`)}
+              >
+                Hủy
+              </Button>
             </div>
           </form>
-        </div>
-      </main>
+        </CardContent>
+      </Card>
     </div>
   );
 }
