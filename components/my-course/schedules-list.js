@@ -28,7 +28,7 @@ export default function SchedulesList({
                         Chưa có lịch học nào
                     </h3>
                     <p className="text-gray-600">
-                        Bạn chưa có kế hoạch học tập nào được tạo
+                        Bạn chưa có nhắc nhở học tập nào được tạo
                     </p>
                 </CardContent>
             </Card>
@@ -49,7 +49,7 @@ export default function SchedulesList({
                 <div className="text-sm text-muted-foreground">
                     {pagination && (
                         <span>
-                            Hiển thị <strong>{studyPlans.length}</strong> kế hoạch học tập
+                            Hiển thị <strong>{studyPlans.length}</strong> nhắc nhở học tập
                         </span>
                     )}
                 </div>

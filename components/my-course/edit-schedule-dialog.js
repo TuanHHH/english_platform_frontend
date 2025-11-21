@@ -137,13 +137,13 @@ export default function EditScheduleDialog({ open, onOpenChange, onSuccess, stud
             } else {
                 setFormError("root", {
                     type: "manual",
-                    message: result.error || "Cập nhật kế hoạch học tập thất bại"
+                    message: result.error || "Cập nhật nhắc nhở học tập thất bại"
                 })
             }
         } catch (err) {
             setFormError("root", {
                 type: "manual",
-                message: "Có lỗi xảy ra khi cập nhật kế hoạch học tập"
+                message: "Có lỗi xảy ra khi cập nhật nhắc nhở học tập"
             })
         }
     }
@@ -161,9 +161,9 @@ export default function EditScheduleDialog({ open, onOpenChange, onSuccess, stud
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-6xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Chỉnh sửa kế hoạch học tập</DialogTitle>
+                    <DialogTitle>Chỉnh sửa nhắc nhở học tập</DialogTitle>
                     <DialogDescription>
-                        Cập nhật thông tin kế hoạch học tập và các buổi học
+                        Cập nhật thông tin nhắc nhở học tập và các buổi học
                     </DialogDescription>
                 </DialogHeader>
 
@@ -171,7 +171,7 @@ export default function EditScheduleDialog({ open, onOpenChange, onSuccess, stud
                     {/* Title */}
                     <div className="space-y-2">
                         <Label htmlFor="title">
-                            Tiêu đề kế hoạch <span className="text-red-500">*</span>
+                            Tiêu đề <span className="text-red-500">*</span>
                         </Label>
                         <Input
                             id="title"
@@ -357,7 +357,7 @@ export default function EditScheduleDialog({ open, onOpenChange, onSuccess, stud
                             Hủy
                         </Button>
                         <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? "Đang cập nhật..." : "Cập nhật kế hoạch"}
+                            {isSubmitting ? "Đang cập nhật..." : "Cập nhật nhắc nhở học tập"}
                         </Button>
                     </DialogFooter>
                 </form>

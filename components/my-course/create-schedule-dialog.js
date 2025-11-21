@@ -97,13 +97,13 @@ export default function CreateScheduleDialog({ open, onOpenChange, onSuccess }) 
             } else {
                 setFormError("root", {
                     type: "manual",
-                    message: result.error || "Tạo kế hoạch học tập thất bại"
+                    message: result.error || "Tạo nhắc nhở học tập thất bại"
                 })
             }
         } catch (err) {
             setFormError("root", {
                 type: "manual",
-                message: "Có lỗi xảy ra khi tạo kế hoạch học tập"
+                message: "Có lỗi xảy ra khi tạo nhắc nhở học tập"
             })
         }
     }
@@ -161,13 +161,13 @@ export default function CreateScheduleDialog({ open, onOpenChange, onSuccess }) 
             } else {
                 setFormError("root", {
                     type: "manual",
-                    message: result.error || "Tạo kế hoạch AI thất bại"
+                    message: result.error || "Tạo nhắc nhở học tập bằng AI thất bại"
                 })
             }
         } catch (err) {
             setFormError("root", {
                 type: "manual",
-                message: "Có lỗi xảy ra khi tạo kế hoạch AI"
+                message: "Có lỗi xảy ra khi tạo nhắc nhở học tập AI"
             })
         } finally {
             setAiGenerating(false)
@@ -178,9 +178,9 @@ export default function CreateScheduleDialog({ open, onOpenChange, onSuccess }) 
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-6xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Tạo kế hoạch học tập mới</DialogTitle>
+                    <DialogTitle>Tạo nhắc nhở học tập mới</DialogTitle>
                     <DialogDescription>
-                        Tạo kế hoạch học tập chi tiết với các buổi học cụ thể
+                        Tạo nhắc nhở học tập chi tiết với các buổi học cụ thể
                     </DialogDescription>
                 </DialogHeader>
 
@@ -257,12 +257,12 @@ export default function CreateScheduleDialog({ open, onOpenChange, onSuccess }) 
                             {aiGenerating ? (
                                 <>
                                     <Sparkles className="w-4 h-4 mr-2 animate-spin" />
-                                    Đang tạo kế hoạch...
+                                    Đang tạo nhắc nhở học tập...
                                 </>
                             ) : (
                                 <>
                                     <Sparkles className="w-4 h-4 mr-2" />
-                                    Tạo kế hoạch AI
+                                    Tạo nhắc nhở học tập AI
                                 </>
                             )}
                         </Button>
@@ -279,6 +279,9 @@ export default function CreateScheduleDialog({ open, onOpenChange, onSuccess }) 
                                 <p className="text-xs mt-1 text-green-700">
                                     Mục tiêu: {aiInputs.goal} • Thời gian: {aiInputs.totalTime} phút
                                 </p>
+                                <p className="text-xs mt-1 text-green-700">
+                                    Lưu ý: Nhắc nhở học tập chỉ mang tính chất tham khảo. Vui lòng xem xét trước khi lưu.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -288,7 +291,7 @@ export default function CreateScheduleDialog({ open, onOpenChange, onSuccess }) 
                     {/* Title */}
                     <div className="space-y-2">
                         <Label htmlFor="title">
-                            Tiêu đề kế hoạch <span className="text-red-500">*</span>
+                            Tiêu đề <span className="text-red-500">*</span>
                         </Label>
                         <Input
                             id="title"
@@ -459,7 +462,7 @@ export default function CreateScheduleDialog({ open, onOpenChange, onSuccess }) 
                             Hủy
                         </Button>
                         <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? "Đang tạo..." : "Tạo kế hoạch"}
+                            {isSubmitting ? "Đang tạo..." : "Tạo nhắc nhở học tập"}
                         </Button>
                     </DialogFooter>
                 </form>

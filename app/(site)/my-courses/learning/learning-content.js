@@ -151,8 +151,8 @@ export default function LearningContent() {
                     {activeTab === "reminders" && (
                         <Button onClick={() => setCreateDialogOpen(true)} className="w-full sm:w-auto">
                             <Plus className="w-4 h-4 mr-2" />
-                            <span className="hidden sm:inline">Tạo kế hoạch mới</span>
-                            <span className="sm:hidden">Tạo kế hoạch</span>
+                            <span className="hidden sm:inline">Tạo nhắc nhở mới</span>
+                            <span className="sm:hidden">Tạo nhắc nhở</span>
                         </Button>
                     )}
                 </div>

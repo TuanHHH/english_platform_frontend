@@ -183,9 +183,9 @@ export default function ScheduleCard({ studyPlan, onEdit, onDelete }) {
             <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Xác nhận xóa kế hoạch học tập</AlertDialogTitle>
+                        <AlertDialogTitle>Xác nhận xóa nhắc nhở học tập</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Bạn có chắc chắn muốn xóa kế hoạch học tập "{studyPlan.title}"?
+                            Bạn có chắc chắn muốn xóa nhắc nhở học tập "{studyPlan.title}"?
                             Hành động này không thể hoàn tác.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
