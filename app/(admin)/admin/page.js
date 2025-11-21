@@ -234,13 +234,13 @@ export default function AdminDashboard() {
 
       payments: {
         totalPayments: Number(d.payments?.totalPayments ?? 0),
-        byStripe: Number(d.payments?.byStripe ?? 0),
+        byPayPal: Number(d.payments?.byPayPal ?? 0),
         byPayOS: Number(d.payments?.byPayOS ?? 0),
         succeeded: Number(d.payments?.succeeded ?? 0),
         failed: Number(d.payments?.failed ?? 0),
         refunded: Number(d.payments?.refunded ?? 0),
         successRate: Number(d.payments?.successRate ?? 0),
-        stripePercentage: Number(d.payments?.stripePercentage ?? 0),
+        payPalPercentage: Number(d.payments?.payPalPercentage ?? 0),
         payOSPercentage: Number(d.payments?.payOSPercentage ?? 0),
       },
 
