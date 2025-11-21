@@ -96,7 +96,7 @@ export function OrdersFilters({ statusFilter, setStatusFilter, dateFilter, setDa
                                 <SelectItem value="PENDING">Chờ thanh toán</SelectItem>
                                 <SelectItem value="PAID">Đã thanh toán</SelectItem>
                                 <SelectItem value="CANCELLED">Đã hủy</SelectItem>
-                                <SelectItem value="REFUNDED">Đã hoàn tiền</SelectItem>
+                                {/* <SelectItem value="REFUNDED">Đã hoàn tiền</SelectItem> */}
                                 <SelectItem value="FAILED">Thất bại</SelectItem>
                             </SelectContent>
                         </Select>

@@ -84,7 +84,7 @@ export function CourseCard({ course }) {
 
             <div className="pt-3 border-t">
               <p className="text-lg font-bold text-primary mb-3">
-                {formatCurrency(course.priceCents, course.currency)}
+                {course.priceCents === 0 ? "Miễn phí" : formatCurrency(course.priceCents, course.currency)}
               </p>
             </div>
           </div>

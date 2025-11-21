@@ -72,8 +72,8 @@ export default function OrderDetailContent({ orderId }) {
         return "Chờ thanh toán"
       case "CANCELLED":
         return "Đã hủy"
-      case "REFUNDED":
-        return "Đã hoàn tiền"
+      // case "REFUNDED":
+      //   return "Đã hoàn tiền"
       default:
         return "Không xác định"
     }
@@ -259,12 +259,14 @@ export default function OrderDetailContent({ orderId }) {
                 orderDetails={orderDetails}
               />
 
-              {/* Payment History */}
-              <PaymentHistory
-                orderDetails={orderDetails}
-                getPaymentStatusIcon={getPaymentStatusIcon}
-                formatDate={formatDate}
-              />
+              {/* Payment History - Hide for free orders */}
+              {orderDetails.totalCents > 0 && (
+                <PaymentHistory
+                  orderDetails={orderDetails}
+                  getPaymentStatusIcon={getPaymentStatusIcon}
+                  formatDate={formatDate}
+                />
+              )}
             </div>
 
             {/* Sidebar - Mobile: Bottom, Desktop: Right */}

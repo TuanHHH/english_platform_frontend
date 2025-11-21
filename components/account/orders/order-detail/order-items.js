@@ -13,7 +13,7 @@ export function OrderItems({ orderDetails }) {
         <div className="space-y-4">
           {orderDetails.items.map((item) => (
             <div key={item.id} className="flex gap-4 p-4 border rounded-lg">
-              <div className="w-16 h-16 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center">
+              <div className="w-16 h-16 bg-gray-200 rounded-lg shrink-0 flex items-center justify-center">
                 <BookOpen className="w-8 h-8 text-gray-400" />
               </div>
               <div className="flex-1 w-0 overflow-hidden">
@@ -27,9 +27,9 @@ export function OrderItems({ orderDetails }) {
                   Loại sản phẩm: {item.entityType === "COURSE" ? "Khóa học" : item.entityType}
                 </p>
               </div>
-              <div className="text-right flex-shrink-0 ml-4">
+              <div className="text-right shrink-0 ml-4">
                 <p className="font-semibold text-base sm:text-lg">
-                  {formatCurrency(item.unitPriceCents)}
+                  {item.unitPriceCents === 0 ? "Miễn phí" : formatCurrency(item.unitPriceCents)}
                 </p>
                 <p className="text-sm text-gray-500">SL: {item.quantity}</p>
               </div>
@@ -40,7 +40,7 @@ export function OrderItems({ orderDetails }) {
         <div className="flex justify-between items-center">
           <span className="font-semibold">Tổng cộng:</span>
           <span className="font-bold text-xl text-green-600">
-            {formatCurrency(orderDetails.totalCents)}
+            {orderDetails.totalCents === 0 ? "Miễn phí" : formatCurrency(orderDetails.totalCents)}
           </span>
         </div>
       </CardContent>

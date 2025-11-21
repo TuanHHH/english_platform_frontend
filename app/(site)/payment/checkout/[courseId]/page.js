@@ -59,9 +59,7 @@ export default function CourseCheckoutPage() {
         items: [
           {
             entityType: "COURSE",
-            entityId: courseId,
-            quantity: 1,
-            unitPriceCents: courseData.priceCents
+            entityId: courseId
           }
         ]
       }

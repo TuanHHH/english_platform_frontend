@@ -67,7 +67,7 @@ export function StatusUpdateDialog({
                                 <SelectItem value="PENDING">Chờ thanh toán</SelectItem>
                                 <SelectItem value="PAID">Đã thanh toán</SelectItem>
                                 <SelectItem value="CANCELLED">Đã hủy</SelectItem>
-                                <SelectItem value="REFUNDED">Đã hoàn tiền</SelectItem>
+                                {/* <SelectItem value="REFUNDED">Đã hoàn tiền</SelectItem> */}
                             </SelectContent>
                         </Select>
                         {!isStatusUpdateAllowed(orderDetails.status, newStatus) && newStatus !== orderDetails.status && (

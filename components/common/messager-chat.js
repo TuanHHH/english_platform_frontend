@@ -50,8 +50,8 @@ export default function MessengerChat() {
 
   // --- Mount N8N chat widget ---
   useEffect(() => {
-    if (!isOpen || !isAuthenticated) {
-      // Clean up if chat is closed or user logged out
+    if (!isAuthenticated) {
+      // Clean up if user logged out
       if (instanceRef.current) {
         try {
           if (typeof instanceRef.current.unmount === 'function') {
@@ -66,6 +66,9 @@ export default function MessengerChat() {
       }
       return;
     }
+
+    // Only mount once when authenticated
+    if (instanceRef.current) return;
 
     let mounted = true;
 
@@ -115,20 +118,8 @@ export default function MessengerChat() {
 
     return () => {
       mounted = false;
-      if (instanceRef.current) {
-        try {
-          if (typeof instanceRef.current.unmount === 'function') {
-            instanceRef.current.unmount();
-          } else if (typeof instanceRef.current.destroy === 'function') {
-            instanceRef.current.destroy();
-          }
-        } catch (error) {
-          console.error("Failed to cleanup chat:", error);
-        }
-        instanceRef.current = null;
-      }
     };
-  }, [isOpen, isAuthenticated, user?.id]);
+  }, [isAuthenticated, user?.id]);
 
   if (shouldHide) return null
 
@@ -165,7 +156,7 @@ export default function MessengerChat() {
           sm:w-[420px] sm:h-[480px]
           md:w-[550px] md:h-[500px]
           lg:w-[750px] lg:h-[550px]
-          py-0.25 shadow-2xl z-[25] flex flex-col
+          py-0.25 shadow-2xl z-25 flex flex-col
           overflow-hidden rounded-xl transition-all duration-300
           ${isOpen
             ? "opacity-100 scale-100 visible"

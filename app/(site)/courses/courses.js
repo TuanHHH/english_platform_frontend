@@ -9,12 +9,15 @@ import {
   SkillFilters,
   CoursesGrid,
   EmptyState,
+  CourseSearchFilters,
 } from "@/components/courses"
 
 export default function Courses() {
   const [courses, setCourses] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedSkills, setSelectedSkills] = useState([])
+  const [searchKeyword, setSearchKeyword] = useState("")
+  const [sortBy, setSortBy] = useState("createdAt,desc")
   const [pagination, setPagination] = useState({
     page: 1,
     pageSize: 12,
@@ -24,16 +27,20 @@ export default function Courses() {
 
   useEffect(() => {
     fetchCourses()
-  }, [selectedSkills, pagination.page])
+  }, [selectedSkills, pagination.page, searchKeyword, sortBy])
 
   const fetchCourses = async () => {
     setLoading(true)
-    const result = await getPublishedCourses({
+    const params = {
       page: pagination.page,
       size: 12,
-      skills: selectedSkills.length > 0 ? selectedSkills : undefined,
-      sort: "createdAt,desc",
-    })
+      sort: sortBy,
+    }
+    
+    if (selectedSkills.length > 0) params.skills = selectedSkills
+    if (searchKeyword) params.keyword = searchKeyword
+
+    const result = await getPublishedCourses(params)
 
     if (result.success) {
       setCourses(result.data.result || [])
@@ -61,6 +68,16 @@ export default function Courses() {
     setPagination((prev) => ({ ...prev, page: 1 }))
   }
 
+  const handleSearch = (keyword) => {
+    setSearchKeyword(keyword)
+    setPagination((prev) => ({ ...prev, page: 1 }))
+  }
+
+  const handleSortChange = (sort) => {
+    setSortBy(sort)
+    setPagination((prev) => ({ ...prev, page: 1 }))
+  }
+
   const handlePageChange = (newPage) => {
     setPagination((prev) => ({ ...prev, page: newPage }))
   }
@@ -69,6 +86,12 @@ export default function Courses() {
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-8">
         <CoursesHeader />
+
+        <CourseSearchFilters
+          onSearch={handleSearch}
+          sortBy={sortBy}
+          onSortChange={handleSortChange}
+        />
 
         <SkillFilters
           selectedSkills={selectedSkills}

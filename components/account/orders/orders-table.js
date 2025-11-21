@@ -35,8 +35,8 @@ const OrdersTable = ({ orders }) => {
         return "Chờ thanh toán"
       case "CANCELLED":
         return "Đã hủy"
-      case "REFUNDED":
-        return "Đã hoàn tiền"
+      // case "REFUNDED":
+      //   return "Đã hoàn tiền"
       default:
         return "Không xác định"
     }

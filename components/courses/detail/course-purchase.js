@@ -2,16 +2,32 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { ShoppingCart, CreditCard } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
 import { useCartStore } from "@/store/cart-store"
+import { useEnrollmentStore } from "@/store/enrollment-store"
 import { formatCurrency } from "@/lib/utils"
+import { createOrder } from "@/lib/api/order"
 
 const MAX_CART_ITEMS = 10
 export function CoursePurchase({ course, isEnrolled = false }) {
+  const router = useRouter()
   const [isAddingToCart, setIsAddingToCart] = useState(false)
+  const [isEnrolling, setIsEnrolling] = useState(false)
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
 
   // Get cart state and actions from Zustand store
   const {
@@ -20,6 +36,8 @@ export function CoursePurchase({ course, isEnrolled = false }) {
     isInCart,
     fetchCart
   } = useCartStore()
+
+  const fetchEnrollments = useEnrollmentStore((state) => state.fetchEnrollments)
 
   const handleAddToCart = async () => {
     // Check if cart already has 10 items
@@ -51,6 +69,42 @@ export function CoursePurchase({ course, isEnrolled = false }) {
       })
     } finally {
       setIsAddingToCart(false)
+    }
+  }
+
+  const handleEnrollFreeCourse = async () => {
+    setIsEnrolling(true)
+
+    try {
+      const orderRequest = {
+        orderSource: "DIRECT",
+        items: [
+          {
+            entityType: "COURSE",
+            entityId: course.id
+          }
+        ]
+      }
+
+      const result = await createOrder(orderRequest)
+
+      if (result.success) {
+        setShowConfirmDialog(false)
+        toast.success("Đã tham gia khóa học thành công!")
+        await fetchEnrollments()
+        router.push("/my-courses/learning")
+      } else {
+        toast.error("Không thể tham gia khóa học", {
+          description: result.error,
+        })
+      }
+    } catch (error) {
+      console.error("Enroll free course error:", error)
+      toast.error("Lỗi khi tham gia khóa học", {
+        description: "Vui lòng thử lại sau",
+      })
+    } finally {
+      setIsEnrolling(false)
     }
   }
 
@@ -118,7 +172,7 @@ export function CoursePurchase({ course, isEnrolled = false }) {
         <div className="mb-6">
           <p className="text-sm text-muted-foreground mb-2">Giá khóa học</p>
           <p className="text-3xl font-bold text-primary">
-            {formatCurrency(course.priceCents, course.currency)}
+            {course.priceCents === 0 ? "Miễn phí" : formatCurrency(course.priceCents, course.currency)}
           </p>
         </div>
 
@@ -135,27 +189,41 @@ export function CoursePurchase({ course, isEnrolled = false }) {
         )}
 
         <div className="space-y-3">
-          <Link href={`/payment/checkout/${course.id}`}>
+          {course.priceCents === 0 ? (
             <Button
               className="w-full"
               size="lg"
+              onClick={() => setShowConfirmDialog(true)}
+              disabled={isEnrolling}
             >
               <CreditCard className="w-5 h-5 mr-2" />
-              Mua ngay
+              {isEnrolling ? "Đang xử lý..." : "Tham gia ngay"}
             </Button>
-          </Link>
+          ) : (
+            <>
+              <Link href={`/payment/checkout/${course.id}`}>
+                <Button
+                  className="w-full"
+                  size="lg"
+                >
+                  <CreditCard className="w-5 h-5 mr-2" />
+                  Mua ngay
+                </Button>
+              </Link>
 
-          <Button
-            variant={isAlreadyInCart ? "secondary" : "outline"}
-            className={`w-full mt-2 ${isAlreadyInCart ? "bg-green-50 border-green-200 text-green-700" : ""}`}
-            size="lg"
-            onClick={handleAddToCart}
-            disabled={isDisabled}
-            title={getButtonTooltip()}
-          >
-            <ShoppingCart className="w-5 h-5 mr-2" />
-            {getButtonText()}
-          </Button>
+              <Button
+                variant={isAlreadyInCart ? "secondary" : "outline"}
+                className={`w-full mt-2 ${isAlreadyInCart ? "bg-green-50 border-green-200 text-green-700" : ""}`}
+                size="lg"
+                onClick={handleAddToCart}
+                disabled={isDisabled}
+                title={getButtonTooltip()}
+              >
+                <ShoppingCart className="w-5 h-5 mr-2" />
+                {getButtonText()}
+              </Button>
+            </>
+          )}
         </div>
 
         <div className="mt-6 pt-6 border-t">
@@ -165,6 +233,23 @@ export function CoursePurchase({ course, isEnrolled = false }) {
           </ul>
         </div>
       </CardContent>
+
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận tham gia khóa học</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn tham gia khóa học <strong>{course.title}</strong> không?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isEnrolling}>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={handleEnrollFreeCourse} disabled={isEnrolling}>
+              {isEnrolling ? "Đang xử lý..." : "Xác nhận"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   )
 }

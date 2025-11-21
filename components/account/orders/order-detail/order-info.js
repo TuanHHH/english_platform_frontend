@@ -27,7 +27,7 @@ export function OrderInfo({ orderDetails, formatDate }) {
           <div>
             <p className="text-sm text-gray-600">Tổng tiền</p>
             <p className="text-lg font-bold text-green-600">
-              {formatCurrency(orderDetails.totalCents)}
+              {orderDetails.totalCents === 0 ? "Miễn phí" : formatCurrency(orderDetails.totalCents)}
             </p>
           </div>
           <div>

@@ -9,6 +9,11 @@ export function ActionButtons({
   onCancelOrder,
   onPayAgain
 }) {
+  // Hide entire action section for free orders
+  if (orderDetails.totalCents === 0) {
+    return null
+  }
+
   return (
     <Card>
       <CardHeader>
