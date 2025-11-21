@@ -1,5 +1,5 @@
 "use client";
-import { toast } from 'sonner';
+import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { forumListCategories, appUpdateThread, forumGetThreadBySlug } from "@/lib/api/forum";
 import Editor from "@/components/content/editor";
+import { useAuthStore } from "@/store/auth-store";
 
 export default function ThreadEditForm({ slug }) {
   const router = useRouter();
+
   const [cats, setCats] = useState([]);
   const [title, setTitle] = useState("");
   const [bodyMd, setBodyMd] = useState("");
@@ -18,34 +20,49 @@ export default function ThreadEditForm({ slug }) {
   const [submitting, setSubmitting] = useState(false);
   const [threadId, setThreadId] = useState(null);
 
-  // 1. Load danh mục & Thông tin bài viết cũ
+  const [noPermission, setNoPermission] = useState(false);
+
+  const user = useAuthStore((state) => state.user);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
+
   useEffect(() => {
+    if (!hasHydrated) return;
+
     async function init() {
       try {
         const [catsData, threadData] = await Promise.all([
           forumListCategories(),
-          forumGetThreadBySlug(slug)
+          forumGetThreadBySlug(slug),
         ]);
-        
-        setCats(catsData);
-        
+
         if (threadData) {
+          if (!user) {
+            setNoPermission(true);
+            return;
+          }
+
+          if (String(threadData.authorId) !== String(user.id)) {
+            setNoPermission(true);
+            return;
+          }
+
           setThreadId(threadData.id);
           setTitle(threadData.title);
           setBodyMd(threadData.bodyMd);
-          // Map categories object sang array of IDs
-          setCategoryIds(threadData.categories?.map(c => c.id) || []);
+          setCategoryIds(threadData.categories?.map((c) => c.id) || []);
         }
+
+        setCats(catsData);
       } catch (e) {
         console.error(e);
         toast.error("Không thể tải thông tin bài viết");
-        router.push("/account/forum");
       } finally {
         setLoading(false);
       }
     }
-    if (slug) init();
-  }, [slug, router]);
+
+    init();
+  }, [slug, user, hasHydrated]);
 
   function toggleCat(id) {
     setCategoryIds((prev) =>
@@ -60,19 +77,16 @@ export default function ThreadEditForm({ slug }) {
     }
     setSubmitting(true);
     try {
-      // Gọi API update
-      const data = await appUpdateThread(threadId, { title, bodyMd, categoryIds });
-      
+      const data = await appUpdateThread(threadId, {
+        title,
+        bodyMd,
+        categoryIds,
+      });
       toast.success("Cập nhật bài viết thành công!");
-      // Redirect về trang chi tiết bài viết (dùng slug mới nếu tiêu đề đổi)
-      if (data?.slug) {
-        router.push(`/forum/${data.slug}`);
-      } else {
-        router.push("/account/forum");
-      }
+      router.push(`/forum/${data.slug}`);
     } catch (e) {
-        console.error(e);
-        toast.error("Cập nhật thất bại. Có thể bài viết đã bị khóa.");
+      console.error(e);
+      toast.error("Cập nhật thất bại.");
     } finally {
       setSubmitting(false);
     }
@@ -80,12 +94,33 @@ export default function ThreadEditForm({ slug }) {
 
   if (loading) return <div>Đang tải dữ liệu...</div>;
 
+  if (noPermission) {
+    return (
+      <Card className="p-6 border-red-300 bg-red-50">
+        <CardHeader>
+          <CardTitle className="text-red-600">
+            Bạn không có quyền chỉnh sửa bài viết này
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-red-700 mb-4">
+            Chỉ tác giả bài viết mới có thể chỉnh sửa nội dung.
+          </p>
+          <Button onClick={() => router.push(`/forum/${slug}`)}>
+            Quay lại bài viết
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Chỉnh sửa chủ đề</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+
         <div className="space-y-2">
           <label className="text-sm font-medium">
             Tiêu đề <span className="text-destructive">*</span>
@@ -122,19 +157,21 @@ export default function ThreadEditForm({ slug }) {
           <label className="text-sm font-medium">
             Nội dung <span className="text-destructive">*</span>
           </label>
-          {/* Key để force re-render editor khi bodyMd load xong */}
-          <Editor key={loading ? "loading" : "loaded"} initialContent={bodyMd} onContentChange={setBodyMd} />
+          <Editor
+            key={loading ? "loading" : "loaded"}
+            initialContent={bodyMd}
+            onContentChange={setBodyMd}
+          />
         </div>
 
         <div className="flex justify-end gap-2 pt-4">
-          <Button
-            variant="outline"
-            onClick={() => router.back()}
-            disabled={submitting}
-          >
+          <Button variant="outline" onClick={() => router.back()} disabled={submitting}>
             Hủy
           </Button>
-          <Button onClick={submit} disabled={submitting || !title.trim() || !bodyMd.trim()}>
+          <Button
+            onClick={submit}
+            disabled={submitting || !title.trim() || !bodyMd.trim()}
+          >
             {submitting ? "Đang lưu..." : "Lưu thay đổi"}
           </Button>
         </div>

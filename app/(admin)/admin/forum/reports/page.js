@@ -1,8 +1,6 @@
 "use client";
 import { toast } from "sonner";
-
 import { useEffect, useState } from "react";
-// import AdminSidebar from "@/components/common/AdminSidebar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,11 +12,20 @@ import {
 } from "@/components/ui/select";
 import { Pagination } from "@/components/ui/pagination";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   adminListReports,
   adminResolveReport,
   adminHidePost,
   adminUnhidePost,
   adminDeletePost,
+  adminDeleteThread,
 } from "@/lib/api/forum";
 
 export default function AdminForumReportsPage() {
@@ -30,15 +37,57 @@ export default function AdminForumReportsPage() {
   const [type, setType] = useState("THREAD");
   const [onlyOpen, setOnlyOpen] = useState("true");
 
+  const [deleteConfirm, setDeleteConfirm] = useState({
+    open: false,
+    type: null,
+    id: null,
+  });
+
+  const [isDeleting, setIsDeleting] = useState(false);
+
   async function load(p = page) {
     const params = { page: p, pageSize, type, onlyOpen: onlyOpen === "true" };
     const { items, meta } = await adminListReports(params);
     setItems(items);
     setMeta(meta);
   }
+
+  const openDeleteConfirm = (deleteType, id) => {
+    setDeleteConfirm({ open: true, type: deleteType, id });
+  };
+
+  const handleDelete = async () => {
+    const { type, id } = deleteConfirm;
+    if (!type || !id) return;
+
+    setIsDeleting(true);
+    try {
+      if (type === "THREAD") {
+        await adminDeleteThread(id);
+        toast.success("Đã xóa chủ đề");
+      } else {
+        await adminDeletePost(id);
+        toast.success("Đã xóa bài viết");
+      }
+      await load(page);
+    } catch (e) {
+      console.error(e);
+      if (type === "THREAD" && (e?.response?.status === 404 || e?.response?.status === 500)) {
+        toast.warning("Chủ đề không tồn tại hoặc đã bị xóa. Đang làm mới...");
+        await load(page);
+      } else {
+        toast.error(`Lỗi khi xóa ${type === "THREAD" ? "chủ đề" : "bài viết"}`);
+      }
+    } finally {
+      setIsDeleting(false);
+      setDeleteConfirm({ open: false, type: null, id: null });
+    }
+  };
+
   useEffect(() => {
     setPage(1);
   }, [type, onlyOpen]);
+
   useEffect(() => {
     load(page);
   }, [page, type, onlyOpen]);
@@ -50,7 +99,6 @@ export default function AdminForumReportsPage() {
 
   return (
     <div className="flex">
-      {/* <AdminSidebar /> */}
       <div className="p-4 w-full space-y-4">
         <h1 className="text-2xl font-semibold">Forum • Báo cáo</h1>
 
@@ -83,11 +131,6 @@ export default function AdminForumReportsPage() {
         <Card>
           <CardHeader className="flex items-center justify-between">
             <CardTitle>Danh sách</CardTitle>
-            <Pagination
-              currentPage={page}
-              totalPages={meta?.pages ?? 0}
-              onPageChange={setPage}
-            />
           </CardHeader>
           <CardContent className="grid gap-2">
             {items.map((r) => (
@@ -96,11 +139,30 @@ export default function AdminForumReportsPage() {
                   {r.targetType} • {r.targetId} •{" "}
                   {r.createdAt ? new Date(r.createdAt).toLocaleString() : ""}
                 </div>
-                {/* Reporter & Preview */}
+
                 <div className="mt-2 text-sm">
                   <div>
                     <b>Người báo cáo:</b> {r.reporterName || r.userId}
                   </div>
+
+                  {/* THREAD → Link xem bài */}
+                  {r.targetType === "THREAD" && r.targetPreview && (
+                    <div className="mt-2">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Chủ đề bị báo cáo
+                      </div>
+
+                      <a
+                        href={`/forum/${r.targetPreview}`}
+                        target="_blank"
+                        className="text-blue-600 underline break-all"
+                      >
+                        {r.targetPreview}
+                      </a>
+                    </div>
+                  )}
+
+                  {/* POST → preview nội dung */}
                   {r.targetType === "POST" && r.targetPreview && (
                     <div className="mt-1 p-2 rounded bg-muted/40">
                       <div className="text-xs text-muted-foreground mb-1">
@@ -112,11 +174,15 @@ export default function AdminForumReportsPage() {
                     </div>
                   )}
                 </div>
-                <div className="mt-1">{r.reason}</div>
-                <div className="mt-2">
+
+                <div className="mt-1">Nội dung báo cáo: {r.reason}</div>
+
+                <div className="mt-2 flex flex-wrap gap-2 items-center">
+                  {/* 1. Nút Xử lý báo cáo */}
                   {r.resolvedAt ? (
                     <span className="text-xs">
-                      Đã xử lý lúc {new Date(r.resolvedAt).toLocaleString()}
+                      Đã xử lý lúc {new Date(r.resolvedAt).toLocaleString()} bởi{" "}
+                      {r.resolvedBy}
                     </span>
                   ) : (
                     <Button size="sm" onClick={() => resolve(r.id)}>
@@ -124,17 +190,20 @@ export default function AdminForumReportsPage() {
                     </Button>
                   )}
 
-                  {/*__POST_MOD__*/}
-                  {/* {r.targetType === 'POST' && (
-                    <div className="mt-2 flex gap-2">
-                      <Button size="sm" variant="secondary" onClick={async()=>{ await adminHidePost(r.targetId); toast.success('Đã ẩn bài'); await load(page); }}>Ẩn</Button>
-                      <Button size="sm" variant="secondary" onClick={async()=>{ await adminUnhidePost(r.targetId); toast.success('Đã hiện bài'); await load(page); }}>Hiện</Button>
-                      <Button size="sm" variant="destructive" onClick={async()=>{ if(!confirm('Xóa bài này?')) return; await adminDeletePost(r.targetId); toast.success('Đã xóa'); await load(page); }}>Xóa</Button>
-                    </div>
-                  )} */}
-                  {r.targetType === "POST" && (
-                    <div className="mt-2 flex gap-2">
-                      {/* Nếu đang HIỆN → chỉ cho ẨN */}
+                  {/* Nút Xóa THREAD */}
+                  {r.targetType === "THREAD" && !r.resolvedAt && (
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => openDeleteConfirm("THREAD", r.targetId)}
+                    >
+                      Xóa chủ đề
+                    </Button>
+                  )}
+
+                  {/* Các nút hành động cho POST */}
+                  {r.targetType === "POST" && !r.resolvedAt && (
+                    <>
                       {r.targetPublished === true && (
                         <Button
                           size="sm"
@@ -149,7 +218,6 @@ export default function AdminForumReportsPage() {
                         </Button>
                       )}
 
-                      {/* Nếu đang ẨN → chỉ cho HIỆN */}
                       {r.targetPublished === false && (
                         <Button
                           size="sm"
@@ -164,7 +232,6 @@ export default function AdminForumReportsPage() {
                         </Button>
                       )}
 
-                      {/* Dữ liệu cũ chưa có trạng thái (null) → cho cả hai để admin xử lý */}
                       {r.targetPublished == null && (
                         <>
                           <Button
@@ -178,6 +245,7 @@ export default function AdminForumReportsPage() {
                           >
                             Ẩn
                           </Button>
+
                           <Button
                             size="sm"
                             variant="secondary"
@@ -195,16 +263,11 @@ export default function AdminForumReportsPage() {
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={async () => {
-                          if (!confirm("Xóa bài này?")) return;
-                          await adminDeletePost(r.targetId);
-                          toast.success("Đã xóa");
-                          await load(page);
-                        }}
+                        onClick={() => openDeleteConfirm("POST", r.targetId)}
                       >
                         Xóa
                       </Button>
-                    </div>
+                    </>
                   )}
                 </div>
               </div>
@@ -216,6 +279,50 @@ export default function AdminForumReportsPage() {
             )}
           </CardContent>
         </Card>
+        
+        <Pagination
+          currentPage={page}
+          totalPages={meta?.pages ?? 0}
+          onPageChange={setPage}
+        />
+
+        <Dialog
+          open={deleteConfirm.open}
+          onOpenChange={(open) => {
+            if (!isDeleting)
+              setDeleteConfirm((prev) => ({ ...prev, open }));
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                Xác nhận xóa {deleteConfirm.type === "THREAD" ? "chủ đề" : "bài viết"}?
+              </DialogTitle>
+              <DialogDescription>
+                Hành động này không thể hoàn tác.{" "}
+                {deleteConfirm.type === "THREAD"
+                  ? "Toàn bộ bài viết trong chủ đề này cũng sẽ bị xóa."
+                  : "Bài viết này sẽ bị xóa vĩnh viễn khỏi hệ thống."}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                disabled={isDeleting}
+                onClick={() => setDeleteConfirm({ open: false, type: null, id: null })}
+              >
+                Hủy bỏ
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={isDeleting}
+                onClick={handleDelete}
+              >
+                {isDeleting ? "Đang xóa..." : "Xác nhận xóa"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

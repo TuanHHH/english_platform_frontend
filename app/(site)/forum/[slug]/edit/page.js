@@ -10,7 +10,7 @@ export default function ForumEditThreadPage() {
   const slug = params?.slug;
 
   return (
-    <div className="container mx-auto p-4 space-y-4 max-w-4xl">
+    <div className="container mx-auto p-4 space-y-4">
       <Button
         variant="ghost"
         onClick={() => router.back()}
