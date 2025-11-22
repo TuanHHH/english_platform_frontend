@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useNotificationStore } from "@/store/notification-store";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Bell, CheckCheck, Trash2, Inbox } from "lucide-react";
+import { Bell, CheckCheck, Trash2, Inbox, RefreshCw } from "lucide-react";
 import NotificationItem from "@/components/notification/notification-item";
 import { Pagination } from "@/components/ui/pagination";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -57,6 +57,15 @@ export default function NotificationsPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => fetchNotifications(pagination.page)} 
+              disabled={loading}
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Tải mới</span>
+            </Button>
             <Button 
               variant="outline" 
               size="sm" 

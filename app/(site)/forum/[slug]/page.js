@@ -1,9 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { MoreVertical } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { MoreVertical, ArrowLeft } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +39,7 @@ import { useAuthStore } from "@/store/auth-store";
 
 export default function ThreadDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const slug = params?.slug;
 
   const [thread, setThread] = useState(null);
@@ -167,6 +170,15 @@ export default function ThreadDetailPage() {
   return (
     <>
       <div className="container mx-auto p-4 space-y-4">
+        <Button
+          variant="ghost"
+          onClick={() => router.push("/forum")}
+          className="mb-4"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Quay lại
+        </Button>
+
         {loadingThread ? (
           <Card>
             <CardHeader>
@@ -196,10 +208,10 @@ export default function ThreadDetailPage() {
               </CardTitle>
 
               <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                <img
-                  src={thread.authorAvatarUrl || "/avatar.svg"}
-                  className="w-6 h-6 rounded-full object-cover"
-                  alt={thread.authorName || "Avatar"}
+                <UserAvatar
+                  src={thread.authorAvatarUrl}
+                  name={thread.authorName}
+                  className="w-6 h-6"
                 />
                 <span>{thread.authorName || "Ẩn danh"}</span>
                 <span>•</span>
@@ -316,10 +328,10 @@ export default function ThreadDetailPage() {
                       <div key={p.id} className="border rounded-md p-3">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <img
-                              src={p.authorAvatarUrl || "/avatar.svg"}
-                              className="w-5 h-5 rounded-full object-cover"
-                              alt=""
+                            <UserAvatar
+                              src={p.authorAvatarUrl}
+                              name={p.authorName}
+                              className="w-5 h-5"
                             />
                             <span>{p.authorName || "Ẩn danh"}</span>
                             <span>•</span>
@@ -381,10 +393,10 @@ export default function ThreadDetailPage() {
                               <div key={c.id} className="border-l-2 border-muted pl-3">
                                 <div className="flex items-center justify-between mb-2">
                                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                    <img
-                                      src={c.authorAvatarUrl || "/avatar.svg"}
-                                      className="w-4 h-4 rounded-full object-cover"
-                                      alt=""
+                                    <UserAvatar
+                                      src={c.authorAvatarUrl}
+                                      name={c.authorName}
+                                      className="w-4 h-4"
                                     />
                                     <span>{c.authorName || "Ẩn danh"}</span>
                                     <span>•</span>

@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { publicGetPostBySlug } from "@/lib/api/content/posts";
 import {
@@ -10,11 +11,13 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import CommentList from "@/components/content/comment-list";
 import { sanitizeHtml } from "@/lib/sanitize";
 
 export default function BlogDetailPage() {
   const { slug } = useParams();
+  const router = useRouter();
 
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
@@ -159,13 +162,22 @@ export default function BlogDetailPage() {
 
   return (
     <div className="container mx-auto p-4 space-y-4">
+      <Button
+        variant="ghost"
+        onClick={() => router.push("/blog")}
+        className="mb-4"
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Quay lại
+      </Button>
+
       <Card>
         <CardHeader>
           <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-            <img 
-              src={post.authorAvatarUrl || "/avatar.svg"} 
-              className="w-6 h-6 rounded-full object-cover" 
-              alt={post.authorName || "Avatar"}
+            <UserAvatar
+              src={post.authorAvatarUrl}
+              name={post.authorName}
+              className="w-6 h-6"
             />
             <span>{post.authorName || "Ẩn danh"}</span>
             <span>•</span>

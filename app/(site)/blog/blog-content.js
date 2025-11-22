@@ -20,7 +20,7 @@ export default function BlogContent() {
   const debouncedFilterKey = useDebouncedValue(filterKey, 1500);
 
   const [page, setPage] = useState(1);
-  const pageSize = 20;
+  const pageSize = 10;
   const [totalPages, setTotalPages] = useState(0);
 
   async function load(p = page, key = debouncedFilterKey) {
@@ -29,7 +29,7 @@ export default function BlogContent() {
       const parsedFilters = key ? JSON.parse(key) : {};
       const [catsData, paged] = await Promise.all([
         listPublicCategories(),
-        publicListPostsPaged({ ...parsedFilters, page: p, pageSize }),
+        publicListPostsPaged({ ...parsedFilters, page: p, size: pageSize }),
       ]);
       setCats(catsData);
       setPosts(paged.items);

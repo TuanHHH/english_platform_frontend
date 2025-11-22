@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, CheckCheck, Trash2, MoreHorizontal } from "lucide-react";
+import { Bell, CheckCheck, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -9,7 +9,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import { useNotificationStore } from "@/store/notification-store";
 import NotificationItem from "./notification-item";
 import Link from "next/link";
@@ -20,6 +19,7 @@ export default function NotificationBell() {
   const { 
     notifications, 
     unreadCount, 
+    loading,
     fetchNotifications, 
     markAsRead, 
     markAllAsRead,
@@ -52,17 +52,28 @@ export default function NotificationBell() {
       <PopoverContent className="w-80 p-0 sm:w-96" align="end">
         <div className="flex items-center justify-between border-b px-4 py-3">
           <h4 className="font-semibold">Thông báo</h4>
-          {unreadCount > 0 && (
+          <div className="flex gap-1">
             <Button 
               variant="ghost" 
               size="sm" 
-              className="h-auto px-2 text-xs text-blue-600 hover:text-blue-700"
-              onClick={() => markAllAsRead()}
+              className="h-auto px-2 text-xs"
+              onClick={() => fetchNotifications(1)}
+              disabled={loading}
             >
-              <CheckCheck className="mr-1 h-3 w-3" />
-              Đánh dấu đã đọc hết
+              <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
             </Button>
-          )}
+            {unreadCount > 0 && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-auto px-2 text-xs text-blue-600 hover:text-blue-700"
+                onClick={() => markAllAsRead()}
+              >
+                <CheckCheck className="mr-1 h-3 w-3" />
+                Đánh dấu đã đọc hết
+              </Button>
+            )}
+          </div>
         </div>
         
         <ScrollArea className="h-[400px]">

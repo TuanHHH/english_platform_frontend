@@ -249,7 +249,10 @@ const InstructorManagement = () => {
               loading={instructorLoading}
               currentPage={instructorPage}
               totalPages={instructorTotalPages}
-              onPageChange={setInstructorPage}
+              onPageChange={(page) => {
+                setInstructorPage(page);
+                fetchInstructors();
+              }}
             />
           </CardContent>
         )}

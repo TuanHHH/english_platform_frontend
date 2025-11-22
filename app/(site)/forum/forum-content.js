@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import ThreadListFilters from "@/components/forum/thread-list-filters";
 import { forumListThreads, forumListCategories } from "@/lib/api/forum";
 import Link from "next/link";
@@ -131,10 +132,10 @@ export default function ForumContent() {
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                       <div className="flex items-center gap-2">
-                        <img
-                          src={t.authorAvatarUrl || "/avatar.svg"}
-                          className="w-6 h-6 sm:w-7 sm:h-7 rounded-full object-cover ring-2 ring-background shadow-sm"
-                          alt=""
+                        <UserAvatar
+                          src={t.authorAvatarUrl}
+                          name={t.authorName}
+                          className="w-6 h-6 sm:w-7 sm:h-7"
                         />
                         <span className="font-medium">{t.authorName || "Ẩn danh"}</span>
                       </div>
