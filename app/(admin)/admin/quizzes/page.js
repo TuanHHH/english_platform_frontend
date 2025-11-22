@@ -1,26 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, ChevronLeft, ChevronRight } from "lucide-react";
-
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "sonner";
 import { searchQuizzes, updateQuiz, deleteQuiz } from "@/lib/api/quiz/quiz";
 import { listQuizTypes } from "@/lib/api/quiz/quiz-type";
 import { listPublicQuizSectionsByType } from "@/lib/api/quiz/quiz-section";
-
-
-const SKILLS = ["LISTENING", "READING", "SPEAKING", "WRITING"];
-const STATUSES = ["DRAFT", "PUBLISHED", "ARCHIVED"];
+import QuizFilters from "@/components/admin/quizzes/quiz-filters";
+import QuizList from "@/components/admin/quizzes/quiz-list";
+import QuizPagination from "@/components/admin/quizzes/quiz-pagination";
+import DeleteQuizDialog from "@/components/admin/quizzes/delete-quiz-dialog";
 
 
 export default function AdminQuizzesPage() {
@@ -42,6 +31,10 @@ export default function AdminQuizzesPage() {
   const [total, setTotal] = useState(0);
   const [items, setItems] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
+
+  // Delete dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [quizToDelete, setQuizToDelete] = useState(null);
 
   const handleStatusChange = async (id, nextStatus) => {
     try {
@@ -175,12 +168,19 @@ export default function AdminQuizzesPage() {
     }
   };
 
-  const onDelete = async (id) => {
-    if (!confirm("Xóa quiz này?")) return;
+  const openDeleteDialog = (quiz) => {
+    setQuizToDelete(quiz);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!quizToDelete) return;
     try {
-      await deleteQuiz(id);
-      await load();
+      await deleteQuiz(quizToDelete.id);
       toast.success("Đã xóa quiz");
+      setDeleteDialogOpen(false);
+      setQuizToDelete(null);
+      await load();
     } catch (err) {
       console.error(err);
       toast.error("Lỗi khi xóa quiz");
@@ -216,222 +216,46 @@ export default function AdminQuizzesPage() {
         </Button>
       </div>
 
-      {/* Filters */}
-      <form
+      <QuizFilters
+        keyword={keyword}
+        setKeyword={setKeyword}
+        quizTypeId={quizTypeId}
+        setQuizTypeId={setQuizTypeId}
+        status={status}
+        setStatus={setStatus}
+        skill={skill}
+        setSkill={setSkill}
+        quizSectionId={quizSectionId}
+        setQuizSectionId={setQuizSectionId}
+        types={types}
+        sections={sections}
         onSubmit={handleSubmit}
-        className="rounded-xl border p-4 space-y-4 bg-background"
-      >
-        {/* 6 columns: keyword, type, status, skill, section */}
-        <div className="grid grid-cols-1 md:grid-cols-8 gap-3">
-          <Input
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            placeholder="Từ khóa"
-            className="md:col-span-2"
-          />
-
-          {/* Quiz Type */}
-          <Select
-            value={quizTypeId}
-            onValueChange={(v) => {
-              setQuizTypeId(v);
-              setQuizSectionId("all");
-            }}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Quiz Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả</SelectItem>
-              {types.map((t) => (
-                <SelectItem key={t.id} value={String(t.id)}>
-                  {t.name || t.code || t.id}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Status */}
-          <Select value={status} onValueChange={(v) => setStatus(v)}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả</SelectItem>
-              {STATUSES.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Skill */}
-          <Select
-            value={skill}
-            onValueChange={(v) => {
-              setSkill(v);
-            }}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Skill" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả</SelectItem>
-              {SKILLS.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Quiz Section */}
-          <Select
-            value={quizSectionId}
-            onValueChange={onChangeSection}
-            disabled={!quizTypeId || quizTypeId === "all" || sections.length === 0}
-          >
-            <SelectTrigger className="w-full md:col-span-2">
-              <SelectValue placeholder="Section (theo Type)" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả</SelectItem>
-              {sections.map((s) => (
-                <SelectItem key={s.id} value={String(s.id)}>
-                  {(s.name || s.id) + (s.skill ? ` • ${s.skill}` : "")}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <div>
-            <Button type="submit" className="w-full md:w-auto">
-              <Search className="mr-2 h-4 w-4" />
-              Tìm kiếm
-            </Button>
-          </div>
-        </div>
-      </form>
+        onChangeSection={onChangeSection}
+      />
 
       <div className="rounded-xl border p-4">
-        {/* <div className="font-medium mb-3">
-          Kết quả ({total} tổng cộng)
-        </div> */}
-        {loading ? (
-          <div className="space-y-3">
-            {[...Array(5)].map((_, idx) => (
-              <div
-                key={idx}
-                className="flex items-center justify-between rounded-lg border p-3"
-              >
-                <div className="space-y-1 flex-1">
-                  <Skeleton className="h-6 w-80" />
-                  <Skeleton className="h-4 w-96" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-9 w-16" />
-                  <Skeleton className="h-8 w-12" />
-                  <Skeleton className="h-9 w-20" />
-                  <Skeleton className="h-8 w-[140px]" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {items?.length === 0 && <div>Không có dữ liệu</div>}
-            {items?.map((q) => {
-              const t =
-                q.quizTypeName || q.quizType?.name || q.quizTypeCode || "";
-              const sec = q.quizSectionName || q.quizSection?.name || "";
-              const sk = q.skill || q.quizSection?.skill || "";
-              const statusText = q.status || q.quizStatus || "";
-              return (
-                <div
-                  key={q.id}
-                  className="flex items-center justify-between rounded-lg border p-3"
-                >
-                  <div className="space-y-1">
-                    <div className="font-semibold">
-                      {q.title || q.name || q.id}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {[
-                        t,
-                        statusText,
-                        sk && (sec ? `${sk} • ${sec}` : sk),
-                      ]
-                        .filter(Boolean)
-                        .join(" • ")}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" asChild>
-                      <a href={`/admin/quizzes/${q.id}`}>Sửa</a>
-                    </Button>
-                    <Button size="sm" variant="destructive" onClick={() => onDelete(q.id)}>Xóa</Button>
-                    <Button variant="secondary" asChild>
-                      <a href={`/admin/quizzes/${q.id}/questions`}>Câu hỏi</a>
-                    </Button>
-                    <Select value={q.status} onValueChange={(v) => handleStatusChange(q.id, v)}>
-                      <SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue placeholder="Trạng thái" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="DRAFT">DRAFT</SelectItem>
-                        <SelectItem value="PUBLISHED">PUBLISHED</SelectItem>
-                        <SelectItem value="ARCHIVED">ARCHIVED</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        <QuizList
+          items={items}
+          loading={loading}
+          onDelete={openDeleteDialog}
+          onStatusChange={handleStatusChange}
+        />
 
-        {/* Pagination */}
         {!loading && items.length > 0 && (
-          <div className="mt-6 flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              Trang {page} / {totalPages}
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(page - 1)}
-                disabled={page <= 1}
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-
-              <div className="flex gap-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .slice(Math.max(0, page - 2), Math.min(totalPages, page + 1))
-                  .map((p) => (
-                    <Button
-                      key={p}
-                      variant={p === page ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handlePageChange(p)}
-                    >
-                      {p}
-                    </Button>
-                  ))}
-              </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(page + 1)}
-                disabled={page >= totalPages}
-              >
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
+          <QuizPagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
         )}
       </div>
+
+      <DeleteQuizDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        quiz={quizToDelete}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }
