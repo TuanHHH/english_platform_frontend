@@ -426,28 +426,28 @@ export default function Editor({ initialContent = "", onContentChange }) {
               onClick={() => applyAlignment("left")}
               title="Căn trái"
             >
-              ⬅️ Trái
+              Trái
             </button>
             <button
               className={tempAlign === "center" ? "active" : ""}
               onClick={() => applyAlignment("center")}
               title="Căn giữa"
             >
-              ↔️ Giữa
+              Giữa
             </button>
             <button
               className={tempAlign === "right" ? "active" : ""}
               onClick={() => applyAlignment("right")}
               title="Căn phải"
             >
-              ➡️ Phải
+              Phải
             </button>
             <button
               className={tempAlign === "justify" ? "active" : ""}
               onClick={() => applyAlignment("justify")}
               title="Căn đều"
             >
-              ⬌ Căn đều
+              Căn đều
             </button>
           </div>,
           document.body

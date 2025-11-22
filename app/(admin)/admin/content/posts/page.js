@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { toast } from "sonner"; // NEW: toast
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -224,27 +224,35 @@ export default function AdminPostsPage() {
                           {p.published ? "Đã publish" : "Nháp"}
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button asChild variant="outline">
+                      <div className="flex gap-1.5">
+                        <Button asChild variant="outline" size="sm" className="h-7 px-2 text-xs">
                           <Link href={`/admin/content/posts/${p.id}/edit`}>
                             Sửa
                           </Link>
                         </Button>
                         {p.published ? (
                           <Button
+                            size="sm"
                             variant="secondary"
                             onClick={() => handleUnpublish(p.id, p.title)}
+                            className="h-7 px-2 text-xs"
                           >
                             Unpublish
                           </Button>
                         ) : (
-                          <Button onClick={() => handlePublish(p.id, p.title)}>
+                          <Button 
+                            size="sm"
+                            onClick={() => handlePublish(p.id, p.title)}
+                            className="h-7 px-2 text-xs"
+                          >
                             Publish
                           </Button>
                         )}
                         <Button
+                          size="sm"
                           variant="destructive"
                           onClick={() => openDeleteDialog(p)}
+                          className="h-7 px-2 text-xs"
                         >
                           Xóa
                         </Button>

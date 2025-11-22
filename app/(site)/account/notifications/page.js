@@ -135,7 +135,7 @@ export default function NotificationsPage() {
       ) : (
         <Card className="p-16">
           <div className="flex flex-col items-center justify-center text-center">
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-full mb-6">
+            <div className="bg-linear-to-br from-blue-50 to-indigo-50 p-6 rounded-full mb-6">
               <Bell className="h-16 w-16 text-blue-300" />
             </div>
             <h3 className="text-xl font-semibold mb-2">

@@ -1,9 +1,8 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Pagination } from "@/components/ui/pagination";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,19 +13,26 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import Editor from "@/components/content/editor";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import Link from "next/link";
 import { getQuiz, updateQuiz } from "@/lib/api/quiz/quiz";
-import { listQuestionsByQuiz, deleteQuestion } from "@/lib/api/quiz/question";
+import { listQuestionsByQuiz, deleteQuestion, createQuestion } from "@/lib/api/quiz/question";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
+import QuestionForm from "@/components/admin/questions/question-form";
+import QuestionList from "@/components/admin/questions/question-list";
+import ContextEditor from "@/components/admin/questions/context-editor";
 
 const MediaManager = dynamic(() => import("@/components/media/media-manager"), {
   ssr: false,
 });
 
 export default function QuizQuestionsWithContextPage() {
-  const router = useRouter();
   const params = useParams();
   const quizId = params?.id || "unknown";
   const folderPath = `forums/${quizId}/media`;
@@ -37,16 +43,17 @@ export default function QuizQuestionsWithContextPage() {
 
   const [contextText, setContextText] = useState("");
   const [quizTitle, setQuizTitle] = useState("");
+  const [quizSkill, setQuizSkill] = useState("");
 
   const [questions, setQuestions] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // State cho delete confirmation dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [questionToDelete, setQuestionToDelete] = useState(null);
 
-  // Tính toán orderIndex cao nhất
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+
   const maxOrderIndex = useMemo(() => {
     if (!questions || questions.length === 0) return 0;
     return Math.max(...questions.map((q) => q.orderIndex ?? 1));
@@ -56,13 +63,12 @@ export default function QuizQuestionsWithContextPage() {
     try {
       setLoading(true);
       setError(null);
-      // 1) quiz detail
       const q = await getQuiz(quizId);
       const qd = q?.data || q;
       setQuizTitle(qd?.title || "Quiz");
       setContextText(qd?.contextText || "");
+      setQuizSkill(qd?.skill || "");
 
-      // 2) questions
       const r = await listQuestionsByQuiz(quizId, { page: p, pageSize: 20 });
       const data = r?.data || r;
       setQuestions(data?.result || data?.items || []);
@@ -78,7 +84,6 @@ export default function QuizQuestionsWithContextPage() {
 
   useEffect(() => {
     if (quizId) loadAll(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quizId]);
 
   async function saveContext() {
@@ -93,13 +98,11 @@ export default function QuizQuestionsWithContextPage() {
     }
   }
 
-  // Hàm mở dialog xác nhận xóa
   function openDeleteDialog(question) {
     setQuestionToDelete(question);
     setDeleteDialogOpen(true);
   }
 
-  // Hàm xử lý xóa sau khi xác nhận
   async function handleDeleteQuestion() {
     if (!questionToDelete) return;
     try {
@@ -113,238 +116,121 @@ export default function QuizQuestionsWithContextPage() {
     }
   }
 
+  function openAddDialog() {
+    setAddDialogOpen(true);
+  }
+
+  async function handleAddQuestion(data) {
+    try {
+      const existingQuestion = questions.find(q => q.orderIndex === Number(data.orderIndex));
+      if (existingQuestion) {
+        toast.error(`Thứ tự ${data.orderIndex} đã được sử dụng bởi câu hỏi khác`);
+        return;
+      }
+
+      const payload = {
+        quizId: data.quizId,
+        content: data.content,
+        orderIndex: Number(data.orderIndex),
+      };
+
+      const validOptions = data.options?.filter(o => o.content?.trim());
+      if (validOptions && validOptions.length > 0) {
+        payload.options = validOptions.map((o, i) => ({
+          content: o.content,
+          correct: !!o.correct,
+          explanation: o.explanation || "",
+          orderIndex: Number(o.orderIndex || i + 1),
+        }));
+      }
+
+      await createQuestion(payload);
+      toast.success("Đã tạo câu hỏi mới!");
+      setAddDialogOpen(false);
+      loadAll(page);
+    } catch (e) {
+      toast.error(e?.message || "Không thể tạo câu hỏi.");
+    }
+  }
+
   return (
-    <div className="space-y-6 p-4 min-h-screen">
-      {/* Header Section */}
-      <div className="space-y-2">
-        <h1 className="text-xl font-semibold">
-          Quản lý Media & Câu hỏi cho Quiz
-        </h1>
-        <p className="text-sm text-gray-500">
-          Quiz ID:{" "}
-          <code className="px-2 py-1 bg-gray-100 rounded">{quizId}</code>
-        </p>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto p-6 space-y-6">
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900">
+                {quizTitle}
+              </h1>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-sm text-gray-500">ID: {quizId}</span>
+                {quizSkill && (
+                  <>
+                    <span className="text-gray-300">•</span>
+                    <span className="text-sm text-gray-500">{quizSkill}</span>
+                  </>
+                )}
+                <span className="text-gray-300">•</span>
+                <span className="text-sm text-gray-500">{questions?.length || 0} câu hỏi</span>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Link href="/admin/quizzes">
+                <Button variant="outline">Quay lại</Button>
+              </Link>
+              <Button onClick={openAddDialog}>+ Thêm câu hỏi</Button>
+            </div>
+          </div>
+        </div>
 
-      {/* Media Manager Section - Collapsible */}
-      <MediaManager folder={folderPath} />
-
-      <main className="flex-1 space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold">Câu hỏi • {quizTitle}</h2>
-          <div className="flex gap-2">
-            <Link href="/admin/quizzes">
-              <Button variant="outline">Quay lại</Button>
-            </Link>
-            {/* Truyền nextOrderIndex qua URL */}
-            <Link
-              href={`/admin/questions/new?quizId=${quizId}&nextOrderIndex=${
-                maxOrderIndex + 1
-              }`}
-            >
-              <Button>+ Thêm câu hỏi</Button>
-            </Link>
+        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+          <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+            <h2 className="text-sm font-semibold text-gray-700">Quản lý Media</h2>
+          </div>
+          <div className="p-4">
+            <MediaManager folder={folderPath} />
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* LEFT: ContextText with Editor.js */}
-          <Card className="h-fit">
-            <CardHeader>
+          <ContextEditor
+            contextText={contextText}
+            onContextChange={setContextText}
+            onSave={saveContext}
+            saving={saving}
+            loading={loading}
+            folderPath={folderPath}
+          />
+
+          <Card className="border-gray-200 gap-2">
+            <CardHeader className="border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <CardTitle>Đoạn văn/Ngữ cảnh chung (contextText)</CardTitle>
-                <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">
-                  S3 Upload Enabled
+                <CardTitle className="text-sm font-semibold text-gray-700">Danh sách câu hỏi</CardTitle>
+                <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs font-medium">
+                  {questions?.length || 0}
                 </span>
               </div>
             </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-                  <span className="ml-3 text-gray-600">Đang tải...</span>
-                </div>
-              ) : (
-                <>
-                  {/* Editor với S3 Upload */}
-                  <Editor
-                    initialContent={contextText}
-                    onContentChange={setContextText}
-                    useServerUpload={true}
-                    uploadFolder={folderPath}
-                  />
-
-                  <div className="mt-4 flex gap-2">
-                    <Button onClick={saveContext} disabled={saving}>
-                      {saving ? "Đang lưu..." : "Lưu contextText"}
-                    </Button>
-                  </div>
-
-                  <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-xs text-blue-800 font-medium mb-1">
-                      Hướng dẫn sử dụng Editor:
-                    </p>
-                    <ul className="text-xs text-blue-700 space-y-1 list-disc list-inside">
-                      <li>
-                        <strong>Ảnh:</strong> Click nút Image → Chọn file → Tự
-                        động upload lên S3
-                      </li>
-                      <li>
-                        <strong>Audio:</strong> Click nút Audio → Chọn file audio →
-                        Upload lên S3
-                      </li>
-                      <li>
-                        <strong>Resize ảnh:</strong> Click vào ảnh đã chèn →
-                        Chọn kích thước hoặc căn lề
-                      </li>
-                      <li>
-                        <strong>Media:</strong> Tất cả file được lưu vào folder:{" "}
-                        <code className="bg-blue-100 px-1 rounded">
-                          {folderPath}
-                        </code>
-                      </li>
-                    </ul>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* RIGHT: Questions list */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Danh sách câu hỏi</CardTitle>
-                <span className="text-xs text-gray-600">
-                  {questions?.length || 0} câu hỏi
-                </span>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-                  <span className="ml-3 text-gray-600">Đang tải...</span>
-                </div>
-              ) : error ? (
-                <div className="text-red-600 p-4 bg-red-50 rounded-lg border border-red-200">
-                  {error}
-                </div>
-              ) : !questions || questions.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="text-gray-500 italic">Chưa có câu hỏi.</div>
-                  <Link
-                    href={`/admin/questions/new?quizId=${quizId}&nextOrderIndex=1`}
-                    className="inline-block mt-4"
-                  >
-                    <Button>+ Tạo câu hỏi đầu tiên</Button>
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {questions.map((q, idx) => (
-                    <div
-                      key={q.id || idx}
-                      className="border rounded-lg p-4 hover:shadow-md transition-shadow"
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <span className="px-2 py-1 bg-gray-100 rounded text-sm font-medium">
-                            Câu {q.orderIndex ?? idx + 1}
-                          </span>
-                          {q.type && (
-                            <span className="text-xs text-gray-500 capitalize">
-                              {q.type}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex gap-2">
-                          <Link
-                            href={`/admin/questions/${q.id}?quizId=${quizId}`}
-                          >
-                            <Button size="sm" variant="outline">
-                              Sửa
-                            </Button>
-                          </Link>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => openDeleteDialog(q)}
-                          >
-                            Xóa
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* Render question stem/preview (HTML) if available */}
-                      {q.content ? (
-                        <div
-                          className="prose prose-sm max-w-none mt-2 border-l-2 border-gray-200 pl-3"
-                          dangerouslySetInnerHTML={{ __html: q.content }}
-                        />
-                      ) : (
-                        <div className="text-sm text-muted-foreground mt-2 italic">
-                          — Không có nội dung hiển thị —
-                        </div>
-                      )}
-
-                      {/* Render options */}
-                      {q.options && q.options.length > 0 && (
-                        <div className="mt-3 pt-3 border-t">
-                          <div className="text-xs font-medium text-gray-600 mb-2">
-                            Các lựa chọn:
-                          </div>
-                          <ul className="space-y-1">
-                            {q.options
-                              .sort(
-                                (a, b) =>
-                                  (a.orderIndex || 1) - (b.orderIndex || 1)
-                              )
-                              .map((opt, i) => (
-                                <li
-                                  key={opt.id || i}
-                                  className={`text-sm flex items-start gap-2 ${
-                                    opt.correct
-                                      ? "font-medium text-green-700 bg-green-50 p-2 rounded"
-                                      : "text-gray-700"
-                                  }`}
-                                >
-                                  <span className="text-gray-400 flex-shrink-0">
-                                    {String.fromCharCode(65 + i)}.
-                                  </span>
-                                  <span className="flex-1">{opt.content}</span>
-                                  {opt.correct && (
-                                    <span className="flex-shrink-0 text-green-600 font-bold">✓</span>
-                                  )}
-                                </li>
-                              ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-
-                  {/* Pagination */}
-                  {totalPages > 1 && (
-                    <div className="pt-4 border-t">
-                      <Pagination
-                        currentPage={Math.max(0, page - 1)}
-                        totalPages={totalPages}
-                        onPageChange={(p) => {
-                          setPage(p + 1);
-                          loadAll(p + 1);
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
+            <CardContent className="pt-4">
+              <QuestionList
+                questions={questions}
+                quizId={quizId}
+                loading={loading}
+                error={error}
+                page={page}
+                totalPages={totalPages}
+                onPageChange={(p) => {
+                  setPage(p);
+                  loadAll(p);
+                }}
+                onDelete={openDeleteDialog}
+                onAddNew={openAddDialog}
+              />
             </CardContent>
           </Card>
         </div>
-      </main>
+      </div>
 
-      {/* Delete confirmation dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -368,6 +254,21 @@ export default function QuizQuestionsWithContextPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+        <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Thêm câu hỏi mới</DialogTitle>
+          </DialogHeader>
+          <QuestionForm
+            quizId={quizId}
+            quizSkill={quizSkill}
+            orderIndex={maxOrderIndex + 1}
+            onSubmit={handleAddQuestion}
+            onCancel={() => setAddDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

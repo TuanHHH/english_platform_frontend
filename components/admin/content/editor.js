@@ -40,7 +40,6 @@ export default function Editor({
   const [selectedImageEl, setSelectedImageEl] = useState(null);
   const [tempWidth, setTempWidth] = useState("");
   const [tempAlign, setTempAlign] = useState("left");
-  const [showAlignToolbar, setShowAlignToolbar] = useState(false);
 
   // State cho audio modal
   const [showAudioModal, setShowAudioModal] = useState(false);
@@ -342,7 +341,6 @@ export default function Editor({
           setTempAlign("left");
         }
 
-        setShowAlignToolbar(true);
         setShowResizeModal(true);
 
         console.log("🖼️ Image selected:", {
@@ -418,7 +416,6 @@ export default function Editor({
       updateQuillContent();
 
       setShowResizeModal(false);
-      setShowAlignToolbar(false);
       if (selectedImageEl) {
         selectedImageEl.classList.remove("image-selected");
       }
@@ -433,7 +430,6 @@ export default function Editor({
 
   const handleCancelResize = () => {
     setShowResizeModal(false);
-    setShowAlignToolbar(false);
     if (selectedImageEl) {
       selectedImageEl.classList.remove("image-selected");
     }
@@ -843,6 +839,12 @@ export default function Editor({
           border-color: #06c;
         }
 
+        .image-resize-buttons button.active {
+          background: #06c;
+          color: white;
+          border-color: #06c;
+        }
+
         .image-resize-input {
           display: flex;
           align-items: center;
@@ -1086,44 +1088,6 @@ export default function Editor({
           document.body
         )}
 
-      {/* Alignment Toolbar */}
-      {showAlignToolbar &&
-        selectedImageEl &&
-        typeof window !== "undefined" &&
-        createPortal(
-          <div className="image-alignment-toolbar">
-            <button
-              className={tempAlign === "left" ? "active" : ""}
-              onClick={() => applyAlignment("left")}
-              title="Căn trái"
-            >
-              ⬅️ Trái
-            </button>
-            <button
-              className={tempAlign === "center" ? "active" : ""}
-              onClick={() => applyAlignment("center")}
-              title="Căn giữa"
-            >
-              ↔️ Giữa
-            </button>
-            <button
-              className={tempAlign === "right" ? "active" : ""}
-              onClick={() => applyAlignment("right")}
-              title="Căn phải"
-            >
-              ➡️ Phải
-            </button>
-            <button
-              className={tempAlign === "justify" ? "active" : ""}
-              onClick={() => applyAlignment("justify")}
-              title="Căn đều"
-            >
-              ⬌ Căn đều
-            </button>
-          </div>,
-          document.body
-        )}
-
       {/* Image Resize Modal */}
       {showResizeModal &&
         typeof window !== "undefined" &&
@@ -1185,6 +1149,38 @@ export default function Editor({
                   <p className="text-xs text-gray-500 mt-1">
                     Giá trị hiện tại: {tempWidth}px
                   </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Căn lề:
+                  </label>
+                  <div className="image-resize-buttons">
+                    <button
+                      className={tempAlign === "left" ? "active" : ""}
+                      onClick={() => setTempAlign("left")}
+                    >
+                      Trái
+                    </button>
+                    <button
+                      className={tempAlign === "center" ? "active" : ""}
+                      onClick={() => setTempAlign("center")}
+                    >
+                      Giữa
+                    </button>
+                    <button
+                      className={tempAlign === "right" ? "active" : ""}
+                      onClick={() => setTempAlign("right")}
+                    >
+                      Phải
+                    </button>
+                    <button
+                      className={tempAlign === "justify" ? "active" : ""}
+                      onClick={() => setTempAlign("justify")}
+                    >
+                      Căn đều
+                    </button>
+                  </div>
                 </div>
               </div>
 

@@ -45,7 +45,6 @@ export default function MediaManager({ folder = "uploads", initial = [] }) {
       const map = new Map();
       [...normalized, ...items].forEach(it => { if (it?.url) map.set(it.url, it); });
       setItems([...map.values()]);
-      toast.success("Đã tải danh sách media");
     } catch (e) {
       console.error(e);
       toast.error(e?.message || "Không lấy được danh sách file");
@@ -136,7 +135,7 @@ export default function MediaManager({ folder = "uploads", initial = [] }) {
         >
           <div className="flex items-center gap-3">
             <div>
-              <div className="font-semibold text-left">Media Uploader</div>
+              <div className="font-semibold text-left">Media Uploader Tool</div>
             </div>
           </div>
           <div className="shrink-0">
@@ -161,14 +160,14 @@ export default function MediaManager({ folder = "uploads", initial = [] }) {
                   disabled={loadingList}
                   className="px-3 py-1 rounded-xl border text-sm disabled:opacity-50 hover:bg-gray-100"
                 >
-                  {loadingList ? "Loading..." : "Refresh list"}
+                  {loadingList ? "Loading..." : "Làm mới"}
                 </button>
                 <button
                   type="button"
                   onClick={handleDeleteFolder}
                   className="px-3 py-1 rounded-xl border text-sm hover:bg-red-50 text-red-600"
                 >
-                  Delete folder
+                  Xóa folder
                 </button>
               </div>
             </div>
@@ -186,7 +185,7 @@ export default function MediaManager({ folder = "uploads", initial = [] }) {
               <button
                 type="button"
                 disabled={busy}
-                className="px-4 py-2 rounded-xl bg-black text-white disabled:opacity-50 whitespace-nowrap"
+                className="px-4 py-2 rounded-xl bg-blue-500 text-white disabled:opacity-50 whitespace-nowrap"
                 onClick={() => inputRef.current?.click()}
               >
                 {busy ? "Uploading..." : "Choose Files"}

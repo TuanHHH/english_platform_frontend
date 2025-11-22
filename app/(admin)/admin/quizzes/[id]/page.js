@@ -3,6 +3,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +31,7 @@ import {
 } from "@/lib/api/quiz/quiz";
 import { pageQuizSectionsByType } from "@/lib/api/quiz/quiz-section";
 import { toast } from "sonner";
+import { quizCreateSchema } from "@/schema/quiz";
 
 const SKILLS = ["LISTENING", "READING", "SPEAKING", "WRITING"];
 const STATUSES = ["DRAFT", "PUBLISHED", "ARCHIVED"];
@@ -41,21 +44,32 @@ export default function AdminQuizEditorPage() {
 
   const [types, setTypes] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Section state
-  const [quizSectionId, setQuizSectionId] = useState("none");
   const [sections, setSections] = useState([]);
 
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    quizTypeId: "none",
-    skill: "READING",
-    status: "DRAFT",
-    contextText: "",
-    questionText: "",
-    explanation: "",
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    setValue,
+    watch,
+    reset,
+  } = useForm({
+    resolver: zodResolver(quizCreateSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      quizTypeId: "none",
+      skill: "READING",
+      status: "DRAFT",
+      contextText: "",
+      explanation: "",
+      quizSectionId: null,
+    },
   });
+
+  const watchQuizTypeId = watch("quizTypeId");
+  const watchSkill = watch("skill");
+  const watchQuizSectionId = watch("quizSectionId");
 
   // Load Types + existing Quiz
   useEffect(() => {
@@ -69,18 +83,16 @@ export default function AdminQuizEditorPage() {
           const q = await getQuiz(id);
           const d = q?.data || q;
 
-          setForm({
+          reset({
             title: d.title || "",
             description: d.description || "",
             quizTypeId: d.quizTypeId ? String(d.quizTypeId) : "none",
             skill: d.skill || "READING",
             status: d.status || "DRAFT",
             contextText: d.contextText || "",
-            questionText: d.questionText || "",
             explanation: d.explanation || "",
+            quizSectionId: d.quizSectionId ? String(d.quizSectionId) : null,
           });
-
-          setQuizSectionId(d.quizSectionId ? String(d.quizSectionId) : "none");
         }
       } catch (e) {
         console.error(e);
@@ -89,14 +101,14 @@ export default function AdminQuizEditorPage() {
         setLoading(false);
       }
     })();
-  }, [id, isNew]);
+  }, [id, isNew, reset]);
 
-  // ✅ useEffect 1: Fetch sections chỉ khi quizTypeId thay đổi
+  // Fetch sections when quizTypeId changes
   useEffect(() => {
-    const typeId = form.quizTypeId;
+    const typeId = watchQuizTypeId;
     if (!typeId || typeId === "none") {
       setSections([]);
-      setQuizSectionId("none");
+      setValue("quizSectionId", null);
       return;
     }
     (async () => {
@@ -108,68 +120,53 @@ export default function AdminQuizEditorPage() {
         const data = await pageQuizSectionsByType(String(typeId), params);
         const items = data?.result || data?.data?.result || data?.data || data || [];
         const list = Array.isArray(items) ? items : [];
-        setSections(list); // Lưu tất cả sections (không lọc)
+        setSections(list);
 
         if (
-          quizSectionId &&
-          quizSectionId !== "none" &&
-          !list.find((s) => String(s.id) === String(quizSectionId))
+          watchQuizSectionId &&
+          !list.find((s) => String(s.id) === String(watchQuizSectionId))
         ) {
-          setQuizSectionId("none");
+          setValue("quizSectionId", null);
         }
       } catch (e) {
         console.error("Failed to load sections", e);
         setSections([]);
-        setQuizSectionId("none");
+        setValue("quizSectionId", null);
       }
     })();
-  }, [form.quizTypeId]); // ✅ Chỉ phụ thuộc vào quizTypeId
+  }, [watchQuizTypeId, setValue]);
 
-  // ✅ useEffect 2: Lọc sections khi skill thay đổi (không gọi API)
+  // Reset section if skill changes and current section doesn't match
   useEffect(() => {
     if (sections.length === 0) return;
 
-    // Lọc sections theo skill hiện tại
     const filtered = sections.filter((s) => {
       const sk = String(s.skill || s.quizSkill || "").toUpperCase();
-      return !form.skill || sk === String(form.skill).toUpperCase();
+      return !watchSkill || sk === String(watchSkill).toUpperCase();
     });
 
-    // Reset quizSectionId nếu section hiện tại không phù hợp với skill mới
     if (
-      quizSectionId &&
-      quizSectionId !== "none" &&
-      !filtered.find((s) => String(s.id) === String(quizSectionId))
+      watchQuizSectionId &&
+      !filtered.find((s) => String(s.id) === String(watchQuizSectionId))
     ) {
-      setQuizSectionId("none");
+      setValue("quizSectionId", null);
     }
-  }, [form.skill, sections, quizSectionId]);
+  }, [watchSkill, sections, watchQuizSectionId, setValue]);
 
-  const onSubmit = async (e) => {
-    e.preventDefault();
+  const onSubmit = async (data) => {
     try {
-      const payload = { ...form };
-
-      if (!payload.title || !payload.quizTypeId || payload.quizTypeId === "none") {
-        toast.error("Vui lòng nhập tiêu đề và chọn loại đề");
-        return;
-      }
-
       const submitPayload = {
-        title: payload.title,
-        description: payload.description,
-        quizTypeId: payload.quizTypeId,
-        skill: payload.skill,
-        status: payload.status,
-        contextText: payload.contextText,
-        questionText: payload.questionText,
-        explanation: payload.explanation,
+        title: data.title,
+        description: data.description || "",
+        quizTypeId: data.quizTypeId,
+        skill: data.skill,
+        status: data.status,
+        contextText: data.contextText || "",
+        explanation: data.explanation || "",
       };
 
-      if (quizSectionId && quizSectionId !== "none") {
-        submitPayload.quizSectionId = quizSectionId;
-      } else {
-        delete submitPayload.quizSectionId;
+      if (data.quizSectionId) {
+        submitPayload.quizSectionId = data.quizSectionId;
       }
 
       if (isNew) {
@@ -182,7 +179,7 @@ export default function AdminQuizEditorPage() {
       router.push("/admin/quizzes");
     } catch (e) {
       console.error(e);
-      toast.error("Lưu thất bại");
+      toast.error(e?.response?.data?.message || "Lưu thất bại");
     }
   };
 
@@ -194,10 +191,10 @@ export default function AdminQuizEditorPage() {
     );
   }
 
-  // ✅ Lọc sections theo skill để hiển thị trong dropdown
+  // Filter sections based on current skill
   const filteredSections = sections.filter((s) => {
     const sk = String(s.skill || s.quizSkill || "").toUpperCase();
-    return !form.skill || sk === String(form.skill).toUpperCase();
+    return !watchSkill || sk === String(watchSkill).toUpperCase();
   });
 
   return (
@@ -217,157 +214,214 @@ export default function AdminQuizEditorPage() {
             <CardTitle>Thông tin Quiz</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={onSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Title */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-2">Tiêu đề</label>
-                <Input
-                  placeholder="Nhập tiêu đề quiz"
-                  value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                <label className="block text-sm font-medium mb-2">
+                  Tiêu đề <span className="text-red-500">*</span>
+                </label>
+                <Controller
+                  name="title"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      {...field}
+                      placeholder="Nhập tiêu đề quiz"
+                    />
+                  )}
                 />
+                {errors.title && (
+                  <p className="text-sm text-red-600 mt-1">{errors.title.message}</p>
+                )}
               </div>
 
               {/* Type */}
               <div>
-                <label className="block text-sm font-medium mb-2">Loại đề</label>
-                <Select
-                  value={form.quizTypeId}
-                  onValueChange={(v) => {
-                    setForm({ ...form, quizTypeId: v });
-                    setQuizSectionId("none");
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn loại đề" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">-- Chọn loại đề --</SelectItem>
-                    {types.map((t) => (
-                      <SelectItem key={t.id} value={String(t.id)}>
-                        {t.name || t.code || t.id}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <label className="block text-sm font-medium mb-2">
+                  Loại đề <span className="text-red-500">*</span>
+                </label>
+                <Controller
+                  name="quizTypeId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value}
+                      onValueChange={(v) => {
+                        field.onChange(v);
+                        setValue("quizSectionId", null);
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn loại đề" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">-- Chọn loại đề --</SelectItem>
+                        {types.map((t) => (
+                          <SelectItem key={t.id} value={String(t.id)}>
+                            {t.name || t.code || t.id}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.quizTypeId && (
+                  <p className="text-sm text-red-600 mt-1">{errors.quizTypeId.message}</p>
+                )}
               </div>
 
               {/* Skill */}
               <div>
-                <label className="block text-sm font-medium mb-2">Kỹ năng</label>
-                <Select
-                  value={form.skill}
-                  onValueChange={(v) => {
-                    setForm({ ...form, skill: v });
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn kỹ năng" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SKILLS.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <label className="block text-sm font-medium mb-2">
+                  Kỹ năng <span className="text-red-500">*</span>
+                </label>
+                <Controller
+                  name="skill"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn kỹ năng" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SKILLS.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {s}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.skill && (
+                  <p className="text-sm text-red-600 mt-1">{errors.skill.message}</p>
+                )}
               </div>
 
               {/* Section (filtered) */}
               <div>
                 <label className="block text-sm font-medium mb-2">
                   Chọn Section
-                  {form.quizTypeId === "none" && (
-                    <span className="text-xs text-muted-foreground">(Chọn loại đề trước)</span>
+                  {watchQuizTypeId === "none" && (
+                    <span className="text-xs text-muted-foreground"> (Chọn loại đề trước)</span>
                   )}
                 </label>
-                <Select
-                  value={quizSectionId}
-                  onValueChange={(v) => setQuizSectionId(v)}
-                  disabled={form.quizTypeId === "none" || filteredSections.length === 0}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="-- Không chọn --" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">-- Không chọn --</SelectItem>
-                    {filteredSections.map((s) => (
-                      <SelectItem key={String(s.id)} value={String(s.id)}>
-                        {(s.name || s.id) + (s.skill ? ` • ${s.skill}` : s.quizSkill ? ` • ${s.quizSkill}` : "")}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="quizSectionId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value || "none"}
+                      onValueChange={(v) => field.onChange(v === "none" ? null : v)}
+                      disabled={watchQuizTypeId === "none" || filteredSections.length === 0}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="-- Không chọn --" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">-- Không chọn --</SelectItem>
+                        {filteredSections.map((s) => (
+                          <SelectItem key={String(s.id)} value={String(s.id)}>
+                            {(s.name || s.id) + (s.skill ? ` • ${s.skill}` : s.quizSkill ? ` • ${s.quizSkill}` : "")}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.quizSectionId && (
+                  <p className="text-sm text-red-600 mt-1">{errors.quizSectionId.message}</p>
+                )}
               </div>
 
               {/* Status */}
               <div>
-                <label className="block text-sm font-medium mb-2">Trạng thái</label>
-                <Select
-                  value={form.status}
-                  onValueChange={(v) => setForm({ ...form, status: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn trạng thái" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUSES.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <label className="block text-sm font-medium mb-2">
+                  Trạng thái <span className="text-red-500">*</span>
+                </label>
+                <Controller
+                  name="status"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn trạng thái" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {STATUSES.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {s}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.status && (
+                  <p className="text-sm text-red-600 mt-1">{errors.status.message}</p>
+                )}
               </div>
 
               {/* Description */}
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium mb-2">Mô tả</label>
-                <Textarea
-                  rows={3}
-                  placeholder="Nhập mô tả quiz"
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                <Controller
+                  name="description"
+                  control={control}
+                  render={({ field }) => (
+                    <Textarea
+                      {...field}
+                      rows={3}
+                      placeholder="Nhập mô tả quiz"
+                    />
+                  )}
                 />
+                {errors.description && (
+                  <p className="text-sm text-red-600 mt-1">{errors.description.message}</p>
+                )}
               </div>
 
               {/* contextText */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-2">Đoạn văn/Ngữ cảnh chung (contextText)</label>
-                <Textarea
-                  rows={4}
-                  placeholder="Nhập đoạn văn hoặc ngữ cảnh cho câu hỏi"
-                  value={form.contextText}
-                  onChange={(e) => setForm({ ...form, contextText: e.target.value })}
+                <label className="block text-sm font-medium mb-2">Đoạn văn/Ngữ cảnh chung</label>
+                <Controller
+                  name="contextText"
+                  control={control}
+                  render={({ field }) => (
+                    <Textarea
+                      {...field}
+                      rows={4}
+                      placeholder="Nhập đoạn văn hoặc ngữ cảnh cho câu hỏi"
+                    />
+                  )}
                 />
-              </div>
-
-              {/* questionText */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-2">Yêu cầu Speaking/Writing (questionText)</label>
-                <Textarea
-                  rows={4}
-                  placeholder="Nhập yêu cầu cho phần Speaking hoặc Writing"
-                  value={form.questionText}
-                  onChange={(e) => setForm({ ...form, questionText: e.target.value })}
-                />
+                {errors.contextText && (
+                  <p className="text-sm text-red-600 mt-1">{errors.contextText.message}</p>
+                )}
               </div>
 
               {/* explanation */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-2">Giải thích sau khi nộp (explanation)</label>
-                <Textarea
-                  rows={4}
-                  placeholder="Nhập giải thích hoặc đáp án mẫu"
-                  value={form.explanation}
-                  onChange={(e) => setForm({ ...form, explanation: e.target.value })}
+                <label className="block text-sm font-medium mb-2">Giải thích sau khi nộp</label>
+                <Controller
+                  name="explanation"
+                  control={control}
+                  render={({ field }) => (
+                    <Textarea
+                      {...field}
+                      rows={4}
+                      placeholder="Nhập giải thích hoặc đáp án mẫu"
+                    />
+                  )}
                 />
+                {errors.explanation && (
+                  <p className="text-sm text-red-600 mt-1">{errors.explanation.message}</p>
+                )}
               </div>
 
               <div className="md:col-span-2">
-                <Button type="submit" className="w-full md:w-auto">
-                  {isNew ? "Tạo mới" : "Cập nhật"}
+                <Button type="submit" disabled={isSubmitting} className="w-full md:w-auto">
+                  {isSubmitting ? "Đang lưu..." : isNew ? "Tạo mới" : "Cập nhật"}
                 </Button>
               </div>
             </form>

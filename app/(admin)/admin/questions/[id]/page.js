@@ -1,6 +1,5 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -10,7 +9,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   getQuestion,
-  createQuestion,
   updateQuestion,
 } from "@/lib/api/quiz/question";
 import { Toaster, toast } from "sonner";
@@ -20,43 +18,33 @@ export default function QuestionEditor() {
   const params = useParams();
   const searchParams = useSearchParams();
   const id = params?.id;
-  const isNew = id === "new";
-  const initialQuizId = searchParams.get("quizId") || "";
-  const nextOrderIndex = searchParams.get("nextOrderIndex") || "1";
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const [form, setForm] = useState({
-    quizId: initialQuizId,
+    quizId: "",
     content: "",
-    orderIndex: parseInt(nextOrderIndex, 10) || 1,
-    options: [
-      { content: "", correct: false, explanation: "", orderIndex: 1 },
-      { content: "", correct: false, explanation: "", orderIndex: 2 },
-      { content: "", correct: false, explanation: "", orderIndex: 3 },
-      { content: "", correct: false, explanation: "", orderIndex: 4 },
-    ],
+    orderIndex: 1,
+    options: [],
   });
 
   useEffect(() => {
     (async () => {
       try {
-        if (!isNew) {
-          const r = await getQuestion(id);
-          const d = r?.data || r;
-          setForm({
-            quizId: d.quizId,
-            content: d.content || "",
-            orderIndex: d.orderIndex ?? 1,
-            options: (d.options || []).map((o, idx) => ({
-              content: o.content || "",
-              correct: !!o.correct,
-              explanation: o.explanation || "",
-              orderIndex: o.orderIndex ?? idx + 1,
-            })),
-          });
-        }
+        const r = await getQuestion(id);
+        const d = r?.data || r;
+        setForm({
+          quizId: d.quizId,
+          content: d.content || "",
+          orderIndex: d.orderIndex ?? 1,
+          options: (d.options || []).map((o, idx) => ({
+            content: o.content || "",
+            correct: !!o.correct,
+            explanation: o.explanation || "",
+            orderIndex: o.orderIndex ?? idx + 1,
+          })),
+        });
       } catch (e) {
         console.error(e);
         setError("Không tải được dữ liệu câu hỏi.");
@@ -65,7 +53,7 @@ export default function QuestionEditor() {
         setLoading(false);
       }
     })();
-  }, [id, isNew]);
+  }, [id]);
 
   const setOption = (idx, patch) => {
     setForm((prev) => {
@@ -106,27 +94,25 @@ export default function QuestionEditor() {
         quizId: form.quizId,
         content: form.content,
         orderIndex: Number(form.orderIndex || 1),
-        options: form.options.map((o, i) => ({
+      };
+      
+      const validOptions = form.options.filter(o => o.content.trim());
+      if (validOptions.length > 0) {
+        payload.options = validOptions.map((o, i) => ({
           content: o.content,
           correct: !!o.correct,
           explanation: o.explanation || "",
           orderIndex: Number(o.orderIndex || i + 1),
-        })),
-      };
+        }));
+      }
+      
       if (!payload.quizId) {
-        toast.warning(
-          "Thiếu Quiz ID (query ?quizId=...). Hãy quay lại từ trang Quản lí đề thi và bấm Câu hỏi."
-        );
+        toast.warning("Thiếu Quiz ID.");
         return;
       }
-      if (isNew) {
-        await createQuestion(payload);
-        toast.success("Đã tạo câu hỏi mới!");
-      } else {
-        await updateQuestion(id, payload);
-        toast.success("Đã cập nhật câu hỏi!");
-      }
-      // Redirect về trang quiz questions với format mới
+
+      await updateQuestion(id, payload);
+      toast.success("Đã cập nhật câu hỏi!");
       router.push(`/admin/quizzes/${payload.quizId}/questions`);
     } catch (e) {
       console.error(e);
@@ -136,8 +122,28 @@ export default function QuestionEditor() {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-4">
-        <div>Đang tải...</div>
+      <div className="container mx-auto p-4 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="h-8 w-48 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-10 w-24 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+        
+        <div className="border rounded-lg p-6 space-y-4">
+          <div className="h-6 w-32 bg-gray-200 rounded animate-pulse"></div>
+          <div className="space-y-3">
+            <div className="h-32 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+          <div className="space-y-3">
+            <div className="h-6 w-40 bg-gray-200 rounded animate-pulse"></div>
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="border rounded-lg p-4 space-y-3 bg-gray-50">
+                <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -147,9 +153,7 @@ export default function QuestionEditor() {
       <Toaster position="top-right" richColors />
       
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">
-          {isNew ? "Thêm câu hỏi" : "Sửa câu hỏi"}
-        </h1>
+        <h1 className="text-2xl font-semibold">Sửa câu hỏi</h1>
         <Button variant="outline" asChild>
           <Link href={`/admin/quizzes/${form.quizId}/questions`}>
             Quay lại
@@ -187,23 +191,15 @@ export default function QuestionEditor() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Thứ tự</label>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  className="w-32"
-                  placeholder="Thứ tự"
-                  value={form.orderIndex}
-                  onChange={(e) =>
-                    setForm({ ...form, orderIndex: e.target.value })
-                  }
-                  readOnly={isNew}
-                />
-                {isNew && (
-                  <span className="text-xs text-muted-foreground">
-                    (Tự động tăng từ câu hỏi cuối cùng)
-                  </span>
-                )}
-              </div>
+              <Input
+                type="number"
+                className="w-32"
+                placeholder="Thứ tự"
+                value={form.orderIndex}
+                onChange={(e) =>
+                  setForm({ ...form, orderIndex: e.target.value })
+                }
+              />
             </div>
 
             <div className="space-y-4">
@@ -301,9 +297,7 @@ export default function QuestionEditor() {
             </div>
 
             <div className="flex gap-2 pt-4">
-              <Button type="submit">
-                {isNew ? "Tạo mới" : "Cập nhật"}
-              </Button>
+              <Button type="submit">Cập nhật</Button>
               <Button
                 type="button"
                 variant="outline"

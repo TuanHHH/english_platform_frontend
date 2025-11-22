@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect, useState } from "react";
-// import AdminSidebar from "@/components/common/AdminSidebar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import PostForm from "@/components/content/post-form";
 import { listCategories } from "@/lib/api/content/categories";

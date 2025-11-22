@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, ChevronLeft, ChevronRight, CheckCircle, Clock, XCircle, AlertCircle, Filter, MoreHorizontal } from "lucide-react";
+import { ChevronLeft, ChevronRight, CheckCircle, Clock, XCircle, AlertCircle, Filter } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,12 +22,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { getAdminWithdrawals, processWithdrawal } from "@/lib/api/admin";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -141,17 +135,6 @@ export default function AdminWithdrawalsPage() {
       setProcessing(false);
     }
   };
-
-  const stats = withdrawals.reduce(
-    (acc, w) => {
-      acc.total += 1;
-      if (w.status === "PENDING") acc.pending += 1;
-      if (w.status === "COMPLETED") acc.completed += 1;
-      if (w.status === "PROCESSING") acc.processing += 1;
-      return acc;
-    },
-    { total: meta?.total || 0, pending: 0, completed: 0, processing: 0 }
-  );
 
   return (
     <div className="min-h-screen bg-gray-50 py-4 sm:py-6 lg:py-8">

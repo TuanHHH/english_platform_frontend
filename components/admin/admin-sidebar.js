@@ -62,8 +62,8 @@ const AdminSidebar = () => {
   ];
 
   return (
-    <div className="w-64 min-h-screen bg-card border-r">
-      <div className="p-6">
+    <div className="h-full flex flex-col bg-card">
+      <div className="p-6 flex-shrink-0">
         <Link href="/" className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
             <BookOpen className="w-5 h-5 text-white" />
@@ -74,7 +74,7 @@ const AdminSidebar = () => {
         </Link>
       </div>
 
-      <nav className="px-4 pb-4">
+      <nav className="flex-1 overflow-y-auto px-4 pb-4">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.path);
