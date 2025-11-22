@@ -23,6 +23,7 @@ import EnrollmentChart from "@/components/admin/dashboard/enrollment-chart";
 import DetailedStatsGrid from "@/components/admin/dashboard/detailed-stats-grid";
 import TopPerformersSection from "@/components/admin/dashboard/top-performers-section";
 import ContentForumSection from "@/components/admin/dashboard/content-forum-section";
+import ExportCSVSection from "@/components/admin/dashboard/export-csv-section";
 
 export default function AdminDashboard() {
   const [overview, setOverview] = useState(null);
@@ -264,6 +265,9 @@ export default function AdminDashboard() {
       {pendingActions && (
         <PendingActionsSection pendingActions={pendingActions} />
       )}
+
+      {/* Export CSV Section */}
+      <ExportCSVSection />
 
       {/* Charts Section */}
       <Tabs defaultValue="users" className="w-full">
