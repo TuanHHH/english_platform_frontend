@@ -17,7 +17,13 @@ export default function AttemptDetailPage({ params }) {
     (async () => {
       try {
         const res = await getAttemptAnswers(id);
-        if (mounted) setData(res?.data || res);
+        if (mounted) {
+          if (res.success) {
+            setData(res.data);
+          } else {
+            setError(res.error || "Load thất bại");
+          }
+        }
       } catch (e) {
         if (mounted) setError(e?.message || "Load thất bại");
       } finally {

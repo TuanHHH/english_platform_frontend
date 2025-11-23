@@ -59,14 +59,18 @@ export default function TestHistory() {
     
     ;(async () => {
       try {
-        const data = await listMyAttempts({ page, pageSize: 10 })
-        const attempts = data?.data?.result || data?.result || []
-        
+        const res = await listMyAttempts({ page, pageSize: 10 })
         if (!mounted) return
         
-        setRows(attempts)
-        setMeta(data?.data?.meta || data?.meta || null)
-        
+        if (res.success) {
+          const attempts = res.data?.result || []
+          setRows(attempts)
+          setMeta(res.data?.meta || null)
+        } else {
+          console.error('Fetch attempts failed:', res.error)
+          setRows([])
+          setMeta(null)
+        }
       } catch (e) {
         console.error('Fetch attempts failed', e)
         if (mounted) {

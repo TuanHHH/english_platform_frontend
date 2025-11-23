@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef, memo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import {
   AlertDialog,
@@ -21,6 +21,26 @@ import { sanitizeHtml } from "@/lib/sanitize";
 import { getPublicQuiz } from "@/lib/api/quiz/quiz";
 import { submitOneShot } from "@/lib/api/attempt";
 import SpeakingRecorder from "@/components/practice/speaking-recorder";
+
+const ContextPassage = memo(({ contextText }) => {
+  if (!contextText) return null;
+  
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Đoạn văn</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <article
+          className="prose prose-sm max-w-none ql-content"
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(contextText) }}
+        />
+      </CardContent>
+    </Card>
+  );
+});
+
+ContextPassage.displayName = "ContextPassage";
 
 export default function PracticePage() {
   const router = useRouter();
@@ -108,7 +128,6 @@ export default function PracticePage() {
       setLoading(true);
       setWarningDialogOpen(false);
 
-      // Chuẩn payload theo attempt submit
       const payloadAnswers = questions.map((q) => ({
         questionId: q.id,
         selectedOptionId: isMCQ(q) ? answers[q.id] ?? null : null,
@@ -121,15 +140,18 @@ export default function PracticePage() {
         answers: payloadAnswers,
       });
 
-      const data = res?.data || res;
-      const attemptId = data?.id || data?.attemptId || data?.attempt?.id;
+      if (res.success) {
+        const data = res.data;
+        const attemptId = data?.id || data?.attemptId || data?.attempt?.id;
 
-      // ✅ Khuyến nghị: chuyển sang trang review để xem đáp án/giải thích
-      if (attemptId) {
-        router.push(`/account/attempts/${attemptId}`);
+        if (attemptId) {
+          router.push(`/account/attempts/${attemptId}`);
+        } else {
+          router.push(`/account`);
+        }
       } else {
-        // fallback nếu server chưa trả id rõ ràng
-        router.push(`/account`);
+        setWarningMessage(res.error || "Nộp bài thất bại. Vui lòng thử lại.");
+        setWarningDialogOpen(true);
       }
     } catch (e) {
       console.error("Submit failed:", e);
@@ -268,19 +290,7 @@ export default function PracticePage() {
       </Card>
 
       {/* Passage (contextText) hiển thị 1 lần */}
-      {quiz.contextText && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Đoạn văn</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <article
-              className="prose prose-sm max-w-none ql-content"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(quiz.contextText) }}
-            />
-          </CardContent>
-        </Card>
-      )}
+      <ContextPassage contextText={quiz.contextText} />
 
       {/* Vùng làm bài */}
       <Card className="shadow-md">

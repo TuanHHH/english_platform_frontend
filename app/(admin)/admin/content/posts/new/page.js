@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-// import AdminSidebar from "@/components/common/AdminSidebar";
+import { toast } from "sonner";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import PostForm from "@/components/content/post-form";
 import { listCategories } from "@/lib/api/content/categories";
@@ -14,17 +14,30 @@ export default function AdminPostNewPage() {
 
   useEffect(() => {
     (async () => {
-      const data = await listCategories();
-      const content = data?.content ?? data?.data ?? data;
-      setCategories(Array.isArray(content) ? content : []);
+      const res = await listCategories();
+      if (res.success) {
+        const data = res.data;
+        const content = Array.isArray(data?.result) 
+          ? data.result 
+          : Array.isArray(data?.content) 
+          ? data.content 
+          : Array.isArray(data) 
+          ? data 
+          : [];
+        setCategories(content);
+      }
     })();
   }, []);
 
   async function create(payload) {
     setSaving(true);
     try {
-      await adminCreatePost(payload);
-      router.push("/admin/content/posts");
+      const res = await adminCreatePost(payload);
+      if (res.success) {
+        router.push("/admin/content/posts");
+      } else {
+        toast.error(res.error || "Tạo bài viết thất bại");
+      }
     } finally {
       setSaving(false);
     }

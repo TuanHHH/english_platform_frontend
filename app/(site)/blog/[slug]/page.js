@@ -36,22 +36,28 @@ export default function BlogDetailPage() {
   const loadComments = useCallback(async (postId, currentPage) => {
     setCommentsLoading(true);
     try {
-      const { items, meta: m } = await publicListCommentsByPostPaged(postId, {
+      const res = await publicListCommentsByPostPaged(postId, {
         page: currentPage,
         size: 10,
       });
       
-      console.log("Comments loaded:", items?.length || 0);
-      console.log("Meta data:", m);
-      
-      setComments(items || []);
-      setMeta({
-        page: m?.page || currentPage,
-        pages: m?.pages || m?.totalPages || 1,
-        total: m?.total || m?.totalItems || 0,
-        pageSize: m?.pageSize || 10
-      });
-      
+      if (res.success) {
+        const { items, meta: m } = res.data;
+        console.log("Comments loaded:", items?.length || 0);
+        console.log("Meta data:", m);
+        
+        setComments(items || []);
+        setMeta({
+          page: m?.page || currentPage,
+          pages: m?.pages || m?.totalPages || 1,
+          total: m?.total || m?.totalItems || 0,
+          pageSize: m?.pageSize || 10
+        });
+      } else {
+        toast.error(res.error || "Không thể tải bình luận");
+        setComments([]);
+        setMeta({ page: 1, pages: 1, total: 0, pageSize: 10 });
+      }
     } catch (error) {
       console.error("Error loading comments:", error);
       toast.error("Không thể tải bình luận");
@@ -65,26 +71,35 @@ export default function BlogDetailPage() {
   // ✅ Khi tạo comment mới → chuyển đến trang cuối
   const handleCreateComment = useCallback(async (payload) => {
     try {
-      const created = await appCreateComment(post.id, payload);
+      const res = await appCreateComment(post.id, payload);
+      
+      if (!res.success) {
+        toast.error(res.error || "Gửi bình luận thất bại. Vui lòng thử lại.");
+        throw new Error(res.error);
+      }
       
       // Reload để lấy meta mới
-      const { items, meta: m } = await publicListCommentsByPostPaged(post.id, {
+      const reloadRes = await publicListCommentsByPostPaged(post.id, {
         page: 1,
         size: 10,
       });
       
-      const totalPages = m?.pages || m?.totalPages || 1;
-      
-      // Chuyển đến trang cuối
-      setPage(totalPages);
-      await loadComments(post.id, totalPages);
+      if (reloadRes.success) {
+        const totalPages = reloadRes.data?.meta?.pages || reloadRes.data?.meta?.totalPages || 1;
+        
+        // Chuyển đến trang cuối
+        setPage(totalPages);
+        await loadComments(post.id, totalPages);
+      }
       
       toast.success("Bình luận đã được gửi thành công!");
       
-      return created;
+      return res.data;
     } catch (error) {
       console.error("Error creating comment:", error);
-      toast.error("Gửi bình luận thất bại. Vui lòng thử lại.");
+      if (!error.message?.includes("thất bại")) {
+        toast.error("Gửi bình luận thất bại. Vui lòng thử lại.");
+      }
       throw error;
     }
   }, [post?.id, loadComments]);
@@ -111,12 +126,16 @@ export default function BlogDetailPage() {
       
       setIsLoading(true);
       try {
-        const postData = await publicGetPostBySlug(slug);
-        setPost(postData);
-        
-        if (postData?.id) {
-          setPage(1); // Reset về trang 1
-          await loadComments(postData.id, 1);
+        const res = await publicGetPostBySlug(slug);
+        if (res.success) {
+          setPost(res.data);
+          
+          if (res.data?.id) {
+            setPage(1);
+            await loadComments(res.data.id, 1);
+          }
+        } else {
+          toast.error(res.error || "Không thể tải bài viết");
         }
       } catch (error) {
         console.error("Error loading post:", error);

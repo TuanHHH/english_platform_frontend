@@ -24,27 +24,22 @@ export default function AdminCategoriesPage() {
   async function load() {
     setLoading(true);
     try {
-      const response = await listCategories();
-      console.log("API response categories:", response);
-
-      let categories = [];
-
-      // ✅ Lấy từ data.result
-      if (Array.isArray(response?.data?.result)) {
-        categories = response.data.result;
-      } else if (Array.isArray(response?.data?.content)) {
-        categories = response.data.content;
-      } else if (Array.isArray(response?.data)) {
-        categories = response.data;
-      } else if (Array.isArray(response?.content)) {
-        categories = response.content;
-      } else if (Array.isArray(response)) {
-        categories = response;
+      const res = await listCategories();
+      
+      if (res.success) {
+        const data = res.data;
+        const categories = Array.isArray(data?.result) 
+          ? data.result 
+          : Array.isArray(data?.content) 
+          ? data.content 
+          : Array.isArray(data) 
+          ? data 
+          : [];
+        setItems(categories);
+      } else {
+        toast.error(res.error || "Tải danh mục thất bại");
       }
-
-      setItems(categories);
     } catch (err) {
-      // console.error("Lỗi load categories:", err);
       toast.error("Tải danh mục thất bại");
     } finally {
       setLoading(false);
@@ -58,8 +53,13 @@ export default function AdminCategoriesPage() {
   async function onCreate(payload) {
     setCreating(true);
     try {
-      await createCategory(payload);
-      await load();
+      const res = await createCategory(payload);
+      if (res.success) {
+        toast.success("Tạo danh mục thành công");
+        await load();
+      } else {
+        toast.error(res.error || "Tạo danh mục thất bại");
+      }
     } finally {
       setCreating(false);
     }
@@ -68,8 +68,12 @@ export default function AdminCategoriesPage() {
   async function confirmDelete() {
     if (!deleteId) return;
     try {
-      await deleteCategory(deleteId);
-      toast.success("Đã xoá danh mục");
+      const res = await deleteCategory(deleteId);
+      if (res.success) {
+        toast.success("Đã xoá danh mục");
+      } else {
+        toast.error(res.error || "Xoá danh mục thất bại");
+      }
     } catch (err) {
       toast.error("Xoá danh mục thất bại");
     } finally {
