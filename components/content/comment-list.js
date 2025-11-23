@@ -173,11 +173,15 @@ export default function CommentList({ postId, initial = [], onCreate }) {
     
     setDeleting(true);
     try {
-      await appDeleteComment(commentToDelete.id);
-      setItems(prev => prev.filter(x => x.id !== commentToDelete.id));
-      toast.success("Đã xóa bình luận");
-      setDeleteDialogOpen(false);
-      setCommentToDelete(null);
+      const res = await appDeleteComment(commentToDelete.id);
+      if (res.success) {
+        setItems(prev => prev.filter(x => x.id !== commentToDelete.id));
+        toast.success("Đã xóa bình luận");
+        setDeleteDialogOpen(false);
+        setCommentToDelete(null);
+      } else {
+        toast.error(res.error || "Xóa bình luận thất bại.");
+      }
     } catch (e) {
       console.error(e);
       toast.error("Xóa bình luận thất bại.");
@@ -186,7 +190,7 @@ export default function CommentList({ postId, initial = [], onCreate }) {
     }
   }
 
-  // ✅ Hủy xóa
+  // Hủy xóa
   function cancelDelete() {
     setDeleteDialogOpen(false);
     setCommentToDelete(null);
@@ -197,10 +201,14 @@ export default function CommentList({ postId, initial = [], onCreate }) {
     setReplyLoading(true);
     try {
       const payload = { bodyMd: body, parentId: parent.id };
-      const created = await appCreateComment(postId, payload);
-      setItems(prev => [...prev, created]);
-      setReplyingTo(null);
-      toast.success("Đã gửi phản hồi");
+      const res = await appCreateComment(postId, payload);
+      if (res.success) {
+        setItems(prev => [...prev, res.data]);
+        setReplyingTo(null);
+        toast.success("Đã gửi phản hồi");
+      } else {
+        toast.error(res.error || "Gửi phản hồi thất bại. Vui lòng thử lại.");
+      }
     } catch (e) {
       console.error(e);
       toast.error("Gửi phản hồi thất bại. Vui lòng thử lại.");
@@ -217,12 +225,17 @@ export default function CommentList({ postId, initial = [], onCreate }) {
       if (onCreate) {
         const created = await onCreate({ bodyMd: body });
         if (created) setItems(prev => [...prev, created]);
+        setBody("");
       } else {
-        const created = await appCreateComment(postId, { bodyMd: body });
-        setItems(prev => [...prev, created]);
+        const res = await appCreateComment(postId, { bodyMd: body });
+        if (res.success) {
+          setItems(prev => [...prev, res.data]);
+          setBody("");
+          toast.success("Đã gửi bình luận");
+        } else {
+          toast.error(res.error || "Gửi bình luận thất bại");
+        }
       }
-      setBody("");
-      toast.success("Đã gửi bình luận");
     } catch (e) {
       console.error(e);
       toast.error("Gửi bình luận thất bại");

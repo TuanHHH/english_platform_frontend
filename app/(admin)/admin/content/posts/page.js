@@ -62,29 +62,32 @@ export default function AdminPostsPage() {
   async function load(p = page) {
     setLoading(true);
     try {
-      // const params = { page: p + 1, pageSize };
       const params = { page: p, pageSize };
-      // const params = { page: (p ?? page) + 1, pageSize };
       if (debouncedKeyword?.trim()) params.keyword = debouncedKeyword.trim();
       if (published !== "all") params.published = published === "true";
 
-      const { items, meta } = await adminSearchPostsPaged(params);
+      const res = await adminSearchPostsPaged(params);
 
-      // Bảo đảm chia đúng theo published ngay cả khi BE trả trộn
-      let filtered = items;
-      if (published !== "all") {
-        const expect = published === "true";
-        filtered = items.filter((x) => !!x.published === expect);
-      }
-      if (debouncedKeyword?.trim()) {
-        const q = debouncedKeyword.toLowerCase();
-        filtered = filtered.filter((x) =>
-          (x.title || "").toLowerCase().includes(q)
-        );
-      }
+      if (res.success) {
+        const { items, meta } = res.data;
+        
+        let filtered = items;
+        if (published !== "all") {
+          const expect = published === "true";
+          filtered = items.filter((x) => !!x.published === expect);
+        }
+        if (debouncedKeyword?.trim()) {
+          const q = debouncedKeyword.toLowerCase();
+          filtered = filtered.filter((x) =>
+            (x.title || "").toLowerCase().includes(q)
+          );
+        }
 
-      setItems(filtered);
-      setTotalPages(meta?.pages ?? 0);
+        setItems(filtered);
+        setTotalPages(meta?.pages ?? 0);
+      } else {
+        toast.error(res.error || "Tải danh sách thất bại");
+      }
     } catch (e) {
       toast.error(`Tải danh sách thất bại: ${getErr(e)}`);
     } finally {
@@ -112,11 +115,12 @@ export default function AdminPostsPage() {
   // Xác nhận xóa
   async function handleConfirmDelete() {
     if (!deleteId) return;
-    await toast.promise(adminDeletePost(deleteId), {
-      loading: "Đang xóa bài...",
-      success: "Đã xóa bài",
-      error: (e) => `Xóa thất bại: ${getErr(e)}`,
-    });
+    const res = await adminDeletePost(deleteId);
+    if (res.success) {
+      toast.success("Đã xóa bài");
+    } else {
+      toast.error(res.error || "Xóa thất bại");
+    }
     setOpenDelete(false);
     setDeleteId(null);
     setDeleteTitle("");
@@ -125,21 +129,23 @@ export default function AdminPostsPage() {
 
   // Publish / Unpublish với toast
   async function handlePublish(id, title) {
-    await toast.promise(adminPublishPost(id), {
-      loading: "Đang publish...",
-      success: `Đã publish: "${title || "bài viết"}"`,
-      error: (e) => `Publish thất bại: ${getErr(e)}`,
-    });
-    await load();
+    const res = await adminPublishPost(id);
+    if (res.success) {
+      toast.success(`Đã publish: "${title || "bài viết"}"`);
+      await load();
+    } else {
+      toast.error(res.error || "Publish thất bại");
+    }
   }
 
   async function handleUnpublish(id, title) {
-    await toast.promise(adminUnpublishPost(id), {
-      loading: "Đang chuyển về nháp...",
-      success: `Đã chuyển về nháp: "${title || "bài viết"}"`,
-      error: (e) => `Thao tác thất bại: ${getErr(e)}`,
-    });
-    await load();
+    const res = await adminUnpublishPost(id);
+    if (res.success) {
+      toast.success(`Đã chuyển về nháp: "${title || "bài viết"}"`);
+      await load();
+    } else {
+      toast.error(res.error || "Thao tác thất bại");
+    }
   }
 
   return (

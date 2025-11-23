@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { questionCreateSchema } from "@/schema/question";
 
 export default function QuestionForm({ quizId, quizSkill, orderIndex, onSubmit, onCancel }) {
-  const { register, handleSubmit, control, formState: { errors } } = useForm({
+  const { register, handleSubmit, control, formState: { errors }, setValue, watch } = useForm({
     resolver: zodResolver(questionCreateSchema),
     defaultValues: {
       quizId,
@@ -27,6 +27,12 @@ export default function QuestionForm({ quizId, quizSkill, orderIndex, onSubmit, 
     control,
     name: "options",
   });
+
+  const handleCorrectChange = (idx) => {
+    fields.forEach((_, i) => {
+      setValue(`options.${i}.correct`, i === idx);
+    });
+  };
 
   const showOptions = quizSkill !== "SPEAKING" && quizSkill !== "WRITING";
 
@@ -118,6 +124,7 @@ export default function QuestionForm({ quizId, quizSkill, orderIndex, onSubmit, 
                     type="checkbox"
                     id={`correct-${idx}`}
                     {...register(`options.${idx}.correct`)}
+                    onChange={() => handleCorrectChange(idx)}
                     className="rounded border-gray-300"
                   />
                   <label htmlFor={`correct-${idx}`} className="text-sm font-medium">

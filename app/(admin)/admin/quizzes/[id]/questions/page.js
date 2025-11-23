@@ -105,13 +105,17 @@ export default function QuizQuestionsWithContextPage() {
 
   async function handleDeleteQuestion() {
     if (!questionToDelete) return;
+    const previousQuestions = [...questions];
+    
+    setQuestions(questions.filter(q => q.id !== questionToDelete.id));
+    setDeleteDialogOpen(false);
+    setQuestionToDelete(null);
+    
     try {
       await deleteQuestion(questionToDelete.id);
       toast.success("Đã xóa câu hỏi.");
-      setDeleteDialogOpen(false);
-      setQuestionToDelete(null);
-      loadAll(page);
     } catch (e) {
+      setQuestions(previousQuestions);
       toast.error(e?.message || "Không xóa được câu hỏi.");
     }
   }

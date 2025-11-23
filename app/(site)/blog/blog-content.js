@@ -27,13 +27,28 @@ export default function BlogContent() {
     setLoading(true);
     try {
       const parsedFilters = key ? JSON.parse(key) : {};
-      const [catsData, paged] = await Promise.all([
+      const [catsRes, postsRes] = await Promise.all([
         listPublicCategories(),
         publicListPostsPaged({ ...parsedFilters, page: p, size: pageSize }),
       ]);
-      setCats(catsData);
-      setPosts(paged.items);
-      setTotalPages(paged.meta?.pages ?? 0);
+      
+      if (catsRes.success) {
+        const data = catsRes.data;
+        const categories = Array.isArray(data?.result) 
+          ? data.result 
+          : Array.isArray(data?.content) 
+          ? data.content 
+          : Array.isArray(data) 
+          ? data 
+          : [];
+        setCats(categories);
+      }
+      
+      if (postsRes.success) {
+        const { items, meta } = postsRes.data;
+        setPosts(items);
+        setTotalPages(meta?.pages ?? 0);
+      }
     } finally {
       setLoading(false);
     }

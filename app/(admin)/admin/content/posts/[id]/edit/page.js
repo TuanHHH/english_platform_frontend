@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import PostForm from "@/components/content/post-form";
 import { listCategories } from "@/lib/api/content/categories";
@@ -15,33 +16,36 @@ export default function AdminPostEditPage() {
 
   useEffect(() => {
     (async () => {
-      const cats = await listCategories();
+      const res = await listCategories();
 
-      // Lấy đúng mảng categories ra
-      let catsContent = [];
-      if (Array.isArray(cats?.content)) {
-        catsContent = cats.content;
-      } else if (Array.isArray(cats?.data)) {
-        catsContent = cats.data;
-      } else if (Array.isArray(cats)) {
-        catsContent = cats;
-      } else if (Array.isArray(cats?.data?.result)) {
-        // thêm trường hợp giống như posts
-        catsContent = cats.data.result;
+      if (res.success) {
+        const data = res.data;
+        const catsContent = Array.isArray(data?.result) 
+          ? data.result 
+          : Array.isArray(data?.content) 
+          ? data.content 
+          : Array.isArray(data) 
+          ? data 
+          : [];
+        setCategories(catsContent);
       }
 
-      setCategories(catsContent);
-
-      const post = await adminGetPost(id);
-      setInitial(post);
+      const postRes = await adminGetPost(id);
+      if (postRes.success) {
+        setInitial(postRes.data);
+      }
     })();
   }, [id]);
 
   async function update(payload) {
     setSaving(true);
     try {
-      await adminUpdatePost(id, payload);
-      router.push("/admin/content/posts");
+      const res = await adminUpdatePost(id, payload);
+      if (res.success) {
+        router.push("/admin/content/posts");
+      } else {
+        toast.error(res.error || "Cập nhật bài viết thất bại");
+      }
     } finally {
       setSaving(false);
     }
