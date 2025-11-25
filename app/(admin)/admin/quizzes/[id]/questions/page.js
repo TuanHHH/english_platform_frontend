@@ -135,6 +135,7 @@ export default function QuizQuestionsWithContextPage() {
       const payload = {
         quizId: data.quizId,
         content: data.content,
+        explanation: data.explanation || "",
         orderIndex: Number(data.orderIndex),
       };
 

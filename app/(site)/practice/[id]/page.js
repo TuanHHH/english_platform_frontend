@@ -15,7 +15,7 @@ import {
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Clock } from "lucide-react"; // [New] Import Clock icon
 import { getPublicQuiz } from "@/lib/api/quiz/quiz";
 import { submitOneShot, submitSpeaking, getSpeakingResults, getWritingResultsByAnswer, getAttemptAnswers } from "@/lib/api/attempt";
 import ContextPassage from "@/components/practice/context-passage";
@@ -36,6 +36,10 @@ export default function PracticePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // [New] State cho thời gian
+  const [startedAt, setStartedAt] = useState(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   // Assessment states
   const [attemptId, setAttemptId] = useState(null);
@@ -69,6 +73,9 @@ export default function PracticePage() {
         setIndex(0);
         setAnswers({});
         setError("");
+        
+        // [New] Ghi nhận thời gian bắt đầu khi load xong dữ liệu
+        setStartedAt(new Date().toISOString()); 
       } catch (e) {
         console.error(e);
         if (mounted) setError("Không tải được đề thi.");
@@ -80,6 +87,34 @@ export default function PracticePage() {
       mounted = false;
     };
   }, [id]);
+
+  // [New] Effect bộ đếm thời gian
+  useEffect(() => {
+    if (!startedAt || submitting || assessmentMode) return;
+
+    const interval = setInterval(() => {
+      const now = new Date();
+      const start = new Date(startedAt);
+      const diffInSeconds = Math.floor((now - start) / 1000);
+      setElapsedSeconds(diffInSeconds);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [startedAt, submitting, assessmentMode]);
+
+  // [New] Helper format thời gian (MM:SS hoặc HH:MM:SS)
+  const formatTime = (totalSeconds) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    const pad = (num) => num.toString().padStart(2, '0');
+    
+    if (hours > 0) {
+      return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    }
+    return `${pad(minutes)}:${pad(seconds)}`;
+  };
 
   const total = questions.length;
   const current = useMemo(() => questions?.[index] || null, [questions, index]);
@@ -138,9 +173,11 @@ export default function PracticePage() {
         timeSpentMs: null,
       }));
 
+      // [New] Thêm startedAt vào payload gửi lên server
       const res = await submitOneShot({
         quizId: String(id),
         answers: payloadAnswers,
+        startedAt: startedAt // Gửi thời gian bắt đầu
       });
 
       if (res.success) {
@@ -355,14 +392,24 @@ export default function PracticePage() {
 
   return (
     <div className="container mx-auto max-w-5xl p-4 sm:p-6 space-y-6">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => router.back()}
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Quay lại
-      </Button>
+      <div className="flex justify-between items-center">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.back()}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Quay lại
+        </Button>
+        
+        {/* [New] Hiển thị bộ đếm thời gian */}
+        {!assessmentMode && startedAt && (
+            <div className="flex items-center gap-2 px-4 py-2 bg-muted rounded-full font-mono text-sm font-medium">
+                <Clock className="w-4 h-4" />
+                <span>{formatTime(elapsedSeconds)}</span>
+            </div>
+        )}
+      </div>
 
       {/* Assessment Results */}
       {assessmentMode && (

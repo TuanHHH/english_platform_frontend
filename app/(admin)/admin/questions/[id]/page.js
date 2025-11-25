@@ -25,6 +25,7 @@ export default function QuestionEditor() {
   const [form, setForm] = useState({
     quizId: "",
     content: "",
+    explanation: "",
     orderIndex: 1,
     options: [],
   });
@@ -37,6 +38,7 @@ export default function QuestionEditor() {
         setForm({
           quizId: d.quizId,
           content: d.content || "",
+          explanation: d.explanation || "",
           orderIndex: d.orderIndex ?? 1,
           options: (d.options || []).map((o, idx) => ({
             content: o.content || "",
@@ -93,6 +95,7 @@ export default function QuestionEditor() {
       const payload = {
         quizId: form.quizId,
         content: form.content,
+        explanation: form.explanation || "",
         orderIndex: Number(form.orderIndex || 1),
       };
       
@@ -186,6 +189,16 @@ export default function QuestionEditor() {
                 value={form.content}
                 onChange={(e) => setForm({ ...form, content: e.target.value })}
                 rows={5}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Giải thích chi tiết câu hỏi</label>
+              <Textarea
+                placeholder="Nhập giải thích cho câu hỏi này..."
+                value={form.explanation}
+                onChange={(e) => setForm({ ...form, explanation: e.target.value })}
+                rows={3}
               />
             </div>
 
