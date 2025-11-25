@@ -8,6 +8,7 @@ import { FullPageLoader } from "@/components/ui/full-page-loader"
 import { getCourseBySlug } from "@/lib/api/course"
 import { useEnrollmentStore } from "@/store/enrollment-store"
 import { useAuthStore } from "@/store/auth-store"
+import CourseReviews from "@/components/reviews/course-review"
 import {
   CourseHeader,
   CourseInfo,
@@ -113,7 +114,11 @@ export default function CourseDetailPage() {
             <CoursePurchase course={course} isEnrolled={isEnrolled} />
           </div>
         </div>
+        <div className="mt-16 max-w-4xl mx-auto">
+            <CourseReviews courseId={course.id} />
+        </div>
       </div>
     </div>
   )
 }
+
