@@ -1,19 +1,22 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Mic, Square, Play, Pause } from "lucide-react";
+import { Mic, Square, Play, Pause, Upload } from "lucide-react";
 
-export default function SpeakingRecorder({ questionId, onAnswer }) {
+export default function SpeakingRecorder({ questionId, onAnswer, onAudioReady }) {
   const [micPermission, setMicPermission] = useState(false);
   const [recording, setRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [warning, setWarning] = useState("");
+  const [uploadedFileName, setUploadedFileName] = useState("");
+  const [audioUrl, setAudioUrl] = useState(null);
   
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
   const audioRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const requestMicPermission = async () => {
     try {
@@ -46,9 +49,15 @@ export default function SpeakingRecorder({ questionId, onAnswer }) {
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const blob = new Blob(audioChunksRef.current, { type: "audio/mp3" });
+        const url = URL.createObjectURL(blob);
         setAudioBlob(blob);
-        onAnswer(questionId, "audio_recorded", blob);
+        setAudioUrl(url);
+        setUploadedFileName("");
+        onAnswer(questionId, blob);
+        if (onAudioReady) {
+          onAudioReady(questionId, blob);
+        }
         stream.getTracks().forEach(track => track.stop());
       };
 
@@ -75,12 +84,11 @@ export default function SpeakingRecorder({ questionId, onAnswer }) {
   };
 
   const playAudio = () => {
-    if (audioBlob) {
+    if (audioUrl) {
       if (audioRef.current) {
         audioRef.current.pause();
       }
-      const url = URL.createObjectURL(audioBlob);
-      const audio = new Audio(url);
+      const audio = new Audio(audioUrl);
       audioRef.current = audio;
       
       audio.onplay = () => setPlaying(true);
@@ -97,16 +105,36 @@ export default function SpeakingRecorder({ questionId, onAnswer }) {
     }
   };
 
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('audio/')) {
+      setWarning("Vui lòng chọn file audio hợp lệ");
+      return;
+    }
+
+    const url = URL.createObjectURL(file);
+    setAudioBlob(file);
+    setAudioUrl(url);
+    setUploadedFileName(file.name);
+    setWarning("");
+    onAnswer(questionId, file);
+    if (onAudioReady) {
+      onAudioReady(questionId, file);
+    }
+  };
+
   return (
     <div className="space-y-4 p-6 bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 rounded-xl border-2 border-blue-200 dark:border-blue-800">
       <div className="text-center space-y-2">
         <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100">
-          Ghi âm câu trả lời của bạn
+          Ghi âm hoặc tải lên file audio
         </h3>
         <p className="text-sm text-blue-700 dark:text-blue-300">
-          {!recording && !audioBlob && "Nhấn nút bên dưới để bắt đầu ghi âm"}
+          {!recording && !audioBlob && "Nhấn nút bên dưới để bắt đầu ghi âm hoặc tải file lên"}
           {recording && "Đang ghi âm... Hãy nói câu trả lời của bạn"}
-          {!recording && audioBlob && "Ghi âm hoàn tất! Bạn có thể nghe lại hoặc ghi lại"}
+          {!recording && audioBlob && (uploadedFileName ? `File: ${uploadedFileName}` : "Ghi âm hoàn tất! Bạn có thể nghe lại hoặc ghi lại")}
         </p>
         {warning && <p className="text-sm text-red-600">{warning}</p>}
       </div>
@@ -136,6 +164,22 @@ export default function SpeakingRecorder({ questionId, onAnswer }) {
                 <Mic className="h-5 w-5" />
                 {audioBlob ? "Ghi lại" : "Bắt đầu ghi âm"}
               </Button>
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                variant="outline"
+                size="lg"
+                className="gap-2 border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
+              >
+                <Upload className="h-5 w-5" />
+                Tải file lên
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="audio/*"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
               {audioBlob && (
                 <>
                   {!playing ? (
@@ -143,7 +187,7 @@ export default function SpeakingRecorder({ questionId, onAnswer }) {
                       onClick={playAudio}
                       variant="outline"
                       size="lg"
-                      className="gap-2 border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
+                      className="gap-2 border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-950"
                     >
                       <Play className="h-5 w-5" />
                       Nghe lại
@@ -153,7 +197,7 @@ export default function SpeakingRecorder({ questionId, onAnswer }) {
                       onClick={pauseAudio}
                       variant="outline"
                       size="lg"
-                      className="gap-2 border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
+                      className="gap-2 border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-950"
                     >
                       <Pause className="h-5 w-5" />
                       Tạm dừng
@@ -179,8 +223,9 @@ export default function SpeakingRecorder({ questionId, onAnswer }) {
           <>
             <audio
               controls
+              preload="metadata"
               className="w-full max-w-md"
-              src={URL.createObjectURL(audioBlob)}
+              src={audioUrl}
               onPlay={() => setPlaying(true)}
               onPause={() => setPlaying(false)}
               onEnded={() => setPlaying(false)}

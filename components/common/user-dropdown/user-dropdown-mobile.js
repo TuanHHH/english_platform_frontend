@@ -7,6 +7,7 @@ import {
   BookOpen,
   ChartNoAxesGantt 
 } from "lucide-react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -47,43 +48,35 @@ const UserDropdownMobile = ({ user }) => {
       </div>
 
       {user?.roles?.includes("ADMIN") && (
-        <Button
-          variant="ghost"
-          className="justify-start w-full"
-          onClick={() => router.push("/admin")}
-        >
-          <LayoutDashboard className="w-4 h-4 mr-2" />
-          Trang quản trị
+        <Button variant="ghost" className="justify-start w-full" asChild>
+          <Link href="/admin">
+            <LayoutDashboard className="w-4 h-4 mr-2" />
+            Trang quản trị
+          </Link>
         </Button>
       )}
 
       {user?.roles?.includes("INSTRUCTOR") && (
-        <Button
-          variant="ghost"
-          className="justify-start w-full"
-          onClick={() => router.push("/instructor")}
-        >
-          <ChartNoAxesGantt className="w-4 h-4 mr-2" />
-          Trang giảng viên
+        <Button variant="ghost" className="justify-start w-full" asChild>
+          <Link href="/instructor">
+            <ChartNoAxesGantt className="w-4 h-4 mr-2" />
+            Trang giảng viên
+          </Link>
         </Button>
       )}
 
-      <Button
-        variant="ghost"
-        className="justify-start w-full"
-        onClick={() => router.push("/my-courses/learning")}
-      >
-        <BookOpen className="w-4 h-4 mr-2" />
-        Khóa học của tôi
+      <Button variant="ghost" className="justify-start w-full" asChild>
+        <Link href="/my-courses/learning">
+          <BookOpen className="w-4 h-4 mr-2" />
+          Khóa học của tôi
+        </Link>
       </Button>
 
-      <Button
-        variant="ghost"
-        className="justify-start w-full"
-        onClick={() => router.push("/account")}
-      >
-        <UserIcon className="w-4 h-4 mr-2" />
-        Tài khoản
+      <Button variant="ghost" className="justify-start w-full" asChild>
+        <Link href="/account">
+          <UserIcon className="w-4 h-4 mr-2" />
+          Tài khoản
+        </Link>
       </Button>
 
       <Button

@@ -7,6 +7,7 @@ import {
   ChartNoAxesGantt,
   BookOpen,
 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -71,27 +72,35 @@ const UserDropdown = ({ user }) => {
         <DropdownMenuSeparator />
 
         {user?.roles?.includes("ADMIN") && (
-          <DropdownMenuItem onClick={() => router.push("/admin")}>
-            <LayoutDashboard className="w-4 h-4 mr-2" />
-            Trang quản trị
+          <DropdownMenuItem asChild>
+            <Link href="/admin">
+              <LayoutDashboard className="w-4 h-4 mr-2" />
+              Trang quản trị
+            </Link>
           </DropdownMenuItem>
         )}
 
         {user?.roles?.includes("INSTRUCTOR") && (
-          <DropdownMenuItem onClick={() => router.push("/instructor")}>
-            <ChartNoAxesGantt  className="w-4 h-4 mr-2" />
-            Trang giảng viên
+          <DropdownMenuItem asChild>
+            <Link href="/instructor">
+              <ChartNoAxesGantt  className="w-4 h-4 mr-2" />
+              Trang giảng viên
+            </Link>
           </DropdownMenuItem>
         )}
 
-        <DropdownMenuItem onClick={() => router.push("/my-courses/learning")}>
-          <BookOpen className="w-4 h-4 mr-2" />
-          Khóa học của tôi
+        <DropdownMenuItem asChild>
+          <Link href="/my-courses/learning">
+            <BookOpen className="w-4 h-4 mr-2" />
+            Khóa học của tôi
+          </Link>
         </DropdownMenuItem>
 
-        <DropdownMenuItem onClick={() => router.push("/account")}>
-          <UserIcon className="w-4 h-4 mr-2" />
-          Tài khoản
+        <DropdownMenuItem asChild>
+          <Link href="/account">
+            <UserIcon className="w-4 h-4 mr-2" />
+            Tài khoản
+          </Link>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />

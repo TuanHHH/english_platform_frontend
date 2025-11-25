@@ -7,13 +7,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import AttemptAnswersView from "@/components/assessment/attempt-answers-view";
 import { getAttemptAnswers } from "@/lib/api/attempt";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 export default function AttemptDetailPage({ params }) {
   const { id } = useParams();
+  const router = useRouter();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -22,13 +24,32 @@ export default function AttemptDetailPage({ params }) {
         const res = await getAttemptAnswers(id);
         if (mounted) {
           if (res.success) {
-            setData(res.data);
+            const attemptData = res.data;
+            const skill = attemptData?.skill?.toUpperCase();
+            
+            if (skill === 'WRITING' || skill === 'SPEAKING') {
+              setRedirecting(true);
+              setTimeout(() => {
+                if (mounted) router.push('/');
+              }, 3000);
+              return;
+            }
+            
+            setData(attemptData);
           } else {
-            setError(res.error || "Load thất bại");
+            setRedirecting(true);
+            setTimeout(() => {
+              if (mounted) router.push('/');
+            }, 3000);
           }
         }
       } catch (e) {
-        if (mounted) setError(e?.message || "Load thất bại");
+        if (mounted) {
+          setRedirecting(true);
+          setTimeout(() => {
+            if (mounted) router.push('/');
+          }, 3000);
+        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -50,6 +71,21 @@ export default function AttemptDetailPage({ params }) {
             <Skeleton className="h-8 w-3/4" />
             <Skeleton className="h-4 w-1/2" />
             <Skeleton className="h-20 w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (redirecting) {
+    return (
+      <div className="container mx-auto max-w-5xl p-4 sm:p-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center py-12">
+              <p className="text-muted-foreground text-lg font-medium">Không tìm thấy dữ liệu</p>
+              <p className="text-sm text-muted-foreground mt-2">Đang chuyển về trang chủ...</p>
+            </div>
           </CardContent>
         </Card>
       </div>

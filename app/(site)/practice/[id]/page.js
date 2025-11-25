@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef, memo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import {
   AlertDialog,
@@ -12,35 +12,16 @@ import {
   AlertDialogTitle,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronLeft, ChevronRight, Send, ArrowLeft } from "lucide-react";
-import { sanitizeHtml } from "@/lib/sanitize";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { getPublicQuiz } from "@/lib/api/quiz/quiz";
-import { submitOneShot } from "@/lib/api/attempt";
-import SpeakingRecorder from "@/components/practice/speaking-recorder";
-
-const ContextPassage = memo(({ contextText }) => {
-  if (!contextText) return null;
-  
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Đoạn văn</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <article
-          className="prose prose-sm max-w-none ql-content"
-          dangerouslySetInnerHTML={{ __html: sanitizeHtml(contextText) }}
-        />
-      </CardContent>
-    </Card>
-  );
-});
-
-ContextPassage.displayName = "ContextPassage";
+import { submitOneShot, submitSpeaking, getSpeakingResults, getWritingResultsByAnswer, getAttemptAnswers } from "@/lib/api/attempt";
+import ContextPassage from "@/components/practice/context-passage";
+import QuizHeader from "@/components/practice/quiz-header";
+import QuestionCard from "@/components/practice/question-card";
+import AssessmentPolling from "@/components/practice/assessment-polling";
 
 export default function PracticePage() {
   const router = useRouter();
@@ -51,14 +32,23 @@ export default function PracticePage() {
   const [questions, setQuestions] = useState([]);
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState({});
+  const [audioBlobs, setAudioBlobs] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  // Assessment states
+  const [attemptId, setAttemptId] = useState(null);
+  const [assessmentMode, setAssessmentMode] = useState(false);
+  const [allResults, setAllResults] = useState([]);
+  const [assessmentError, setAssessmentError] = useState(null);
+  const [isPolling, setIsPolling] = useState(false);
 
   // State cho warning dialog
   const [warningDialogOpen, setWarningDialogOpen] = useState(false);
   const [warningMessage, setWarningMessage] = useState("");
 
-  const resultRef = useRef(null);
+  const answered = useMemo(() => Object.keys(answers).length, [answers]);
 
   // Load đề (PUBLIC)
   useEffect(() => {
@@ -96,8 +86,6 @@ export default function PracticePage() {
   const isMCQ = (q) => Array.isArray(q?.options) && q.options.length > 0;
   const isSpeaking = (q) => quiz?.skill?.toUpperCase() === "SPEAKING" && !isMCQ(q);
 
-  const answered = useMemo(() => Object.keys(answers).length, [answers]);
-
   const go = (step) => {
     setIndex((prev) => {
       const next = prev + step;
@@ -111,8 +99,23 @@ export default function PracticePage() {
     setAnswers((prev) => ({ ...prev, [qid]: value }));
   };
 
+  const onAudioReady = (qid, blob) => {
+    setAudioBlobs((prev) => ({ ...prev, [qid]: blob }));
+  };
+
   const onSubmit = async () => {
-    if (answered < total) {
+    const skill = quiz?.skill?.toUpperCase();
+    const isAssessmentQuiz = skill === 'SPEAKING' || skill === 'WRITING';
+    
+    if (isAssessmentQuiz && answered < total) {
+      setWarningMessage(
+        `Bạn phải hoàn thành tất cả ${total} câu hỏi trước khi nộp bài.`
+      );
+      setWarningDialogOpen(true);
+      return;
+    }
+    
+    if (!isAssessmentQuiz && answered < total) {
       setWarningMessage(
         `Bạn mới trả lời ${answered}/${total} câu. Vẫn nộp bài?`
       );
@@ -125,13 +128,13 @@ export default function PracticePage() {
 
   const handleSubmit = async () => {
     try {
-      setLoading(true);
+      setSubmitting(true);
       setWarningDialogOpen(false);
 
       const payloadAnswers = questions.map((q) => ({
         questionId: q.id,
         selectedOptionId: isMCQ(q) ? answers[q.id] ?? null : null,
-        answerText: !isMCQ(q) ? answers[q.id] ?? null : null,
+        answerText: !isMCQ(q) && !isSpeaking(q) ? answers[q.id] ?? null : null,
         timeSpentMs: null,
       }));
 
@@ -142,12 +145,62 @@ export default function PracticePage() {
 
       if (res.success) {
         const data = res.data;
-        const attemptId = data?.id || data?.attemptId || data?.attempt?.id;
+        const newAttemptId = data?.id;
+        const attemptAnswers = data?.answers || [];
+        setAttemptId(newAttemptId);
 
-        if (attemptId) {
-          router.push(`/account/attempts/${attemptId}`);
+        const skill = quiz?.skill?.toUpperCase();
+        const hasSpeakingOrWriting = skill === 'SPEAKING' || skill === 'WRITING';
+
+        if (hasSpeakingOrWriting && newAttemptId && attemptAnswers.length > 0) {
+          setAssessmentMode(true);
+          setIsPolling(true);
+          
+          const assessmentPromises = [];
+          const assessmentQuestions = questions.filter(q => 
+            (skill === 'SPEAKING' && !isMCQ(q)) || (skill === 'WRITING' && !isMCQ(q))
+          );
+          const totalAssessments = assessmentQuestions.length;
+          
+          for (const q of questions) {
+            const answer = attemptAnswers.find(a => a.questionId === q.id);
+            if (!answer) continue;
+            
+            const answerId = answer.answerId || answer.id;
+            
+            if (skill === 'SPEAKING' && !isMCQ(q)) {
+              const audioBlob = audioBlobs[q.id];
+              if (audioBlob) {
+                assessmentPromises.push(
+                  (async () => {
+                    try {
+                      const speakingRes = await submitSpeaking(newAttemptId, answerId, audioBlob);
+                      if (speakingRes.success && speakingRes.data?.id) {
+                        return pollSpeakingResult(speakingRes.data.id, q, totalAssessments);
+                      }
+                    } catch (err) {
+                      console.error('Speaking assessment error:', err);
+                      return null;
+                    }
+                  })()
+                );
+              }
+            } else if (skill === 'WRITING' && !isMCQ(q)) {
+              assessmentPromises.push(
+                pollWritingResult(newAttemptId, answerId, q, totalAssessments)
+              );
+            }
+          }
+          
+          const results = await Promise.all(assessmentPromises);
+          setAllResults(results.filter(r => r !== null));
+          setIsPolling(false);
         } else {
-          router.push(`/account`);
+          const answersRes = await getAttemptAnswers(newAttemptId);
+          if (answersRes.success) {
+            setAssessmentMode(true);
+            setAllResults([{ type: 'mcq', data: answersRes.data }]);
+          }
         }
       } else {
         setWarningMessage(res.error || "Nộp bài thất bại. Vui lòng thử lại.");
@@ -158,8 +211,44 @@ export default function PracticePage() {
       setWarningMessage("Nộp bài thất bại. Vui lòng thử lại.");
       setWarningDialogOpen(true);
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
+  };
+
+  const pollSpeakingResult = async (submissionId, question, totalQuestions) => {
+    const maxAttempts = 40;
+    const pollInterval = Math.min(3000 + (totalQuestions - 1) * 1000, 10000);
+    
+    for (let i = 0; i < maxAttempts; i++) {
+      try {
+        const res = await getSpeakingResults(submissionId);
+        if (res?.success && res.data?.aiScore !== null) {
+          return { ...res.data, questionId: question.id, questionContent: question.content, type: 'speaking' };
+        }
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+      } catch (err) {
+        console.error('Poll speaking error:', err);
+      }
+    }
+    return null;
+  };
+
+  const pollWritingResult = async (attemptId, answerId, question, totalQuestions) => {
+    const maxAttempts = 40;
+    const pollInterval = Math.min(3000 + (totalQuestions - 1) * 1000, 10000);
+    
+    for (let i = 0; i < maxAttempts; i++) {
+      try {
+        const res = await getWritingResultsByAnswer(attemptId, answerId);
+        if (res?.success && res.data?.aiScore !== null) {
+          return { ...res.data, questionId: question.id, questionContent: question.content, type: 'writing' };
+        }
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+      } catch (err) {
+        console.error('Poll writing error:', err);
+      }
+    }
+    return null;
   };
 
   if (loading) {
@@ -242,6 +331,28 @@ export default function PracticePage() {
     );
   }
 
+  if (total === 0) {
+    return (
+      <div className="container mx-auto max-w-5xl p-4 sm:p-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center py-12 text-muted-foreground">
+              <p className="text-lg">Đề thi chưa có câu hỏi nào.</p>
+              <p className="text-sm mt-2">Vui lòng quay lại sau.</p>
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => router.back()}
+              >
+                Quay lại
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto max-w-5xl p-4 sm:p-6 space-y-6">
       <Button
@@ -253,138 +364,41 @@ export default function PracticePage() {
         Quay lại
       </Button>
 
-      {/* Header */}
-      <Card className="shadow-md">
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-            <div className="space-y-3 flex-1">
-              <CardTitle className="text-2xl">{quiz.title}</CardTitle>
-              {quiz.description && (
-                <p className="text-sm text-muted-foreground">{quiz.description}</p>
-              )}
-              <div className="text-sm text-muted-foreground bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-                <p className="font-medium text-blue-900 dark:text-blue-100 mb-1">Hướng dẫn làm bài:</p>
-                <ul className="list-disc list-inside space-y-1 text-blue-800 dark:text-blue-200">
-                  <li>Đọc kỹ câu hỏi và chọn đáp án phù hợp nhất</li>
-                  <li>Sử dụng nút "Trước" và "Tiếp theo" để di chuyển giữa các câu</li>
-                  <li>Nhấn "Nộp bài" khi hoàn thành để xem kết quả</li>
-                </ul>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {quiz.quizTypeName && (
-                  <Badge variant="secondary">{quiz.quizTypeName}</Badge>
-                )}
-                {quiz.skill && <Badge variant="outline">{quiz.skill}</Badge>}
-                {quiz.quizSectionName && (
-                  <Badge variant="outline">{quiz.quizSectionName}</Badge>
-                )}
-              </div>
-            </div>
+      {/* Assessment Results */}
+      {assessmentMode && (
+        <AssessmentPolling
+          isPolling={isPolling}
+          allResults={allResults}
+          assessmentError={assessmentError}
+          attemptId={attemptId}
+          quizId={id}
+          onViewDetails={(id) => router.push(id ? `/account/attempts/${id}` : '/account')}
+        />
+      )}
 
-            <Button onClick={onSubmit} size="lg">
-              <Send className="mr-2 h-4 w-4" />
-              Nộp bài
-            </Button>
-          </div>
-        </CardHeader>
-      </Card>
+      {!assessmentMode && (
+        <>
+          {/* Header */}
+          <QuizHeader quiz={quiz} onSubmit={onSubmit} submitting={submitting} />
 
-      {/* Passage (contextText) hiển thị 1 lần */}
-      <ContextPassage contextText={quiz.contextText} />
+          {/* Passage */}
+          <ContextPassage contextText={quiz.contextText} />
 
-      {/* Vùng làm bài */}
-      <Card className="shadow-md">
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <Badge variant="default" className="text-base py-1 px-3">
-                Câu {Math.min(index + 1, total)}/{total}
-              </Badge>
-              <span className="text-sm text-muted-foreground">
-                Đã trả lời: {answered}/{total}
-              </span>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => go(-1)}
-                disabled={index === 0}
-              >
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                Trước
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => go(1)}
-                disabled={index >= total - 1}
-              >
-                Tiếp theo
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-6">
           {/* Question */}
-          {current && (
-            <>
-              <article
-                className="prose prose-sm max-w-none ql-content"
-                dangerouslySetInnerHTML={{
-                  __html: sanitizeHtml(current.content || ""),
-                }}
-              />
+          <QuestionCard
+            current={current}
+            index={index}
+            total={total}
+            answered={answered}
+            answers={answers}
+            isMCQ={isMCQ}
+            isSpeaking={isSpeaking}
+            onChoose={onChoose}
+            onAudioReady={onAudioReady}
+            onNavigate={go}
+          />
 
-              {/* Options / Text answer */}
-              {isMCQ(current) ? (
-                <div className="space-y-3">
-                  {(current.options || [])
-                    .slice()
-                    .sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0))
-                    .map((op) => {
-                      const checked = answers[current.id] === op.id;
-                      return (
-                        <label
-                          key={op.id}
-                          className={`flex items-start gap-3 border rounded-lg p-4 cursor-pointer transition-all ${
-                            checked
-                              ? "border-primary bg-primary/5 ring-2 ring-primary"
-                              : "hover:bg-muted/50 hover:border-muted-foreground/30"
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name={`q-${current.id}`}
-                            checked={checked}
-                            onChange={() => onChoose(current.id, op.id)}
-                            className="w-4 h-4 mt-1"
-                          />
-                          <span className="text-sm flex-1">{op.content}</span>
-                        </label>
-                      );
-                    })}
-                </div>
-              ) : isSpeaking(current) ? (
-                <SpeakingRecorder questionId={current.id} onAnswer={onChoose} />
-              ) : (
-                <div>
-                  <textarea
-                    className="w-full min-h-[140px] border rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                    placeholder="Nhập câu trả lời của bạn..."
-                    value={answers[current.id] || ""}
-                    onChange={(e) => onChoose(current.id, e.target.value)}
-                  />
-                </div>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Warning dialog - chỉ hiển thị thông báo */}
+          {/* Warning dialog */}
       <AlertDialog open={warningDialogOpen} onOpenChange={setWarningDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -397,7 +411,9 @@ export default function PracticePage() {
             {warningMessage.includes("Vẫn nộp bài") ? (
               <>
                 <AlertDialogCancel>Hủy</AlertDialogCancel>
-                <AlertDialogAction onClick={handleSubmit}>Nộp bài</AlertDialogAction>
+                <AlertDialogAction onClick={handleSubmit} disabled={submitting}>
+                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Nộp bài"}
+                </AlertDialogAction>
               </>
             ) : (
               <AlertDialogAction onClick={() => setWarningDialogOpen(false)}>
@@ -407,6 +423,8 @@ export default function PracticePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </>
+      )}
     </div>
   );
 }
