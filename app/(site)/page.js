@@ -1,233 +1,140 @@
-import Link from "next/link"
-import { Headphones, BookOpen, Users } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import "./homepage-animation.css"
-
 export default function HomePage() {
-  const features = [
-    {
-      icon: BookOpen,
-      title: "Tài liệu phong phú",
-      description:
-        "Kho bài học và bài tập từ cơ bản đến nâng cao, phù hợp nhiều mục tiêu",
-      color: "text-blue-600",
-    },
-    {
-      icon: Users,
-      title: "Cộng đồng học tập",
-      description:
-        "Kết nối và trao đổi với hàng ngàn học viên khác qua diễn đàn",
-      color: "text-green-600",
-    },
-    {
-      icon: Headphones,
-      title: "Hỗ trợ 24/7",
-      description:
-        "Đội ngũ hỗ trợ của chúng tôi luôn trực tuyến 24/7 để giúp đỡ bạn bất cứ khi nào bạn cần!",
-    },
-    {
-      icon: BookOpen,
-      title: "Truy cập toàn bộ tài liệu",
-      description:
-        "Chúng tôi cung cấp đầy đủ tài liệu học tập chất lượng cao để giúp bạn học tốt hơn",
-    },
-  ]
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-white">
-        {/* Decorative Elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {/* Top right decorative lines */}
-          <div className="absolute top-0 right-0 w-1/2 h-full">
-            <svg className="absolute top-20 right-32 w-64 h-64 opacity-20" viewBox="0 0 200 200">
-              <path d="M 50 100 Q 100 50 150 100" stroke="#e5e7eb" strokeWidth="2" fill="none" />
-              <path d="M 60 120 Q 110 70 160 120" stroke="#e5e7eb" strokeWidth="2" fill="none" />
-            </svg>
-
-            {/* Decorative shapes */}
-            <div className="absolute top-32 right-64 w-12 h-12 rotate-45">
-              <div className="w-full h-full bg-blue-400 rounded-lg opacity-80"></div>
+    <div className="min-h-screen bg-[#f6f7f8] dark:bg-[#101922]">
+      <section className="py-16 md:py-24">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col-reverse gap-8 py-10 md:flex-row md:items-center">
+            <div className="flex flex-col gap-6 text-center md:text-left md:w-1/2 md:pr-8">
+              <div className="flex flex-col gap-4">
+                <h1 className="text-[#111418] dark:text-white text-4xl font-black leading-tight tracking-[-0.033em] md:text-5xl">
+                  Làm chủ tiếng Anh theo cách của bạn
+                </h1>
+                <p className="text-[#617589] dark:text-gray-300 text-base leading-normal md:text-lg">
+                  Trải nghiệm hệ thống học tiếng Anh hiện đại, phù hợp với mọi đối tượng từ cơ bản đến nâng cao
+                </p>
+              </div>
+              <button className="flex self-center md:self-start min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-blue-600 hover:bg-blue-500 text-white text-base font-bold leading-normal tracking-[0.015em] transition-colors">
+                <a href="/quiz-types" className="truncate">Bắt đầu</a>
+              </button>
             </div>
-
-            {/* Stars */}
-            <svg className="absolute top-24 right-48 w-8 h-8 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-            </svg>
-
-            <svg className="absolute top-48 right-24 w-6 h-6 text-gray-300" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-            </svg>
-
-            {/* Curved lines */}
-            <svg className="absolute top-64 right-16 w-48 h-48 opacity-20" viewBox="0 0 200 200">
-              <path d="M 20 100 Q 100 20 180 100 Q 100 180 20 100" stroke="#e5e7eb" strokeWidth="2" fill="none" />
-            </svg>
-
-            {/* Squiggly line */}
-            <svg className="absolute bottom-32 right-40 w-32 h-16 opacity-30" viewBox="0 0 100 50">
-              <path d="M 0 25 Q 12.5 10 25 25 T 50 25 T 75 25 T 100 25" stroke="#9ca3af" strokeWidth="2" fill="none" />
-            </svg>
+            <div className="w-full md:w-1/2">
+              <div className="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-xl" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuA8qCfN73jWxpCwm-DRi8ENkM9xJMLxWKIcqPF2pXurtoVRRGzynaQfxESPDvfYFCvvG2OY-KFcS0PGVFzMOJk15rNHwEtGMRL6OTfg5BRMpTwpvK2tB8vbreD-MyaNPDxIeUaZn13VSPIgyfVedIW_aVP6RqCw4aqeH1qk3_HoezUNZYe3sCCN-z3nZCGU8aS9j7-fDQDXodVOk3hCFDJM3t2z5WIUgwlBRDHT71ZHd_WRDuASaV0zaNjAxcCQuxp7ygLsIuQA0g")' }}></div>
+            </div>
           </div>
-
-          {/* Bottom left decorative elements */}
-          <svg className="absolute bottom-32 left-16 w-16 h-16 text-gray-300 opacity-40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polygon points="12 2 2 7 12 12 22 7 12 2" />
-            <polyline points="2 17 12 22 22 17" />
-            <polyline points="2 12 12 17 22 12" />
-          </svg>
-
-          <svg className="absolute bottom-64 left-32 w-12 h-12 text-gray-400 opacity-30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3" />
-          </svg>
         </div>
+      </section>
 
-        <div className="container mx-auto px-4 py-10 relative">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left Content */}
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-full text-sm font-medium mb-8">
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                </svg>
-                English Pro
-              </div>
-
-              <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold text-gray-900 mb-6 leading-tight">
-                Học tiếng Anh dễ dàng hơn bao giờ hết!
-              </h1>
-
-              <p className="text-lg text-gray-600 mb-8 max-w-xl">
-                Trải nghiệm hệ thống học tiếng Anh hiện đại, phù hợp với mọi đối tượng từ cơ bản đến nâng cao
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-6 text-base" asChild>
-                  <Link href="/practice">Bắt đầu học ngay</Link>
-                </Button>
-                <Button variant="ghost" size="lg" className="text-gray-900 hover:text-gray-700 px-8 py-6 text-base font-medium" asChild>
-                  <Link href="/courses">Xem khóa học</Link>
-                </Button>
+      {/* Courses Section */}
+      <section className="py-12 md:py-16">
+        <h2 className="text-[#111418] dark:text-white text-2xl md:text-3xl font-bold leading-tight tracking-[-0.015em] px-4 pb-6 pt-5 text-center">
+          Tìm khóa học hoàn hảo cho bạn
+        </h2>
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-6">
+            <div className="flex flex-col gap-3 pb-3 bg-white dark:bg-[#101922]/50 rounded-xl p-4 border border-gray-200 dark:border-white/10 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+              <div className="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-lg" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBA-JD3pMCP47ozAgs4VtMclj1fCyubtzDSC8M0eVfsV5yPujROYgNvvI2ady-0USTe6s3AE1HGMgGiEzTBZFmL6YUr-syDStwdVCH3MaComqnoiC8HUDPtsPJumRBUuaj-gLSjKFTCGNvturQxW423acyMc4VGjy7HTmvUsFBPonVfbB1tCHhFNdaGLLXcRwlB9WmF44c1nnsLOVT7D5xo-KzwTiS0MEtnu4BsKtlpwa0q4SIIUopRcmYlvDVFj9IRUcoij9LWQw")' }}></div>
+              <div>
+                <p className="text-[#111418] dark:text-white text-lg font-medium leading-normal">Tiếng Anh tổng quát</p>
+                <p className="text-[#617589] dark:text-gray-300 text-sm font-normal leading-normal">Xây dựng nền tảng vững chắc trong giao tiếp tiếng Anh hàng ngày.</p>
               </div>
             </div>
-
-            {/* Right Illustration */}
-            <div className="hidden lg:flex relative h-[500px] items-center justify-center">
-              {/* Main illustration container with floating animation */}
-              <div className="relative w-full h-full flex items-center justify-center">
-                
-                {/* Large background circle with gradient */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-96 h-96 rounded-full bg-gradient-to-br from-blue-100 via-purple-50 to-pink-100 opacity-60 animate-pulse"></div>
-                </div>
-
-                {/* Floating book illustration */}
-                <div className="relative z-10 animate-float">
-                  <svg className="w-80 h-80" viewBox="0 0 200 200" fill="none">
-                    {/* Open book */}
-                    <g className="drop-shadow-2xl">
-                      {/* Left page */}
-                      <path d="M 60 50 Q 60 40 70 40 L 95 40 L 95 140 L 70 140 Q 60 140 60 130 Z" 
-                            fill="#ffffff" stroke="#e5e7eb" strokeWidth="2"/>
-                      
-                      {/* Right page */}
-                      <path d="M 105 40 L 130 40 Q 140 40 140 50 L 140 130 Q 140 140 130 140 L 105 140 Z" 
-                            fill="#ffffff" stroke="#e5e7eb" strokeWidth="2"/>
-                      
-                      {/* Book spine */}
-                      <rect x="95" y="40" width="10" height="100" fill="#3b82f6"/>
-                      
-                      {/* Text lines on left page */}
-                      <line x1="70" y1="60" x2="90" y2="60" stroke="#cbd5e1" strokeWidth="2"/>
-                      <line x1="70" y1="70" x2="85" y2="70" stroke="#cbd5e1" strokeWidth="2"/>
-                      <line x1="70" y1="80" x2="90" y2="80" stroke="#cbd5e1" strokeWidth="2"/>
-                      <line x1="70" y1="90" x2="88" y2="90" stroke="#cbd5e1" strokeWidth="2"/>
-                      
-                      {/* Text lines on right page */}
-                      <line x1="110" y1="60" x2="130" y2="60" stroke="#cbd5e1" strokeWidth="2"/>
-                      <line x1="110" y1="70" x2="125" y2="70" stroke="#cbd5e1" strokeWidth="2"/>
-                      <line x1="110" y1="80" x2="130" y2="80" stroke="#cbd5e1" strokeWidth="2"/>
-                      <line x1="110" y1="90" x2="128" y2="90" stroke="#cbd5e1" strokeWidth="2"/>
-                    </g>
-
-                    {/* Floating letters around the book */}
-                    <text x="35" y="35" className="text-2xl font-bold fill-blue-500 animate-bounce-slow">A</text>
-                    <text x="155" y="45" className="text-2xl font-bold fill-purple-500 animate-bounce-slower">B</text>
-                    <text x="25" y="120" className="text-2xl font-bold fill-pink-500 animate-bounce-slow">C</text>
-                    <text x="165" y="130" className="text-2xl font-bold fill-indigo-500 animate-bounce-slower">D</text>
-                  </svg>
-                </div>
-
-                {/* Floating decorative elements */}
-                <div className="absolute top-10 left-10 w-16 h-16 bg-blue-400 rounded-full opacity-20 animate-float-delayed"></div>
-                <div className="absolute bottom-10 right-10 w-20 h-20 bg-purple-400 rounded-full opacity-20 animate-float"></div>
-                <div className="absolute top-1/2 right-0 w-12 h-12 bg-pink-400 rounded-full opacity-20 animate-float-delayed"></div>
-                
-                {/* Sparkle effects */}
-                <div className="absolute top-20 right-20">
-                  <svg className="w-8 h-8 text-yellow-400 animate-pulse" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
-                </div>
-                
-                <div className="absolute bottom-32 left-16">
-                  <svg className="w-6 h-6 text-blue-400 animate-pulse-slow" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
-                </div>
-
-                {/* Achievement badges */}
-                <div className="absolute top-1/4 -left-8 bg-white rounded-lg shadow-lg p-3 animate-float-slow">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
-                      <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="absolute bottom-1/4 -right-8 bg-white rounded-lg shadow-lg p-3 animate-float-delayed">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
-                      <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
-                    </div>
-                  </div>
-                </div>
+            <div className="flex flex-col gap-3 pb-3 bg-white dark:bg-[#101922]/50 rounded-xl p-4 border border-gray-200 dark:border-white/10 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+              <div className="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-lg" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCHY4hNLWTp5BmKihOMEkPLxuos7rhebYjfBUUitDiLvcMob22-P_V1KAh8eWTz1kzIDW41zImAr73ZagtBXiKmO88bZcKbL4BXGt3jWs832j36YlChFF9yhDZ_nn6XnO9ts2svL-Pi-bV3eiKvnrKDoiYZjR7zUhhApbIQEjWRU5OcqtgskYk_D9CO3FI144BHrOn41gr0CPxG3xwpRh_eYXWQ2WSN3tkHTddImWBVzgiIc6XQfXUc2G8I41mRd3vkNJ82VsfoKQ")' }}></div>
+              <div>
+                <p className="text-[#111418] dark:text-white text-lg font-medium leading-normal">Luyện thi IELTS</p>
+                <p className="text-[#617589] dark:text-gray-300 text-sm font-normal leading-normal">Chuẩn bị toàn diện cho kỳ thi IELTS học thuật.</p>
+              </div>
+            </div>
+            <div className="flex flex-col gap-3 pb-3 bg-white dark:bg-[#101922]/50 rounded-xl p-4 border border-gray-200 dark:border-white/10 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+              <div className="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-lg" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDR3XH2dHUpBUC79Vs55Hupg82VevGT-YqpG6Tw4UYg5gT8ULSCKz4POqDVgrUXaLCOtjJz0_iEEYDBpzfdbQF0cs7A9l44vvOUymf56_E32W8bt1T7cpADtOMMJzx32o2nD6vEDYBdCHjqurIj6i2B_sCeyEOFDsaLYCcqoM2qJG1SHFPplQJ5Ek_-y-mNdasilLHsTDo4gsKxVm4rUH3ezEeLkwe8T4hs886t-L3kwrQoh5DxVzlAsZIBgWdgwDgQGHz2ju8vGA")' }}></div>
+              <div>
+                <p className="text-[#111418] dark:text-white text-lg font-medium leading-normal">Tiếng Anh thương mại</p>
+                <p className="text-[#617589] dark:text-gray-300 text-sm font-normal leading-normal">Làm chủ kỹ năng giao tiếp cho môi trường làm việc toàn cầu.</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-white border-t">
+      {/* Exercises Section */}
+      <section className="py-12 md:py-16">
+        <h2 className="text-[#111418] dark:text-white text-2xl md:text-3xl font-bold leading-tight tracking-[-0.015em] px-4 pb-6 pt-5 text-center">
+          Rèn luyện kỹ năng của bạn
+        </h2>
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-12 max-w-6xl mx-auto">
-            {features.map((feature, index) => {
-              const Icon = feature.icon
-              return (
-                <div key={index} className="text-left">
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="flex-shrink-0">
-                      <Icon className="w-6 h-6 text-gray-900" strokeWidth={2} />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-3">
-                        {feature.title}
-                      </h3>
-                      <p className="text-gray-600 leading-relaxed">
-                        {feature.description}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="flex flex-col items-center gap-4 p-6 bg-white dark:bg-[#101922]/50 rounded-xl border border-gray-200 dark:border-white/10 hover:shadow-lg hover:border-[#2b8cee]/50 transition-all duration-300">
+              <span className="text-[#2b8cee] text-4xl">🎧</span>
+              <p className="text-[#111418] dark:text-white text-base font-medium text-center">Nghe</p>
+            </div>
+            <div className="flex flex-col items-center gap-4 p-6 bg-white dark:bg-[#101922]/50 rounded-xl border border-gray-200 dark:border-white/10 hover:shadow-lg hover:border-[#2b8cee]/50 transition-all duration-300">
+              <span className="text-[#2b8cee] text-4xl">🗣️</span>
+              <p className="text-[#111418] dark:text-white text-base font-medium text-center">Nói</p>
+            </div>
+            <div className="flex flex-col items-center gap-4 p-6 bg-white dark:bg-[#101922]/50 rounded-xl border border-gray-200 dark:border-white/10 hover:shadow-lg hover:border-[#2b8cee]/50 transition-all duration-300">
+              <span className="text-[#2b8cee] text-4xl">📖</span>
+              <p className="text-[#111418] dark:text-white text-base font-medium text-center">Đọc</p>
+            </div>
+            <div className="flex flex-col items-center gap-4 p-6 bg-white dark:bg-[#101922]/50 rounded-xl border border-gray-200 dark:border-white/10 hover:shadow-lg hover:border-[#2b8cee]/50 transition-all duration-300">
+              <span className="text-[#2b8cee] text-4xl">✍️</span>
+              <p className="text-[#111418] dark:text-white text-base font-medium text-center">Viết</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Blog Section */}
+      <section className="py-12 md:py-16">
+        <h2 className="text-[#111418] dark:text-white text-2xl md:text-3xl font-bold leading-tight tracking-[-0.015em] px-4 pb-6 pt-5 text-center">
+          Mẹo và kiến thức từ Blog của chúng tôi
+        </h2>
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="flex flex-col gap-4 bg-white dark:bg-[#101922]/50 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 hover:shadow-lg transition-shadow duration-300">
+              <div className="w-full bg-center bg-no-repeat aspect-video bg-cover" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuANX8VLmwsTQF1LEdNsLaN2SNittMT9_F0DwsFaOqF0ltWV_iTPQGgQhcOxNPydxgy0txVT--wjEpjVlfoD0ODYLx3tz9Cv7Qx_F0Pl7TmcKq0mahsErX4pSxVAkyO4H7df2Wpg9xpZKTRTK6RG-yDhij_LEeEUy_LYdT6JkknX60G2BoyZSPA4_KYiZp9uc0myRIegTlOWLtuvY55XB30ol3mPKWwCqD_30S9aNPNTP5am9dNc2lAAbfv2DPCGHCHfXOgSmJfOOg")' }}></div>
+              <div className="p-5 flex flex-col grow">
+                <p className="text-[#111418] dark:text-white text-lg font-medium leading-normal mb-2">5 cách để cải thiện sự tự tin khi nói tiếng Anh</p>
+                <p className="text-[#617589] dark:text-gray-300 text-sm font-normal leading-normal mb-4">Khám phá các mẹo thực tế giúp bạn nói tiếng Anh trưng tự nhiên và tự tin hơn trong các tình huống hàng ngày.</p>
+
+              </div>
+            </div>
+            <div className="flex flex-col gap-4 bg-white dark:bg-[#101922]/50 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 hover:shadow-lg transition-shadow duration-300">
+              <div className="w-full bg-center bg-no-repeat aspect-video bg-cover" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBoEs29u-O3DoDd5SoqUjkb55tkVeVWq_nudoQs8MXYRsZAjeT1XIpAdMSj-GE8fDBH3VqwVBspX4z5uQtAjlIDREPFz9mbp2iV0X_xVgowMMLs4un1cDVoCqIhTA8LTTTcBBW7E5R5kqqjCTL0i22EwdTKyG53KG9szAthTPK6R1TXvyDGaxYxReb8EbFxKSXaWIYysmYnvnj1EWl9FucQ-881cEs92wPz31q2XDCJ9Mef19jbbV1lClEKxNhlKkxO-lPOl_9xUQ")' }}></div>
+              <div className="p-5 flex flex-col grow">
+                <p className="text-[#111418] dark:text-white text-lg font-medium leading-normal mb-2">Những lỗi ngữ pháp phổ biến cần tránh</p>
+                <p className="text-[#617589] dark:text-gray-300 text-sm font-normal leading-normal mb-4">Tìm hiểu về những lỗi ngữ pháp thường gặp nhất mà người học tiếng Anh mắc phải và cách sửa chúng.</p>
+
+              </div>
+            </div>
+            <div className="flex flex-col gap-4 bg-white dark:bg-[#101922]/50 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 hover:shadow-lg transition-shadow duration-300">
+              <div className="w-full bg-center bg-no-repeat aspect-video bg-cover" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDFY8lZiMyouvdSh75f29x7xEAgyJVm6S77QU_by_5A-YtYAFGrDZFUXFPW3iqgAvnAoxBQkhnBBhcqYkQSLyuC_8gHMea9S0jv4lDdMmZJmRfdnk3CPVJZbs9s6KrCObfVWImzyHgaHvOHj01UFz9qycNZ-Rp5hW3GpA6TMVkoNq-AQVnZGdlfY-PcHslMyYpujtNysxnOkHBsHyFtnhloaX47VuKDXtVs3jM0cQc2Um7GC00V7YyFxYOREJQqFxdc6JjaTT8sfw")' }}></div>
+              <div className="p-5 flex flex-col grow">
+                <p className="text-[#111418] dark:text-white text-lg font-medium leading-normal mb-2">Cách mở rộng vốn từ vựng hiệu quả</p>
+                <p className="text-[#617589] dark:text-gray-300 text-sm font-normal leading-normal mb-4">Từ thẻ ghi nhớ đến đọc sách, chúng tôi khám phá các kỹ thuật tốt nhất để ghi nhớ từ tiếng Anh mới.</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-center mt-8">
+            <a href="/blog" className="min-w-[84px] max-w-[480px] cursor-pointer flex items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-blue-600 text-white text-base font-bold leading-normal tracking-[0.015em] hover:bg-blue-500 transition-colors">
+              <span className="truncate">Xem toàn bộ blog</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Community CTA */}
+      <section className="py-12 md:py-16">
+        <div className="container mx-auto px-4">
+          <div className="bg-[#2b8cee]/10 dark:bg-[#2b8cee]/20 rounded-xl p-8 md:p-12 text-center">
+            <h2 className="text-[#111418] dark:text-white text-2xl md:text-3xl font-bold leading-tight tracking-[-0.015em] mb-4">
+              Tham gia cộng đồng của chúng tôi
+            </h2>
+            <p className="text-[#617589] dark:text-gray-200 max-w-2xl mx-auto mb-6">
+              Đặt câu hỏi, luyện tập với bạn bè từ khắp nơi trên thế giới và chia sẻ tiến trình học tập của bạn trong diễn đàn thân thiện của chúng tôi.
+            </p>
+            <button className="flex mx-auto min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-blue-600 text-white text-base font-bold leading-normal tracking-[0.015em] hover:bg-blue-500 transition-colors">
+              <a href="/forum" className="truncate">Truy cập diễn đàn</a>
+            </button>
           </div>
         </div>
       </section>

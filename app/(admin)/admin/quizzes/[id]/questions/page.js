@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import Link from "next/link";
 import { getQuiz, updateQuiz } from "@/lib/api/quiz/quiz";
-import { listQuestionsByQuiz, deleteQuestion, createQuestion } from "@/lib/api/quiz/question";
+import { listQuestionsByQuiz, deleteQuestion, createQuestion, updateQuestion } from "@/lib/api/quiz/question";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
 import QuestionForm from "@/components/admin/questions/question-form";
@@ -35,7 +35,7 @@ const MediaManager = dynamic(() => import("@/components/media/media-manager"), {
 export default function QuizQuestionsWithContextPage() {
   const params = useParams();
   const quizId = params?.id || "unknown";
-  const folderPath = `forums/${quizId}/media`;
+  const folderPath = `quiz/${quizId}/media`;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -53,6 +53,9 @@ export default function QuizQuestionsWithContextPage() {
   const [questionToDelete, setQuestionToDelete] = useState(null);
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [questionToEdit, setQuestionToEdit] = useState(null);
 
   const maxOrderIndex = useMemo(() => {
     if (!questions || questions.length === 0) return 0;
@@ -158,6 +161,48 @@ export default function QuizQuestionsWithContextPage() {
     }
   }
 
+  function openEditDialog(question) {
+    setQuestionToEdit(question);
+    setEditDialogOpen(true);
+  }
+
+  async function handleEditQuestion(data) {
+    if (!questionToEdit) return;
+    try {
+      const existingQuestion = questions.find(
+        q => q.orderIndex === Number(data.orderIndex) && q.id !== questionToEdit.id
+      );
+      if (existingQuestion) {
+        toast.error(`Thứ tự ${data.orderIndex} đã được sử dụng bởi câu hỏi khác`);
+        return;
+      }
+
+      const payload = {
+        quizId: data.quizId,
+        content: data.content,
+        orderIndex: Number(data.orderIndex),
+      };
+
+      const validOptions = data.options?.filter(o => o.content?.trim());
+      if (validOptions && validOptions.length > 0) {
+        payload.options = validOptions.map((o, i) => ({
+          content: o.content,
+          correct: !!o.correct,
+          explanation: o.explanation || "",
+          orderIndex: Number(o.orderIndex || i + 1),
+        }));
+      }
+
+      await updateQuestion(questionToEdit.id, payload);
+      toast.success("Đã cập nhật câu hỏi!");
+      setEditDialogOpen(false);
+      setQuestionToEdit(null);
+      loadAll(page);
+    } catch (e) {
+      toast.error(e?.message || "Không thể cập nhật câu hỏi.");
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-6 space-y-6">
@@ -230,6 +275,7 @@ export default function QuizQuestionsWithContextPage() {
                 }}
                 onDelete={openDeleteDialog}
                 onAddNew={openAddDialog}
+                onEdit={openEditDialog}
               />
             </CardContent>
           </Card>
@@ -272,6 +318,32 @@ export default function QuizQuestionsWithContextPage() {
             onSubmit={handleAddQuestion}
             onCancel={() => setAddDialogOpen(false)}
           />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editDialogOpen} onOpenChange={(open) => {
+        setEditDialogOpen(open);
+        if (!open) setQuestionToEdit(null);
+      }}>
+        <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Sửa câu hỏi #{questionToEdit?.orderIndex}</DialogTitle>
+          </DialogHeader>
+          {questionToEdit && (
+            <QuestionForm
+              key={questionToEdit.id}
+              quizId={quizId}
+              quizSkill={quizSkill}
+              orderIndex={questionToEdit.orderIndex}
+              initialData={questionToEdit}
+              isEditing={true}
+              onSubmit={handleEditQuestion}
+              onCancel={() => {
+                setEditDialogOpen(false);
+                setQuestionToEdit(null);
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

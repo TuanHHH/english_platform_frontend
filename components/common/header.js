@@ -75,7 +75,7 @@ export default function Header() {
           </div>
 
           <Sheet>
-            <SheetTrigger asChild>
+            <SheetTrigger asChild suppressHydrationWarning>
               <Button variant="ghost" size="sm" className="md:hidden">
                 <Menu className="h-5 w-5" />
               </Button>
