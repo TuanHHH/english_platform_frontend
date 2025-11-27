@@ -5,10 +5,22 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { questionCreateSchema } from "@/schema/question";
 
-export default function QuestionForm({ quizId, quizSkill, orderIndex, onSubmit, onCancel }) {
-  const { register, handleSubmit, control, formState: { errors }, setValue, watch } = useForm({
-    resolver: zodResolver(questionCreateSchema),
-    defaultValues: {
+export default function QuestionForm({ quizId, quizSkill, orderIndex, onSubmit, onCancel, initialData, isEditing = false }) {
+  const getDefaultValues = () => {
+    if (initialData) {
+      return {
+        quizId: initialData.quizId || quizId,
+        content: initialData.content || "",
+        orderIndex: initialData.orderIndex ?? orderIndex,
+        options: (initialData.options || []).map((o, idx) => ({
+          content: o.content || "",
+          correct: !!o.correct,
+          explanation: o.explanation || "",
+          orderIndex: o.orderIndex ?? idx + 1,
+        })),
+      };
+    }
+    return {
       quizId,
       content: "",
       orderIndex,
@@ -20,7 +32,12 @@ export default function QuestionForm({ quizId, quizSkill, orderIndex, onSubmit, 
           { content: "", correct: false, explanation: "", orderIndex: 4 },
         ],
       }),
-    },
+    };
+  };
+
+  const { register, handleSubmit, control, formState: { errors }, setValue, watch } = useForm({
+    resolver: zodResolver(questionCreateSchema),
+    defaultValues: getDefaultValues(),
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -152,7 +169,7 @@ export default function QuestionForm({ quizId, quizSkill, orderIndex, onSubmit, 
       )}
 
       <div className="flex gap-2 pt-4">
-        <Button type="submit">Tạo mới</Button>
+        <Button type="submit">{isEditing ? "Cập nhật" : "Tạo mới"}</Button>
         <Button type="button" variant="outline" onClick={onCancel}>
           Hủy
         </Button>

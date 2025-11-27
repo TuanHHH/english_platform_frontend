@@ -9,8 +9,8 @@ import { uploadMedia } from "@/lib/api/media";
 export default function Editor({
   initialContent = "",
   onContentChange,
-  useServerUpload = false, // Prop mới: true = upload S3, false = base64/link
-  uploadFolder = "forums", // Folder để upload lên S3
+  useServerUpload = false, 
+  uploadFolder = "forums",
 }) {
   const [content, setContent] = useState(initialContent);
   const [isMounted, setIsMounted] = useState(false);

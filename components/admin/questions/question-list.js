@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 
@@ -11,7 +10,8 @@ export default function QuestionList({
   totalPages, 
   onPageChange, 
   onDelete, 
-  onAddNew 
+  onAddNew,
+  onEdit
 }) {
   if (loading) {
     return (
@@ -60,11 +60,14 @@ export default function QuestionList({
               )}
             </div>
             <div className="flex gap-1.5">
-              <Link href={`/admin/questions/${q.id}?quizId=${quizId}`}>
-                <Button size="sm" variant="outline" className="h-7 px-2 text-xs">
-                  Sửa
-                </Button>
-              </Link>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="h-7 px-2 text-xs"
+                onClick={() => onEdit(q)}
+              >
+                Sửa
+              </Button>
               <Button
                 size="sm"
                 variant="destructive"
