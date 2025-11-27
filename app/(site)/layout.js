@@ -13,7 +13,7 @@ export default function RootLayout({ children }) {
       <Header />
       <LabanDictFrame />
       <MessengerChat />
-      <main className="flex-grow">{children}</main>
+      <main className="grow">{children}</main>
       <Footer />
     </div>
   )
