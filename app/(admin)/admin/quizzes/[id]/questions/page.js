@@ -35,7 +35,7 @@ const MediaManager = dynamic(() => import("@/components/media/media-manager"), {
 export default function QuizQuestionsWithContextPage() {
   const params = useParams();
   const quizId = params?.id || "unknown";
-  const folderPath = `forums/${quizId}/media`;
+  const folderPath = `quiz/${quizId}/media`;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
