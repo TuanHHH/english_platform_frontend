@@ -1,11 +1,11 @@
-
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import Link from "next/link";
+import dynamic from "next/dynamic";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,6 +33,14 @@ import { pageQuizSectionsByType } from "@/lib/api/quiz/quiz-section";
 import { toast } from "sonner";
 import { quizCreateSchema } from "@/schema/quiz";
 
+// Import Component Editor
+import ContextEditor from "@/components/admin/questions/context-editor";
+
+// Import MediaManager (Dynamic)
+const MediaManager = dynamic(() => import("@/components/media/media-manager"), {
+  ssr: false,
+});
+
 const SKILLS = ["LISTENING", "READING", "SPEAKING", "WRITING"];
 const STATUSES = ["DRAFT", "PUBLISHED", "ARCHIVED"];
 
@@ -41,6 +49,11 @@ export default function AdminQuizEditorPage() {
   const router = useRouter();
   const id = params?.id;
   const isNew = id === "new";
+
+  // Xác định đường dẫn folder media
+  const folderPath = useMemo(() => {
+    return isNew ? null : `quiz/${id}/media`;
+  }, [id, isNew]);
 
   const [types, setTypes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -118,7 +131,8 @@ export default function AdminQuizEditorPage() {
           pageSize: 200,
         };
         const data = await pageQuizSectionsByType(String(typeId), params);
-        const items = data?.result || data?.data?.result || data?.data || data || [];
+        const items =
+          data?.result || data?.data?.result || data?.data || data || [];
         const list = Array.isArray(items) ? items : [];
         setSections(list);
 
@@ -198,23 +212,44 @@ export default function AdminQuizEditorPage() {
   });
 
   return (
-    <div className="flex min-h-screen">
-      <main className="flex-1 p-6 space-y-6">
-        <div className="flex items-center justify-between mb-6">
+    <div className="flex min-h-screen bg-gray-50">
+      <main className="flex-1 p-6 space-y-6 max-w-7xl mx-auto">
+        <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold">
             {isNew ? "Tạo Quiz" : "Sửa Quiz"}
           </h1>
-          <Link href="/admin/quizzes">
-            <Button variant="outline">Quay lại</Button>
-          </Link>
+          {/* Chỉ hiển thị tiêu đề, nút Quay lại đã bị xóa */}
         </div>
+
+        {/* MEDIA MANAGER SECTION */}
+        {!isNew && folderPath && (
+          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+            <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+              <h2 className="text-sm font-semibold text-gray-700">
+                Quản lý Media (Quiz ID: {id})
+              </h2>
+            </div>
+            <div className="p-4">
+              <MediaManager folder={folderPath} />
+            </div>
+          </div>
+        )}
+
+        {isNew && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-sm text-yellow-800">
+            Vui lòng tạo Quiz trước, sau đó bạn có thể tải lên hình ảnh/media.
+          </div>
+        )}
 
         <Card>
           <CardHeader>
             <CardTitle>Thông tin Quiz</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="grid grid-cols-1 md:grid-cols-2 gap-4"
+            >
               {/* Title */}
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium mb-2">
@@ -231,7 +266,9 @@ export default function AdminQuizEditorPage() {
                   )}
                 />
                 {errors.title && (
-                  <p className="text-sm text-red-600 mt-1">{errors.title.message}</p>
+                  <p className="text-sm text-red-600 mt-1">
+                    {errors.title.message}
+                  </p>
                 )}
               </div>
 
@@ -266,7 +303,9 @@ export default function AdminQuizEditorPage() {
                   )}
                 />
                 {errors.quizTypeId && (
-                  <p className="text-sm text-red-600 mt-1">{errors.quizTypeId.message}</p>
+                  <p className="text-sm text-red-600 mt-1">
+                    {errors.quizTypeId.message}
+                  </p>
                 )}
               </div>
 
@@ -279,7 +318,10 @@ export default function AdminQuizEditorPage() {
                   name="skill"
                   control={control}
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Chọn kỹ năng" />
                       </SelectTrigger>
@@ -294,7 +336,9 @@ export default function AdminQuizEditorPage() {
                   )}
                 />
                 {errors.skill && (
-                  <p className="text-sm text-red-600 mt-1">{errors.skill.message}</p>
+                  <p className="text-sm text-red-600 mt-1">
+                    {errors.skill.message}
+                  </p>
                 )}
               </div>
 
@@ -303,7 +347,10 @@ export default function AdminQuizEditorPage() {
                 <label className="block text-sm font-medium mb-2">
                   Chọn Section
                   {watchQuizTypeId === "none" && (
-                    <span className="text-xs text-muted-foreground"> (Chọn loại đề trước)</span>
+                    <span className="text-xs text-muted-foreground">
+                      {" "}
+                      (Chọn loại đề trước)
+                    </span>
                   )}
                 </label>
                 <Controller
@@ -312,8 +359,13 @@ export default function AdminQuizEditorPage() {
                   render={({ field }) => (
                     <Select
                       value={field.value || "none"}
-                      onValueChange={(v) => field.onChange(v === "none" ? null : v)}
-                      disabled={watchQuizTypeId === "none" || filteredSections.length === 0}
+                      onValueChange={(v) =>
+                        field.onChange(v === "none" ? null : v)
+                      }
+                      disabled={
+                        watchQuizTypeId === "none" ||
+                        filteredSections.length === 0
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="-- Không chọn --" />
@@ -322,7 +374,12 @@ export default function AdminQuizEditorPage() {
                         <SelectItem value="none">-- Không chọn --</SelectItem>
                         {filteredSections.map((s) => (
                           <SelectItem key={String(s.id)} value={String(s.id)}>
-                            {(s.name || s.id) + (s.skill ? ` • ${s.skill}` : s.quizSkill ? ` • ${s.quizSkill}` : "")}
+                            {(s.name || s.id) +
+                              (s.skill
+                                ? ` • ${s.skill}`
+                                : s.quizSkill
+                                ? ` • ${s.quizSkill}`
+                                : "")}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -330,7 +387,9 @@ export default function AdminQuizEditorPage() {
                   )}
                 />
                 {errors.quizSectionId && (
-                  <p className="text-sm text-red-600 mt-1">{errors.quizSectionId.message}</p>
+                  <p className="text-sm text-red-600 mt-1">
+                    {errors.quizSectionId.message}
+                  </p>
                 )}
               </div>
 
@@ -343,7 +402,10 @@ export default function AdminQuizEditorPage() {
                   name="status"
                   control={control}
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Chọn trạng thái" />
                       </SelectTrigger>
@@ -358,7 +420,9 @@ export default function AdminQuizEditorPage() {
                   )}
                 />
                 {errors.status && (
-                  <p className="text-sm text-red-600 mt-1">{errors.status.message}</p>
+                  <p className="text-sm text-red-600 mt-1">
+                    {errors.status.message}
+                  </p>
                 )}
               </div>
 
@@ -377,32 +441,38 @@ export default function AdminQuizEditorPage() {
                   )}
                 />
                 {errors.description && (
-                  <p className="text-sm text-red-600 mt-1">{errors.description.message}</p>
+                  <p className="text-sm text-red-600 mt-1">
+                    {errors.description.message}
+                  </p>
                 )}
               </div>
 
-              {/* contextText */}
+              {/* ContextEditor */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-2">Đoạn văn/Ngữ cảnh chung</label>
                 <Controller
                   name="contextText"
                   control={control}
                   render={({ field }) => (
-                    <Textarea
-                      {...field}
-                      rows={4}
-                      placeholder="Nhập đoạn văn hoặc ngữ cảnh cho câu hỏi"
+                    <ContextEditor
+                      contextText={field.value}
+                      onContextChange={field.onChange}
+                      folderPath={folderPath}
+                      saving={isSubmitting}
                     />
                   )}
                 />
                 {errors.contextText && (
-                  <p className="text-sm text-red-600 mt-1">{errors.contextText.message}</p>
+                  <p className="text-sm text-red-600 mt-1">
+                    {errors.contextText.message}
+                  </p>
                 )}
               </div>
 
-              {/* explanation */}
+              {/* Explanation */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-2">Giải thích sau khi nộp</label>
+                <label className="block text-sm font-medium mb-2">
+                  Giải thích sau khi nộp
+                </label>
                 <Controller
                   name="explanation"
                   control={control}
@@ -415,13 +485,24 @@ export default function AdminQuizEditorPage() {
                   )}
                 />
                 {errors.explanation && (
-                  <p className="text-sm text-red-600 mt-1">{errors.explanation.message}</p>
+                  <p className="text-sm text-red-600 mt-1">
+                    {errors.explanation.message}
+                  </p>
                 )}
               </div>
 
-              <div className="md:col-span-2">
-                <Button type="submit" disabled={isSubmitting} className="w-full md:w-auto">
-                  {isSubmitting ? "Đang lưu..." : isNew ? "Tạo mới" : "Cập nhật"}
+              {/* Nút Submit DUY NHẤT */}
+              <div className="md:col-span-2 mt-4">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full md:w-auto"
+                >
+                  {isSubmitting
+                    ? "Đang lưu..."
+                    : isNew
+                    ? "Tạo mới"
+                    : "Cập nhật"}
                 </Button>
               </div>
             </form>
