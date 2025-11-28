@@ -6,6 +6,7 @@ import { MoreVertical, Edit, Trash2, Eye, CheckCircle, XCircle, Send, EyeOff } f
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { MessageSquare } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -147,6 +148,13 @@ export default function CourseCard({ course, onEdit, onDelete }) {
                 <DropdownMenuItem>
                   <Eye className="h-4 w-4 mr-2" /> Xem chi tiết
                 </DropdownMenuItem>
+
+                <Link href={`/instructor/courses/${course.id}/reviews`}>
+                  <DropdownMenuItem>
+                    <MessageSquare className="h-4 w-4 mr-2" /> Quản lý đánh giá
+                  </DropdownMenuItem>
+                </Link>
+
               </Link>
               <TooltipProvider>
                 <Tooltip>
