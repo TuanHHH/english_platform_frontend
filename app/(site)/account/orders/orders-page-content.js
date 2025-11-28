@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Pagination } from "@/components/ui/pagination"
@@ -29,7 +29,7 @@ export default function OrdersPage() {
   const ordersPerPage = 10
 
   // Fetch orders from API
-  const fetchOrders = async (page = 1, sort = "createdAt,desc") => {
+  const fetchOrders = useCallback(async (page = 1, sort = "createdAt,desc") => {
     try {
       setLoading(true)
       const result = await getMyOrders(page, ordersPerPage, sort)
@@ -53,12 +53,12 @@ export default function OrdersPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   // Initial load and when page/sort changes
   useEffect(() => {
     fetchOrders(currentPage, sortBy)
-  }, [currentPage, sortBy])
+  }, [currentPage, sortBy, fetchOrders])
 
   // Filter orders (client-side filtering for search and status)
   const filteredOrders = useMemo(() => {

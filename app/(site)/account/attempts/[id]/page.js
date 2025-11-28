@@ -9,7 +9,7 @@ import AttemptAnswersView from "@/components/assessment/attempt-answers-view";
 import { getAttemptAnswers } from "@/lib/api/attempt";
 import { useParams, useRouter } from "next/navigation";
 
-export default function AttemptDetailPage({ params }) {
+export default function AttemptDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const [data, setData] = useState(null);
