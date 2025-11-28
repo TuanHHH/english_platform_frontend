@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { CheckCircle, XCircle, Calendar, Clock } from "lucide-react";
+import { CheckCircle, XCircle, Calendar, Clock, Lightbulb } from "lucide-react"; // [New] Thêm icon Lightbulb
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -104,6 +104,18 @@ export default function AttemptAnswersView({ data }) {
         </Card>
       )}
 
+      {/* Explanation for entire attempt */}
+      {explanation && (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardHeader>
+            <CardTitle className="text-lg text-amber-900">Giải thích chung</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-amber-900 whitespace-pre-wrap">{explanation}</p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Answers */}
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Câu hỏi và đáp án</h2>
@@ -193,6 +205,24 @@ export default function AttemptAnswersView({ data }) {
                 )}
               </CardContent>
             )}
+
+            {/* [New] Question Explanation */}
+            {a.questionExplanation && (
+              <CardContent className="pt-0">
+                <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Lightbulb className="h-4 w-4 text-amber-600" />
+                    <span className="text-sm font-semibold text-amber-900">
+                      Giải thích chi tiết
+                    </span>
+                  </div>
+                  <p className="text-sm text-amber-800 whitespace-pre-wrap pl-6">
+                    {a.questionExplanation}
+                  </p>
+                </div>
+              </CardContent>
+            )}
+            
           </Card>
         ))}
       </div>

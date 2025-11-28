@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea"; 
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +27,8 @@ import { toast } from "sonner";
 import dynamic from "next/dynamic";
 import QuestionForm from "@/components/admin/questions/question-form";
 import QuestionList from "@/components/admin/questions/question-list";
+
+// Import lại ContextEditor cho contextText
 import ContextEditor from "@/components/admin/questions/context-editor";
 
 const MediaManager = dynamic(() => import("@/components/media/media-manager"), {
@@ -42,6 +45,7 @@ export default function QuizQuestionsWithContextPage() {
   const [error, setError] = useState(null);
 
   const [contextText, setContextText] = useState("");
+  const [explanation, setExplanation] = useState("");
   const [quizTitle, setQuizTitle] = useState("");
   const [quizSkill, setQuizSkill] = useState("");
 
@@ -68,8 +72,10 @@ export default function QuizQuestionsWithContextPage() {
       setError(null);
       const q = await getQuiz(quizId);
       const qd = q?.data || q;
+      
       setQuizTitle(qd?.title || "Quiz");
       setContextText(qd?.contextText || "");
+      setExplanation(qd?.explanation || ""); 
       setQuizSkill(qd?.skill || "");
 
       const r = await listQuestionsByQuiz(quizId, { page: p, pageSize: 20 });
@@ -89,13 +95,17 @@ export default function QuizQuestionsWithContextPage() {
     if (quizId) loadAll(1);
   }, [quizId]);
 
-  async function saveContext() {
+  async function saveQuizContent() {
     try {
       setSaving(true);
-      await updateQuiz(quizId, { contextText });
-      toast.success("Đã lưu đoạn văn/ngữ cảnh (contextText).");
+      // Gọi API updateQuiz với payload gồm cả contextText và explanation
+      await updateQuiz(quizId, { 
+        contextText, 
+        explanation 
+      });
+      toast.success("Đã lưu nội dung (Ngữ cảnh & Giải thích).");
     } catch (e) {
-      toast.error(e?.message || "Lỗi khi lưu contextText");
+      toast.error(e?.message || "Lỗi khi lưu nội dung");
     } finally {
       setSaving(false);
     }
@@ -138,6 +148,7 @@ export default function QuizQuestionsWithContextPage() {
       const payload = {
         quizId: data.quizId,
         content: data.content,
+        explanation: data.explanation || "",
         orderIndex: Number(data.orderIndex),
         explanation: data.explanation || "",
       };
@@ -179,6 +190,7 @@ export default function QuizQuestionsWithContextPage() {
       const payload = {
         quizId: data.quizId,
         content: data.content,
+        explanation: data.explanation || "",
         orderIndex: Number(data.orderIndex),
         explanation: data.explanation || "",
       };
@@ -205,6 +217,7 @@ export default function QuizQuestionsWithContextPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-6 space-y-6">
+        {/* Header */}
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -232,6 +245,7 @@ export default function QuizQuestionsWithContextPage() {
           </div>
         </div>
 
+        {/* Media Manager */}
         <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
           <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
             <h2 className="text-sm font-semibold text-gray-700">Quản lý Media</h2>
@@ -241,17 +255,53 @@ export default function QuizQuestionsWithContextPage() {
           </div>
         </div>
 
+        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ContextEditor
-            contextText={contextText}
-            onContextChange={setContextText}
-            onSave={saveContext}
-            saving={saving}
-            loading={loading}
-            folderPath={folderPath}
-          />
+          
+          {/* Left Column: Context Editor & Explanation Textarea */}
+          <div className="space-y-6">
+            
+            {/* 1. Context Editor (Editor) */}
+            <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-gray-700">Ngữ cảnh / Bài đọc (Context)</h3>
+                <ContextEditor
+                    contextText={contextText}
+                    onContextChange={setContextText}
+                    onSave={saveQuizContent}
+                    saving={saving}
+                    loading={loading}
+                    folderPath={folderPath}
+                />
+            </div>
 
-          <Card className="border-gray-200 gap-2">
+            {/* 2. Explanation (Textarea) */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-base">Giải thích chi tiết (Explanation)</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <Textarea 
+                        value={explanation}
+                        onChange={(e) => setExplanation(e.target.value)}
+                        rows={6}
+                        placeholder="Nhập giải thích chi tiết cho toàn bộ quiz (hiển thị sau khi nộp bài)..."
+                        className="bg-white"
+                    />
+                    <Button 
+                        onClick={saveQuizContent} 
+                        disabled={saving}
+                        className="w-full"
+                        variant="secondary"
+                    >
+                        {saving ? "Đang lưu..." : "Lưu giải thích"}
+                    </Button>
+                </CardContent>
+            </Card>
+
+          </div>
+
+          {/* Right Column: Question List */}
+          <Card className="border-gray-200 gap-2 h-fit">
             <CardHeader className="border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold text-gray-700">Danh sách câu hỏi</CardTitle>
@@ -281,6 +331,7 @@ export default function QuizQuestionsWithContextPage() {
         </div>
       </div>
 
+      {/* Dialogs */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

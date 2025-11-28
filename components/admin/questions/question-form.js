@@ -11,6 +11,7 @@ export default function QuestionForm({ quizId, quizSkill, orderIndex, onSubmit, 
       return {
         quizId: initialData.quizId || quizId,
         content: initialData.content || "",
+        explanation: initialData.explanation || "",
         orderIndex: initialData.orderIndex ?? orderIndex,
         explanation: initialData.explanation || "",
         options: (initialData.options || []).map((o, idx) => ({
@@ -23,6 +24,7 @@ export default function QuestionForm({ quizId, quizSkill, orderIndex, onSubmit, 
     return {
       quizId,
       content: "",
+      explanation: "", // [Thêm] Mặc định rỗng
       orderIndex,
       explanation: "",
       ...(quizSkill !== "SPEAKING" && quizSkill !== "WRITING" && {
@@ -58,6 +60,7 @@ export default function QuestionForm({ quizId, quizSkill, orderIndex, onSubmit, 
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <input type="hidden" {...register("quizId")} />
       
+      {/* Nội dung câu hỏi */}
       <div className="space-y-2">
         <label className="text-sm font-medium">Nội dung câu hỏi</label>
         <Textarea
@@ -71,6 +74,21 @@ export default function QuestionForm({ quizId, quizSkill, orderIndex, onSubmit, 
         )}
       </div>
 
+      {/* [MỚI] Giải thích chi tiết cho câu hỏi */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Giải thích chi tiết cho câu hỏi</label>
+        <Textarea
+          placeholder="Nhập giải thích cho câu hỏi này..."
+          rows={3}
+          {...register("explanation")}
+          className={errors.explanation ? "border-red-500" : ""}
+        />
+        {errors.explanation && (
+          <p className="text-sm text-red-500">{errors.explanation.message}</p>
+        )}
+      </div>
+
+      {/* Thứ tự */}
       <div className="space-y-2">
         <label className="text-sm font-medium">Thứ tự</label>
         <Input
