@@ -62,7 +62,6 @@ export default function AdminQuizEditorPage() {
       skill: "READING",
       status: "DRAFT",
       contextText: "",
-      explanation: "",
       quizSectionId: null,
     },
   });
@@ -90,7 +89,6 @@ export default function AdminQuizEditorPage() {
             skill: d.skill || "READING",
             status: d.status || "DRAFT",
             contextText: d.contextText || "",
-            explanation: d.explanation || "",
             quizSectionId: d.quizSectionId ? String(d.quizSectionId) : null,
           });
         }
@@ -162,7 +160,6 @@ export default function AdminQuizEditorPage() {
         skill: data.skill,
         status: data.status,
         contextText: data.contextText || "",
-        explanation: data.explanation || "",
       };
 
       if (data.quizSectionId) {
@@ -397,25 +394,6 @@ export default function AdminQuizEditorPage() {
                 />
                 {errors.contextText && (
                   <p className="text-sm text-red-600 mt-1">{errors.contextText.message}</p>
-                )}
-              </div>
-
-              {/* explanation */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-2">Giải thích sau khi nộp</label>
-                <Controller
-                  name="explanation"
-                  control={control}
-                  render={({ field }) => (
-                    <Textarea
-                      {...field}
-                      rows={4}
-                      placeholder="Nhập giải thích hoặc đáp án mẫu"
-                    />
-                  )}
-                />
-                {errors.explanation && (
-                  <p className="text-sm text-red-600 mt-1">{errors.explanation.message}</p>
                 )}
               </div>
 

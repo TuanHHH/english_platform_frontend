@@ -25,7 +25,6 @@ export const quizCreateSchema = z.object({
     .optional()
     .nullable(),
   contextText: z.string().optional().or(z.literal("")),
-  explanation: z.string().optional().or(z.literal("")),
   skill: z.enum(["LISTENING", "READING", "SPEAKING", "WRITING"], {
     required_error: "Vui lòng chọn kỹ năng",
   }),

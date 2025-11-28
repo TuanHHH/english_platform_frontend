@@ -1,9 +1,11 @@
+import { memo } from "react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Send, Loader2 } from "lucide-react";
+import Timer from "./timer";
 
-export default function QuizHeader({ quiz, onSubmit, submitting }) {
+const QuizHeader = memo(function QuizHeader({ quiz, onSubmit, submitting, startTime }) {
   return (
     <Card className="shadow-md">
       <CardHeader>
@@ -32,21 +34,26 @@ export default function QuizHeader({ quiz, onSubmit, submitting }) {
             </div>
           </div>
 
-          <Button onClick={onSubmit} size="lg" disabled={submitting}>
-            {submitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Đang nộp bài...
-              </>
-            ) : (
-              <>
-                <Send className="mr-2 h-4 w-4" />
-                Nộp bài
-              </>
-            )}
-          </Button>
+          <div className="flex flex-col gap-3 items-end">
+            {startTime && <Timer startTime={startTime} isActive={!submitting} />}
+            <Button onClick={onSubmit} size="lg" disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Đang nộp bài...
+                </>
+              ) : (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Nộp bài
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </CardHeader>
     </Card>
   );
-}
+});
+
+export default QuizHeader;

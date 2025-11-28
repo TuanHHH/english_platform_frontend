@@ -30,7 +30,6 @@ export default function QuizDetailPage(){
       <h1 className="text-2xl font-semibold">{quiz.title}</h1>
       {quiz.contextText && <div className="prose" dangerouslySetInnerHTML={{ __html: quiz.contextText }} />}
       {quiz.questionText && <div className="border p-3 rounded-lg">{quiz.questionText}</div>}
-      {quiz.explanation && <details className="border p-3 rounded-lg"><summary>Explanation</summary>{quiz.explanation}</details>}
       <div className="text-sm text-muted-foreground">Total attempts: {quiz.attemptCount ?? 0}</div>
     </div>
   );

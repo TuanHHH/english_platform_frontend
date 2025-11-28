@@ -1,8 +1,8 @@
-import { useState, useRef } from "react";
+import { useState, useRef, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Mic, Square, Play, Pause, Upload } from "lucide-react";
 
-export default function SpeakingRecorder({ questionId, onAnswer, onAudioReady }) {
+const SpeakingRecorder = memo(function SpeakingRecorder({ questionId, onAnswer, onAudioReady }) {
   const [micPermission, setMicPermission] = useState(false);
   const [recording, setRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
@@ -241,4 +241,6 @@ export default function SpeakingRecorder({ questionId, onAnswer, onAudioReady })
       </div>
     </div>
   );
-}
+});
+
+export default SpeakingRecorder;

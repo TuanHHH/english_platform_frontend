@@ -20,8 +20,8 @@ export default function AttemptAnswersView({ data }) {
     maxScore,
     startedAt,
     submittedAt,
+    completionTimeSeconds,
     contextText,
-    explanation,
     answers,
   } = data;
 
@@ -79,6 +79,12 @@ export default function AttemptAnswersView({ data }) {
               <Clock className="h-4 w-4" />
               <span>Nộp bài: {fmt(submittedAt)}</span>
             </div>
+            {completionTimeSeconds !== null && completionTimeSeconds !== undefined && (
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                <span>Thời gian: {completionTimeSeconds}s</span>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -94,18 +100,6 @@ export default function AttemptAnswersView({ data }) {
               className="prose prose-sm max-w-none"
               dangerouslySetInnerHTML={{ __html: contextText }}
             />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Explanation for entire attempt */}
-      {explanation && (
-        <Card className="border-amber-200 bg-amber-50">
-          <CardHeader>
-            <CardTitle className="text-lg text-amber-900">Giải thích</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-amber-900 whitespace-pre-wrap">{explanation}</p>
           </CardContent>
         </Card>
       )}
@@ -189,6 +183,14 @@ export default function AttemptAnswersView({ data }) {
                     );
                   })}
                 </div>
+
+                {/* Explanation for this question */}
+                {a.explanation && (
+                  <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-sm font-medium text-amber-900 mb-1">Giải thích:</p>
+                    <p className="text-sm text-amber-900 whitespace-pre-wrap">{a.explanation}</p>
+                  </div>
+                )}
               </CardContent>
             )}
           </Card>
