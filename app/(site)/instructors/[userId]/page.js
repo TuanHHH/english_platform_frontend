@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -22,6 +22,20 @@ export default function InstructorPublicPage() {
   const [stats, setStats] = useState(null);
   const [courses, setCourses] = useState([]);
   const [meta, setMeta] = useState({ page: 1, pageSize: DEFAULT_PAGE_SIZE, pages: 1, total: 0 });
+
+  const handlePageChange = useCallback(async (nextPage) => {
+    setCoursesLoading(true);
+    const res = await getPublicInstructorCourses(userId, { page: nextPage, pageSize: meta.pageSize });
+    if (res.success) {
+      const payload = res.data;
+      setCourses(payload?.result || payload?.courses?.result || []);
+      setMeta(payload?.meta || payload?.courses?.meta || { page: nextPage, pageSize: meta.pageSize, pages: meta.pages, total: meta.total });
+      setError(null);
+    } else {
+      setError(res.error || "Không thể tải danh sách khoá học");
+    }
+    setCoursesLoading(false);
+  }, [userId, meta.pageSize, meta.pages, meta.total]);
 
   useEffect(() => {
     let mounted = true;
@@ -57,21 +71,7 @@ export default function InstructorPublicPage() {
     }
     if (userId) bootstrap();
     return () => { mounted = false; };
-  }, [userId]);
-
-  async function handlePageChange(nextPage) {
-    setCoursesLoading(true);
-    const res = await getPublicInstructorCourses(userId, { page: nextPage, pageSize: meta.pageSize });
-    if (res.success) {
-      const payload = res.data;
-      setCourses(payload?.result || payload?.courses?.result || []);
-      setMeta(payload?.meta || payload?.courses?.meta || { page: nextPage, pageSize: meta.pageSize, pages: meta.pages, total: meta.total });
-      setError(null);
-    } else {
-      setError(res.error || "Không thể tải danh sách khoá học");
-    }
-    setCoursesLoading(false);
-  }
+  }, [userId, handlePageChange]);
 
   const avatarSrc = useMemo(() => profile?.avatarUrl || "/default-avatar.png", [profile?.avatarUrl]);
 

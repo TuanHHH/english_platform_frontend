@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { searchQuizzes, updateQuiz, deleteQuiz } from "@/lib/api/quiz/quiz";
@@ -36,7 +36,7 @@ export default function AdminQuizzesPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [quizToDelete, setQuizToDelete] = useState(null);
 
-  const handleStatusChange = async (id, nextStatus) => {
+  const handleStatusChange = useCallback(async (id, nextStatus) => {
     try {
       await updateQuiz(id, { status: nextStatus });
       await load();
@@ -45,7 +45,7 @@ export default function AdminQuizzesPage() {
       console.error(err);
       toast.error("Cập nhật trạng thái thất bại");
     }
-  };
+  }, []);
 
   async function load() {
     setLoading(true);
@@ -168,12 +168,12 @@ export default function AdminQuizzesPage() {
     }
   };
 
-  const openDeleteDialog = (quiz) => {
+  const openDeleteDialog = useCallback((quiz) => {
     setQuizToDelete(quiz);
     setDeleteDialogOpen(true);
-  };
+  }, []);
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = useCallback(async () => {
     if (!quizToDelete) return;
     try {
       await deleteQuiz(quizToDelete.id);
@@ -185,7 +185,7 @@ export default function AdminQuizzesPage() {
       console.error(err);
       toast.error("Lỗi khi xóa quiz");
     }
-  };
+  }, [quizToDelete]);
 
 
 

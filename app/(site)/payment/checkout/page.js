@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { CourseInfo } from "@/components/payment/course-info"
@@ -20,33 +20,36 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const router = useRouter()
 
-  useEffect(() => {
-    const fetchCartData = async () => {
-      try {
-        setLoading(true)
-        const result = await getCartCheckout()
+  const fetchCartData = useCallback(async () => {
+    try {
+      setLoading(true)
+      const result = await getCartCheckout()
 
-        if (result.success) {
-          setCartData(result.data)
-        } else {
-          setError(result.error)
-          toast.error(result.error || "Không thể tải thông tin giỏ hàng. Vui lòng thử lại.")
-        }
-      } catch (err) {
-        setError(err.message)
-        toast.error("Không thể tải thông tin giỏ hàng. Vui lòng thử lại.")
-      } finally {
-        setLoading(false)
+      if (result.success) {
+        setCartData(result.data)
+      } else {
+        setError(result.error)
+        toast.error(result.error || "Không thể tải thông tin giỏ hàng. Vui lòng thử lại.")
       }
+    } catch (err) {
+      setError(err.message)
+      toast.error("Không thể tải thông tin giỏ hàng. Vui lòng thử lại.")
+    } finally {
+      setLoading(false)
     }
-
-    fetchCartData()
   }, [])
 
-  // Calculate total from cart data
-  const totalAmount = cartData.reduce((sum, course) => sum + course.priceCents, 0)
+  useEffect(() => {
+    fetchCartData()
+  }, [fetchCartData])
 
-  const handlePayment = async () => {
+  // Calculate total from cart data
+  const totalAmount = useMemo(() => 
+    cartData.reduce((sum, course) => sum + course.priceCents, 0),
+    [cartData]
+  )
+
+  const handlePayment = useCallback(async () => {
     if (cartData.length === 0 || isProcessing) return
 
     setIsProcessing(true)
@@ -116,7 +119,7 @@ export default function CheckoutPage() {
     } finally {
       setIsProcessing(false)
     }
-  }
+  }, [cartData, isProcessing, selectedPayment, router])
 
   if (loading) {
     return (

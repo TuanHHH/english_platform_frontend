@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,14 +22,19 @@ export default function SiteQuizzesPage(){
   const [items, setItems] = useState([]);
   const [meta, setMeta] = useState({ page: 1, pageSize: 10, pages: 1, total: 0 });
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const data = await searchPublicQuizzes({ page, pageSize, keyword, quizTypeId: quizTypeId || null, skill: skill || null });
     setItems(data.result || []);
     setMeta(data.meta || { page, pageSize, pages: 1, total: 0 });
-  };
+  }, [page, pageSize, keyword, quizTypeId, skill]);
+
+  const handleSearch = useCallback(() => {
+    setPage(1);
+    load();
+  }, [load]);
 
   useEffect(() => { (async () => setTypes(await listQuizTypes()))(); }, []);
-  useEffect(() => { load(); }, [page]);
+  useEffect(() => { load(); }, [load]);
 
   return (
     <div className="container mx-auto p-4 space-y-4">
@@ -58,7 +63,7 @@ export default function SiteQuizzesPage(){
               {SKILLS.map(s => <SelectItem key={s} value={s}>{s || "All skills"}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Button onClick={() => { setPage(1); load(); }}>Search</Button>
+          <Button onClick={handleSearch}>Search</Button>
         </CardContent>
       </Card>
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback, useMemo } from "react"
 import Link from "next/link"
 import { Loader2, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -34,15 +34,18 @@ export default function CartContent() {
   } = useCartStore()
 
   // Create a Set for removing items to maintain compatibility with CartItem component
-  const removingItems = itemToDelete ? new Set([itemToDelete.id]) : new Set()
+  const removingItems = useMemo(() => 
+    itemToDelete ? new Set([itemToDelete.id]) : new Set(),
+    [itemToDelete]
+  )
 
-  const handleRemoveFromCart = (courseId, courseTitle) => {
+  const handleRemoveFromCart = useCallback((courseId, courseTitle) => {
     if (isRemovingFromCart) return
     setItemToDelete({ id: courseId, title: courseTitle })
     setDeleteDialogOpen(true)
-  }
+  }, [isRemovingFromCart])
 
-  const confirmRemoveFromCart = async () => {
+  const confirmRemoveFromCart = useCallback(async () => {
     if (!itemToDelete) return
 
     const courseId = itemToDelete.id
@@ -61,13 +64,13 @@ export default function CartContent() {
     } finally {
       setItemToDelete(null)
     }
-  }
+  }, [itemToDelete, removeFromCart])
 
-  const handleClearCart = () => {
+  const handleClearCart = useCallback(() => {
     setClearAllDialogOpen(true)
-  }
+  }, [])
 
-  const confirmClearCart = async () => {
+  const confirmClearCart = useCallback(async () => {
     setClearAllDialogOpen(false)
 
     try {
@@ -81,7 +84,7 @@ export default function CartContent() {
       console.error("Clear cart error:", error)
       toast.error("Lỗi khi xóa giỏ hàng")
     }
-  }
+  }, [clearCart])
   // Show loading state while store is hydrating or fetching data
   if (!hasHydrated || isLoading) {
     return (

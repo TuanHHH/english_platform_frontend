@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,14 +25,15 @@ export default function ForumContent() {
   const user = useAuthStore((state) => state.user);
   const router = useRouter();
 
-
-  async function load(p = page, f = filters) {
+  const load = useCallback(async (p = page, f = filters) => {
     setLoading(true);
     const { items, meta } = await forumListThreads({ ...f, page: p + 1, pageSize });
     setItems(items);
     setMeta(meta);
     setLoading(false);
-  }
+  }, [page, filters]);
+
+  const filtersKey = useMemo(() => JSON.stringify(filters), [filters]);
 
   useEffect(() => {
     forumListCategories().then(setCats);
@@ -45,13 +46,29 @@ export default function ForumContent() {
       setPage(0);
       load(0, filters);
     }
-  }, [JSON.stringify(filters)]);
+  }, [filtersKey]);
 
   useEffect(() => {
     if (!isInitialMount && page !== 0) {
       load(page, filters);
     }
   }, [page]);
+
+  const handlePageChange = useCallback((newPage) => {
+    setPage(newPage);
+  }, []);
+
+  const handleCreateThread = useCallback((e) => {
+    if (e.ctrlKey || e.metaKey || e.button === 1) {
+      return;
+    }
+
+    if (!user) {
+      e.preventDefault();
+      toast.error("Vui lòng đăng nhập để tạo chủ đề mới");
+      router.push("/login");
+    }
+  }, [user, router]);
 
   return (
     <div className="min-h-screen">
@@ -63,21 +80,7 @@ export default function ForumContent() {
           
           <Link
             href={user ? "/forum/new" : "/login"}
-            onClick={(e) => {
-              if (
-                e.ctrlKey ||
-                e.metaKey ||
-                e.button === 1
-              ) {
-                return;
-              }
-
-              if (!user) {
-                e.preventDefault();
-                toast.error("Vui lòng đăng nhập để tạo chủ đề mới");
-                router.push("/login");
-              }
-            }}
+            onClick={handleCreateThread}
           >
             <Button size="lg" className="w-full sm:w-auto shadow-lg hover:shadow-xl transition-shadow">
               Tạo chủ đề
@@ -165,7 +168,7 @@ export default function ForumContent() {
 
                 {meta?.pages > 1 && (
                    <div className="mt-4">
-                    <Pagination currentPage={page} totalPages={meta?.pages ?? 0} onPageChange={(p) => setPage(p)} />
+                    <Pagination currentPage={page} totalPages={meta?.pages ?? 0} onPageChange={handlePageChange} />
                   </div>
                 )}
               </>

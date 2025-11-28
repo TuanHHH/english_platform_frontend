@@ -13,7 +13,6 @@ export default function QuestionForm({ quizId, quizSkill, orderIndex, onSubmit, 
         content: initialData.content || "",
         explanation: initialData.explanation || "",
         orderIndex: initialData.orderIndex ?? orderIndex,
-        explanation: initialData.explanation || "",
         options: (initialData.options || []).map((o, idx) => ({
           content: o.content || "",
           correct: !!o.correct,
@@ -24,9 +23,8 @@ export default function QuestionForm({ quizId, quizSkill, orderIndex, onSubmit, 
     return {
       quizId,
       content: "",
-      explanation: "", // [Thêm] Mặc định rỗng
-      orderIndex,
       explanation: "",
+      orderIndex,
       ...(quizSkill !== "SPEAKING" && quizSkill !== "WRITING" && {
         options: [
           { content: "", correct: false, orderIndex: 1 },
@@ -99,19 +97,6 @@ export default function QuestionForm({ quizId, quizSkill, orderIndex, onSubmit, 
         />
         {errors.orderIndex && (
           <p className="text-sm text-red-500">{errors.orderIndex.message}</p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Giải thích (tùy chọn)</label>
-        <Textarea
-          placeholder="Nhập giải thích cho câu hỏi này..."
-          rows={3}
-          {...register("explanation")}
-          className={errors.explanation ? "border-red-500" : ""}
-        />
-        {errors.explanation && (
-          <p className="text-sm text-red-500">{errors.explanation.message}</p>
         )}
       </div>
 

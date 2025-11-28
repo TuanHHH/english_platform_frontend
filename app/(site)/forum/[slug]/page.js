@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { MoreVertical, ArrowLeft } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -54,7 +54,6 @@ export default function ThreadDetailPage() {
   const [reportTarget, setReportTarget] = useState(null);
   const [reportLoading, setReportLoading] = useState(false);
 
-  // ✅ State cho delete confirmation dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -64,43 +63,45 @@ export default function ThreadDetailPage() {
   const user = useAuthStore((s) => s.user);
   const hydrateFromMe = useAuthStore((s) => s.hydrateFromMe);
   const fetchMe = useAuthStore((s) => s.fetchMe);
+  
   useEffect(() => {
     (hydrateFromMe || fetchMe)?.();
   }, [hydrateFromMe, fetchMe]);
 
-  const eqIds = (a, b) => (a && b ? String(a) === String(b) : false);
-  const isOwnerThread = thread ? eqIds(user?.id, thread.authorId) : false;
+  const eqIds = useCallback((a, b) => (a && b ? String(a) === String(b) : false), []);
+  const isOwnerThread = useMemo(() => 
+    thread ? eqIds(user?.id, thread.authorId) : false,
+    [thread, user?.id, eqIds]
+  );
 
-  async function load() {
+  const load = useCallback(async () => {
     if (!slug) return;
     setLoadingThread(true);
     const t = await forumGetThreadBySlug(slug);
     setThread(t);
     setLoadingThread(false);
-  }
+  }, [slug]);
 
-  async function loadPosts(p = page) {
+  const loadPosts = useCallback(async (p = page) => {
     if (!thread?.id) return;
     setLoadingPosts(true);
     const { items, meta } = await forumListThreadPosts(thread.id, { page: p, pageSize });
     setPosts(items || []);
     setMeta(meta || { page: p, pages: 0 });
     setLoadingPosts(false);
-  }
+  }, [thread?.id, page]);
 
-  useEffect(() => { load(); }, [slug]);
+  useEffect(() => { load(); }, [load]);
   useEffect(() => { setPage(1); }, [thread?.id]); 
-  useEffect(() => { if (thread?.id) loadPosts(page); }, [page, thread?.id]);
+  useEffect(() => { if (thread?.id) loadPosts(page); }, [loadPosts, page, thread?.id]);
 
-  // ✅ Mở dialog xác nhận xóa
-  function openDeleteDialog(postId) {
+  const openDeleteDialog = useCallback((postId) => {
     if (!postId) return;
     setPostToDelete(postId);
     setDeleteDialogOpen(true);
-  }
+  }, []);
 
-  // ✅ Xác nhận xóa từ dialog
-  async function confirmDelete() {
+  const confirmDelete = useCallback(async () => {
     if (!postToDelete) return;
 
     const previousPosts = [...posts];
@@ -119,20 +120,19 @@ export default function ThreadDetailPage() {
     } finally {
       setDeleting(false);
     }
-  }
+  }, [postToDelete, posts]);
 
-  // ✅ Hủy xóa
-  function cancelDelete() {
+  const cancelDelete = useCallback(() => {
     setDeleteDialogOpen(false);
     setPostToDelete(null);
-  }
+  }, []);
 
-  function openReportDialog(target) {
+  const openReportDialog = useCallback((target) => {
     setReportTarget(target);
     setReportOpen(true);
-  }
+  }, []);
 
-  async function handleReportSubmit(reason) {
+  const handleReportSubmit = useCallback(async (reason) => {
     if (!reportTarget?.id) return;
     setReportLoading(true);
     try {
@@ -146,9 +146,9 @@ export default function ThreadDetailPage() {
     } finally {
       setReportLoading(false);
     }
-  }
+  }, [reportTarget]);
 
-  async function handleReplyDone() {
+  const handleReplyDone = useCallback(async () => {
     if (!thread?.id) return;
     
     const { meta: newMeta } = await forumListThreadPosts(thread.id, { 
@@ -160,19 +160,54 @@ export default function ThreadDetailPage() {
     
     setPage(lastPage);
     await loadPosts(lastPage);
-  }
+  }, [thread?.id, loadPosts]);
 
-  async function handleReplyToPostDone() {
+  const handleReplyToPostDone = useCallback(async () => {
     setReplyingPostId(null);
     await loadPosts(page);
-  }
+  }, [page, loadPosts]);
+
+  const handleLockThread = useCallback(async () => {
+    await appLockThread(thread.id);
+    toast.success("Đã khóa bình luận");
+    await load();
+  }, [thread?.id, load]);
+
+  const handleUnlockThread = useCallback(async () => {
+    await appUnlockThread(thread.id);
+    toast.success("Đã mở bình luận");
+    await load();
+  }, [thread?.id, load]);
+
+  const handleBack = useCallback(() => {
+    router.push("/forum");
+  }, [router]);
+
+  const handlePageChange = useCallback((newPage) => {
+    setPage(newPage);
+  }, []);
+
+  const toggleReply = useCallback((postId) => {
+    setReplyingPostId(prev => prev === postId ? null : postId);
+  }, []);
+
+  const postsTree = useMemo(() => {
+    const byParent = new Map();
+    (posts || []).forEach(p => {
+      const key = p.parentId ? String(p.parentId) : null;
+      const arr = byParent.get(key) || [];
+      arr.push(p);
+      byParent.set(key, arr);
+    });
+    return byParent;
+  }, [posts]);
 
   return (
     <>
       <div className="container mx-auto p-4 space-y-4">
         <Button
           variant="ghost"
-          onClick={() => router.push("/forum")}
+          onClick={handleBack}
           className="mb-4"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -252,14 +287,14 @@ export default function ThreadDetailPage() {
                     {!thread.locked ? (
                       <button
                         className="underline hover:no-underline"
-                        onClick={async () => { await appLockThread(thread.id); toast.success("Đã khóa bình luận"); await load(); }}
+                        onClick={handleLockThread}
                       >
                         Khóa bình luận
                       </button>
                     ) : (
                       <button
                         className="underline hover:no-underline"
-                        onClick={async () => { await appUnlockThread(thread.id); toast.success("Đã mở bình luận"); await load(); }}
+                        onClick={handleUnlockThread}
                       >
                         Mở bình luận
                       </button>
@@ -305,14 +340,7 @@ export default function ThreadDetailPage() {
             ) : (
               <>
                 {(() => {
-                  const byParent = new Map();
-                  (posts || []).forEach(p => {
-                    const key = p.parentId ? String(p.parentId) : null;
-                    const arr = byParent.get(key) || [];
-                    arr.push(p);
-                    byParent.set(key, arr);
-                  });
-                  const roots = byParent.get(null) || [];
+                  const roots = postsTree.get(null) || [];
 
                   if (roots.length === 0) {
                     return (
@@ -323,7 +351,7 @@ export default function ThreadDetailPage() {
                   }
 
                   return roots.map((p) => {
-                    const children = byParent.get(String(p.id)) || [];
+                    const children = postsTree.get(String(p.id)) || [];
                     return (
                       <div key={p.id} className="border rounded-md p-3">
                         <div className="flex items-center justify-between mb-2">
@@ -370,7 +398,7 @@ export default function ThreadDetailPage() {
                           {!thread?.locked && (
                             <button
                               className="hover:underline"
-                              onClick={() => setReplyingPostId(replyingPostId === p.id ? null : p.id)}
+                              onClick={() => toggleReply(p.id)}
                             >
                               {replyingPostId === p.id ? "Đóng" : "Trả lời"}
                             </button>
@@ -443,7 +471,7 @@ export default function ThreadDetailPage() {
 
                 {meta?.pages > 1 && (
                   <div className="mt-4">
-                    <Pagination currentPage={page} totalPages={meta?.pages ?? 0} onPageChange={setPage} />
+                    <Pagination currentPage={page} totalPages={meta?.pages ?? 0} onPageChange={handlePageChange} />
                   </div>
                 )}
               </>

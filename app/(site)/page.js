@@ -1,3 +1,5 @@
+import { Headphones, MessageSquare, BookOpen, PenTool } from "lucide-react"
+
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#f6f7f8] dark:bg-[#101922]">
@@ -64,19 +66,27 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div className="flex flex-col items-center gap-4 p-6 bg-white dark:bg-[#101922]/50 rounded-xl border border-gray-200 dark:border-white/10 hover:shadow-lg hover:border-[#2b8cee]/50 transition-all duration-300">
-              <span className="text-[#2b8cee] text-4xl">🎧</span>
+              <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <Headphones className="w-8 h-8 text-[#2b8cee]" />
+              </div>
               <p className="text-[#111418] dark:text-white text-base font-medium text-center">Nghe</p>
             </div>
             <div className="flex flex-col items-center gap-4 p-6 bg-white dark:bg-[#101922]/50 rounded-xl border border-gray-200 dark:border-white/10 hover:shadow-lg hover:border-[#2b8cee]/50 transition-all duration-300">
-              <span className="text-[#2b8cee] text-4xl">🗣️</span>
+              <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <MessageSquare className="w-8 h-8 text-[#2b8cee]" />
+              </div>
               <p className="text-[#111418] dark:text-white text-base font-medium text-center">Nói</p>
             </div>
             <div className="flex flex-col items-center gap-4 p-6 bg-white dark:bg-[#101922]/50 rounded-xl border border-gray-200 dark:border-white/10 hover:shadow-lg hover:border-[#2b8cee]/50 transition-all duration-300">
-              <span className="text-[#2b8cee] text-4xl">📖</span>
+              <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <BookOpen className="w-8 h-8 text-[#2b8cee]" />
+              </div>
               <p className="text-[#111418] dark:text-white text-base font-medium text-center">Đọc</p>
             </div>
             <div className="flex flex-col items-center gap-4 p-6 bg-white dark:bg-[#101922]/50 rounded-xl border border-gray-200 dark:border-white/10 hover:shadow-lg hover:border-[#2b8cee]/50 transition-all duration-300">
-              <span className="text-[#2b8cee] text-4xl">✍️</span>
+              <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <PenTool className="w-8 h-8 text-[#2b8cee]" />
+              </div>
               <p className="text-[#111418] dark:text-white text-base font-medium text-center">Viết</p>
             </div>
           </div>

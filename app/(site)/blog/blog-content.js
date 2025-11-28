@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { publicListPostsPaged } from "@/lib/api/content/posts";
 import { listPublicCategories } from "@/lib/api/content/categories";
 import PostCard from "@/components/content/post-card";
@@ -16,14 +16,14 @@ export default function BlogContent() {
   const [loading, setLoading] = useState(false);
 
   // Debounce toàn bộ object filter (keyword, category, …) bằng stringify
-  const filterKey = JSON.stringify(filters);
+  const filterKey = useMemo(() => JSON.stringify(filters), [filters]);
   const debouncedFilterKey = useDebouncedValue(filterKey, 1500);
 
   const [page, setPage] = useState(1);
   const pageSize = 10;
   const [totalPages, setTotalPages] = useState(0);
 
-  async function load(p = page, key = debouncedFilterKey) {
+  const load = useCallback(async (p = page, key = debouncedFilterKey) => {
     setLoading(true);
     try {
       const parsedFilters = key ? JSON.parse(key) : {};
@@ -52,13 +52,17 @@ export default function BlogContent() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [page, debouncedFilterKey]);
 
   // Reset về trang 1 sau khi filter đã debounce xong
   useEffect(() => { setPage(1); }, [debouncedFilterKey]);
 
   // Gọi API khi page hoặc filter (đã debounce) thay đổi
-  useEffect(() => { load(page, debouncedFilterKey); }, [page, debouncedFilterKey]);
+  useEffect(() => { load(page, debouncedFilterKey); }, [load, page, debouncedFilterKey]);
+
+  const handlePageChange = useCallback((newPage) => {
+    setPage(newPage);
+  }, []);
 
   return (
     <div className="container mx-auto p-4 space-y-4">
@@ -100,7 +104,7 @@ export default function BlogContent() {
                 <Pagination
                   currentPage={page}
                   totalPages={totalPages}
-                  onPageChange={setPage} 
+                  onPageChange={handlePageChange} 
                 />
               )}
             </>

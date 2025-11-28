@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { Pagination } from "@/components/ui/pagination"
 import { getPublishedCourses } from "@/lib/api/course"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -25,11 +25,7 @@ export default function Courses() {
     total: 0,
   })
 
-  useEffect(() => {
-    fetchCourses()
-  }, [selectedSkills, pagination.page, searchKeyword, sortBy])
-
-  const fetchCourses = async () => {
+  const fetchCourses = useCallback(async () => {
     setLoading(true)
     const params = {
       page: pagination.page,
@@ -52,35 +48,39 @@ export default function Courses() {
       })
     }
     setLoading(false)
-  }
+  }, [pagination.page, sortBy, selectedSkills, searchKeyword])
 
-  const handleSkillToggle = (skill) => {
+  useEffect(() => {
+    fetchCourses()
+  }, [fetchCourses])
+
+  const handleSkillToggle = useCallback((skill) => {
     setSelectedSkills((prev) =>
       prev.includes(skill)
         ? prev.filter((s) => s !== skill)
         : [...prev, skill]
     )
     setPagination((prev) => ({ ...prev, page: 1 }))
-  }
+  }, [])
 
-  const handleClearAllSkills = () => {
+  const handleClearAllSkills = useCallback(() => {
     setSelectedSkills([])
     setPagination((prev) => ({ ...prev, page: 1 }))
-  }
+  }, [])
 
-  const handleSearch = (keyword) => {
+  const handleSearch = useCallback((keyword) => {
     setSearchKeyword(keyword)
     setPagination((prev) => ({ ...prev, page: 1 }))
-  }
+  }, [])
 
-  const handleSortChange = (sort) => {
+  const handleSortChange = useCallback((sort) => {
     setSortBy(sort)
     setPagination((prev) => ({ ...prev, page: 1 }))
-  }
+  }, [])
 
-  const handlePageChange = (newPage) => {
+  const handlePageChange = useCallback((newPage) => {
     setPagination((prev) => ({ ...prev, page: newPage }))
-  }
+  }, [])
 
   return (
     <div className="min-h-screen bg-background">
