@@ -22,6 +22,7 @@ export default function AttemptAnswersView({ data }) {
     submittedAt,
     completionTimeSeconds,
     contextText,
+    explanation,
     answers,
   } = data;
 
@@ -154,9 +155,20 @@ export default function AttemptAnswersView({ data }) {
               </div>
             </CardHeader>
 
-            {/* Options */}
-            {Array.isArray(a.options) && a.options.length > 0 && (
-              <CardContent>
+            <CardContent className="space-y-4">
+              {/* Explanation for this question */}
+              {a.explanation && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Lightbulb className="h-4 w-4 text-amber-600" />
+                    <span className="text-sm font-medium text-amber-900">Giải thích:</span>
+                  </div>
+                  <p className="text-sm text-amber-900 whitespace-pre-wrap">{a.explanation}</p>
+                </div>
+              )}
+
+              {/* Options */}
+              {Array.isArray(a.options) && a.options.length > 0 && (
                 <div className="space-y-2">
                   {a.options.map((o) => {
                     const isSelected = !!o.selected;
@@ -195,33 +207,8 @@ export default function AttemptAnswersView({ data }) {
                     );
                   })}
                 </div>
-
-                {/* Explanation for this question */}
-                {a.explanation && (
-                  <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-sm font-medium text-amber-900 mb-1">Giải thích:</p>
-                    <p className="text-sm text-amber-900 whitespace-pre-wrap">{a.explanation}</p>
-                  </div>
-                )}
-              </CardContent>
-            )}
-
-            {/* [New] Question Explanation */}
-            {a.questionExplanation && (
-              <CardContent className="pt-0">
-                <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Lightbulb className="h-4 w-4 text-amber-600" />
-                    <span className="text-sm font-semibold text-amber-900">
-                      Giải thích chi tiết
-                    </span>
-                  </div>
-                  <p className="text-sm text-amber-800 whitespace-pre-wrap pl-6">
-                    {a.questionExplanation}
-                  </p>
-                </div>
-              </CardContent>
-            )}
+              )}
+            </CardContent>
             
           </Card>
         ))}
