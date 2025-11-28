@@ -75,7 +75,6 @@ export default function AdminQuizEditorPage() {
       skill: "READING",
       status: "DRAFT",
       contextText: "",
-      explanation: "",
       quizSectionId: null,
     },
   });
@@ -103,7 +102,6 @@ export default function AdminQuizEditorPage() {
             skill: d.skill || "READING",
             status: d.status || "DRAFT",
             contextText: d.contextText || "",
-            explanation: d.explanation || "",
             quizSectionId: d.quizSectionId ? String(d.quizSectionId) : null,
           });
         }
@@ -176,7 +174,6 @@ export default function AdminQuizEditorPage() {
         skill: data.skill,
         status: data.status,
         contextText: data.contextText || "",
-        explanation: data.explanation || "",
       };
 
       if (data.quizSectionId) {

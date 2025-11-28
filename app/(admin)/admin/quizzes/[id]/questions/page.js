@@ -150,6 +150,7 @@ export default function QuizQuestionsWithContextPage() {
         content: data.content,
         explanation: data.explanation || "",
         orderIndex: Number(data.orderIndex),
+        explanation: data.explanation || "",
       };
 
       const validOptions = data.options?.filter(o => o.content?.trim());
@@ -157,7 +158,6 @@ export default function QuizQuestionsWithContextPage() {
         payload.options = validOptions.map((o, i) => ({
           content: o.content,
           correct: !!o.correct,
-          explanation: o.explanation || "",
           orderIndex: Number(o.orderIndex || i + 1),
         }));
       }
@@ -192,6 +192,7 @@ export default function QuizQuestionsWithContextPage() {
         content: data.content,
         explanation: data.explanation || "",
         orderIndex: Number(data.orderIndex),
+        explanation: data.explanation || "",
       };
 
       const validOptions = data.options?.filter(o => o.content?.trim());
@@ -199,7 +200,6 @@ export default function QuizQuestionsWithContextPage() {
         payload.options = validOptions.map((o, i) => ({
           content: o.content,
           correct: !!o.correct,
-          explanation: o.explanation || "",
           orderIndex: Number(o.orderIndex || i + 1),
         }));
       }

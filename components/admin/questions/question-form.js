@@ -13,10 +13,10 @@ export default function QuestionForm({ quizId, quizSkill, orderIndex, onSubmit, 
         content: initialData.content || "",
         explanation: initialData.explanation || "",
         orderIndex: initialData.orderIndex ?? orderIndex,
+        explanation: initialData.explanation || "",
         options: (initialData.options || []).map((o, idx) => ({
           content: o.content || "",
           correct: !!o.correct,
-          explanation: o.explanation || "",
           orderIndex: o.orderIndex ?? idx + 1,
         })),
       };
@@ -26,12 +26,13 @@ export default function QuestionForm({ quizId, quizSkill, orderIndex, onSubmit, 
       content: "",
       explanation: "", // [Thêm] Mặc định rỗng
       orderIndex,
+      explanation: "",
       ...(quizSkill !== "SPEAKING" && quizSkill !== "WRITING" && {
         options: [
-          { content: "", correct: false, explanation: "", orderIndex: 1 },
-          { content: "", correct: false, explanation: "", orderIndex: 2 },
-          { content: "", correct: false, explanation: "", orderIndex: 3 },
-          { content: "", correct: false, explanation: "", orderIndex: 4 },
+          { content: "", correct: false, orderIndex: 1 },
+          { content: "", correct: false, orderIndex: 2 },
+          { content: "", correct: false, orderIndex: 3 },
+          { content: "", correct: false, orderIndex: 4 },
         ],
       }),
     };
@@ -101,13 +102,26 @@ export default function QuestionForm({ quizId, quizSkill, orderIndex, onSubmit, 
         )}
       </div>
 
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Giải thích (tùy chọn)</label>
+        <Textarea
+          placeholder="Nhập giải thích cho câu hỏi này..."
+          rows={3}
+          {...register("explanation")}
+          className={errors.explanation ? "border-red-500" : ""}
+        />
+        {errors.explanation && (
+          <p className="text-sm text-red-500">{errors.explanation.message}</p>
+        )}
+      </div>
+
       {showOptions && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="text-sm font-medium">Phương án trả lời</div>
             <Button
               type="button"
-              onClick={() => append({ content: "", correct: false, explanation: "", orderIndex: fields.length + 1 })}
+              onClick={() => append({ content: "", correct: false, orderIndex: fields.length + 1 })}
               variant="outline"
               size="sm"
             >
@@ -165,20 +179,6 @@ export default function QuestionForm({ quizId, quizSkill, orderIndex, onSubmit, 
                   <label htmlFor={`correct-${idx}`} className="text-sm font-medium">
                     Đáp án đúng
                   </label>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-gray-600">
-                    Giải thích (tùy chọn)
-                  </label>
-                  <Input
-                    placeholder="Nhập giải thích..."
-                    {...register(`options.${idx}.explanation`)}
-                    className={errors.options?.[idx]?.explanation ? "border-red-500" : ""}
-                  />
-                  {errors.options?.[idx]?.explanation && (
-                    <p className="text-xs text-red-500">{errors.options[idx].explanation.message}</p>
-                  )}
                 </div>
               </div>
             ))}
