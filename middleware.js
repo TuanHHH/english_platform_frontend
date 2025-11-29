@@ -11,23 +11,8 @@ const rules = [
     redirectIfAuth: "/", // logged-in user should not visit again
   },
   {
-    // Private routes
-    routes: [
-      "/cart",
-      "/auth/callback/success",
-      "/payment/checkout",
-      "/account",
-      "/become-instructor",
-      "/my-courses/learning",
-      "/payment",
-      "/practice",
-    ],
-    requireAuth: true,
-    redirectIfNoAuth: "/login",
-  },
-  {
     // Admin-only routes
-    routes: ["/admin", "/admin/"],
+    routes: ["/admin"],
     requireAuth: true,
     requireAdmin: true,
     redirectIfNoAuth: "/login",
@@ -35,11 +20,26 @@ const rules = [
   },
   {
     // Instructor-only routes
-    routes: ["/instructor", "/instructor/"],
+    routes: ["/instructor"],
     requireAuth: true,
     requireInstructor: true,
     redirectIfNoAuth: "/login",
     redirectIfNoInstructor: "/forbidden",
+  },
+  {
+    // Private routes
+    routes: [
+      "/cart",
+      "/auth/callback/success",
+      "/payment",
+      "/account",
+      "/become-instructor",
+      "/my-courses",
+      "/practice",
+      "/forum/new",
+    ],
+    requireAuth: true,
+    redirectIfNoAuth: "/login",
   },
 ]
 
