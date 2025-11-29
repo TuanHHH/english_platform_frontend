@@ -37,6 +37,10 @@ export default function CourseSearchFilters({ onSearch, sortBy, onSortChange }) 
           <SelectItem value="createdAt,asc">Cũ nhất</SelectItem>
           <SelectItem value="title,asc">Tên A-Z</SelectItem>
           <SelectItem value="title,desc">Tên Z-A</SelectItem>
+          <SelectItem value="rating,desc">Đánh giá từ cao đến thấp</SelectItem>
+          <SelectItem value="rating,asc">Đánh giá thấp đên cao</SelectItem>
+          <SelectItem value="totalReviews,asc">Lượt đánh giá thấp đên cao</SelectItem>
+          <SelectItem value="totalReviews,desc">Lượt dánh giá từ cao đến thấp</SelectItem>
         </SelectContent>
       </Select>
     </div>

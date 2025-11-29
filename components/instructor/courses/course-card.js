@@ -143,22 +143,27 @@ export default function CourseCard({ course, onEdit, onDelete }) {
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
+
             <DropdownMenuContent align="end" className="bg-popover z-50">
-              <Link href={`/instructor/courses/${course.id}`}>
-                <DropdownMenuItem>
+              {/* Link item: Xem chi tiết */}
+              <DropdownMenuItem asChild>
+                <Link href={`/instructor/courses/${course.id}`} className="flex items-center">
                   <Eye className="h-4 w-4 mr-2" /> Xem chi tiết
-                </DropdownMenuItem>
-
-                <Link href={`/instructor/courses/${course.id}/reviews`}>
-                  <DropdownMenuItem>
-                    <MessageSquare className="h-4 w-4 mr-2" /> Quản lý đánh giá
-                  </DropdownMenuItem>
                 </Link>
+              </DropdownMenuItem>
 
-              </Link>
+              {/* Link item: Quản lý đánh giá */}
+              <DropdownMenuItem asChild>
+                <Link href={`/instructor/courses/${course.id}/reviews`} className="flex items-center">
+                  <MessageSquare className="h-4 w-4 mr-2" /> Quản lý đánh giá
+                </Link>
+              </DropdownMenuItem>
+
+              {/* Edit with tooltip */}
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
+                    {/* wrap in div to allow disabled behavior */}
                     <div>
                       <DropdownMenuItem
                         onClick={handleEditClick}
@@ -180,6 +185,8 @@ export default function CourseCard({ course, onEdit, onDelete }) {
                   )}
                 </Tooltip>
               </TooltipProvider>
+
+              {/* Conditional status actions */}
               {status === "DRAFT" && (
                 <DropdownMenuItem
                   onClick={() => handleStatusChange("PENDING_REVIEW")}
@@ -224,6 +231,7 @@ export default function CourseCard({ course, onEdit, onDelete }) {
                   <Edit className="h-4 w-4 mr-2" /> Chuyển qua bản nháp
                 </DropdownMenuItem>
               )}
+
               <DropdownMenuItem
                 className="text-destructive"
                 onClick={() => onDelete(course)}
