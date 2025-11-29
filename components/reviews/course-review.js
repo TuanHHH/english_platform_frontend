@@ -8,8 +8,8 @@ import {
   getCourseReviewStats,
   createReview,
   getMyReview,
-  updateReview, // Import thêm
-  deleteReview, // Import thêm
+  updateReview, 
+  deleteReview, 
 } from "@/lib/api/review";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
