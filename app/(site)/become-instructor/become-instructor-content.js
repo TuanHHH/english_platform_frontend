@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -35,17 +35,15 @@ const BecomeInstructorContent = () => {
   const [uploadedFiles, setUploadedFiles] = useState([])
   const [certificateProofs, setCertificateProofs] = useState([])
 
-  // const formValues = watch() // Commented out as it's not needed
-
   // State for rich text editor bio content
   const [bioContent, setBioContent] = useState("")
 
-  const handleBioChange = (content) => {
+  const handleBioChange = useCallback((content) => {
     setBioContent(content)
     setValue('bio', content, { shouldValidate: true })
-  }
+  }, [setValue])
 
-  const handleStep1Submit = async (data) => {
+  const handleStep1Submit = useCallback(async (data) => {
     try {
       setLoading(true)
       const result = await createInstructorRequest({
@@ -69,9 +67,9 @@ const BecomeInstructorContent = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [bioContent])
 
-  const handleFileUpload = async (e) => {
+  const handleFileUpload = useCallback(async (e) => {
     const files = Array.from(e.target.files)
     if (files.length === 0) return
 
@@ -124,9 +122,9 @@ const BecomeInstructorContent = () => {
 
     setUploadedFiles(prev => [...prev, ...newFiles])
     toast.success(`Đã thêm ${validFiles.length} file vào danh sách`)
-  }
+  }, [uploadedFiles])
 
-  const handleSaveCertificates = async () => {
+  const handleSaveCertificates = useCallback(async () => {
     if (!requestId) {
       toast.error("Không tìm thấy ID yêu cầu")
       return
@@ -191,21 +189,21 @@ const BecomeInstructorContent = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [requestId, uploadedFiles])
 
-  const handleFinish = () => {
+  const handleFinish = useCallback(() => {
     toast.success("Hoàn thành đăng ký trở thành giảng viên!")
     router.push("/account/instructor")
-  }
+  }, [router])
 
-  const removeFile = (fileId) => {
+  const removeFile = useCallback((fileId) => {
     setUploadedFiles(prev => prev.filter(f => f.id !== fileId))
     // Also remove from certificate proofs if it was already uploaded
     const fileToRemove = uploadedFiles.find(f => f.id === fileId)
     if (fileToRemove?.url && certificateProofs.some(cp => cp.fileUrl === fileToRemove.url)) {
       setCertificateProofs(prev => prev.filter(cp => cp.fileUrl !== fileToRemove.url))
     }
-  }
+  }, [uploadedFiles, certificateProofs])
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">

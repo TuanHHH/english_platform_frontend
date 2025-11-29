@@ -1,17 +1,31 @@
 "use client";
 
+import { memo, useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Bell, Check, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 
-export default function NotificationItem({ item, onRead, onDelete, compact = false }) {
-  const getVietnamTime = (utcDate) => {
-    if (!utcDate) return null;
-    const date = new Date(utcDate);
+const NotificationItem = memo(({ item, onRead, onDelete, compact = false }) => {
+  const vietnamTime = useMemo(() => {
+    if (!item.createdAt) return null;
+    const date = new Date(item.createdAt);
     return new Date(date.getTime() + 7 * 60 * 60 * 1000);
-  };
+  }, [item.createdAt]);
+
+  const timeAgo = useMemo(() => {
+    if (!vietnamTime) return "";
+    return formatDistanceToNow(vietnamTime, { addSuffix: true, locale: vi });
+  }, [vietnamTime]);
+
+  const handleRead = useCallback(() => {
+    onRead(item.id);
+  }, [item.id, onRead]);
+
+  const handleDelete = useCallback(() => {
+    onDelete(item.id);
+  }, [item.id, onDelete]);
 
   return (
     <div className={cn(
@@ -31,7 +45,7 @@ export default function NotificationItem({ item, onRead, onDelete, compact = fal
             {item.title}
           </p>
           <span className="text-xs text-muted-foreground whitespace-nowrap">
-            {item.createdAt && formatDistanceToNow(getVietnamTime(item.createdAt), { addSuffix: true, locale: vi })}
+            {timeAgo}
           </span>
         </div>
         <p className={cn("text-sm text-muted-foreground", compact && "line-clamp-2")}>
@@ -40,11 +54,11 @@ export default function NotificationItem({ item, onRead, onDelete, compact = fal
         
         <div className="flex items-center gap-2 pt-2 opacity-0 group-hover:opacity-100 transition-opacity">
           {!item.isRead && (
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => onRead(item.id)}>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={handleRead}>
               <Check className="mr-1 h-3 w-3" /> Đã đọc
             </Button>
           )}
-          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-destructive hover:text-destructive" onClick={() => onDelete(item.id)}>
+          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-destructive hover:text-destructive" onClick={handleDelete}>
             <Trash2 className="mr-1 h-3 w-3" /> Xóa
           </Button>
         </div>
@@ -58,4 +72,8 @@ export default function NotificationItem({ item, onRead, onDelete, compact = fal
       )}
     </div>
   );
-}
+});
+
+NotificationItem.displayName = "NotificationItem";
+
+export default NotificationItem;

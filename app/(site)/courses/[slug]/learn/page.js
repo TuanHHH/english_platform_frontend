@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback, useMemo } from "react"
 import { useParams, useSearchParams } from "next/navigation"
 import {
   LearningHeader,
@@ -71,20 +71,31 @@ export default function LessonPage() {
     determinedLessonId
   )
 
-  const isQuizLesson = currentLesson?.kind?.toLowerCase() === "quiz"
+  const isQuizLesson = useMemo(() => 
+    currentLesson?.kind?.toLowerCase() === "quiz",
+    [currentLesson?.kind]
+  )
 
-  const handleLessonClickWithSidebar = (lesson) => {
+  const handleMenuClick = useCallback(() => {
+    setSidebarOpen(true)
+  }, [])
+
+  const handleCloseSidebar = useCallback(() => {
+    setSidebarOpen(false)
+  }, [])
+
+  const handleLessonClickWithSidebar = useCallback((lesson) => {
     handleLessonClick(lesson)
     setSidebarOpen(false)
-  }
+  }, [handleLessonClick])
 
-  const handlePreviousLesson = () => {
+  const handlePreviousLesson = useCallback(() => {
     if (previousLesson) {
       handleLessonClick(previousLesson)
     }
-  }
+  }, [previousLesson, handleLessonClick])
 
-  const handleNextLesson = () => {
+  const handleNextLesson = useCallback(() => {
     // For TEXT lessons, mark as complete when clicking next
     if (currentLesson?.kind === "TEXT" && currentLesson?.id) {
       markAsComplete(currentLesson.id, false)
@@ -93,7 +104,7 @@ export default function LessonPage() {
     if (nextLesson) {
       handleLessonClick(nextLesson)
     }
-  }
+  }, [currentLesson, nextLesson, handleLessonClick, markAsComplete])
 
   if (loading) {
     return <LoadingSkeleton />
@@ -105,7 +116,7 @@ export default function LessonPage() {
       <LearningHeader
         course={course}
         progress={progress}
-        onMenuClick={() => setSidebarOpen(true)}
+        onMenuClick={handleMenuClick}
       />
 
       {/* Main Content */}
@@ -172,7 +183,7 @@ export default function LessonPage() {
             onToggleModule={toggleModule}
             onLessonClick={handleLessonClickWithSidebar}
             onToggleComplete={handleToggleComplete}
-            onClose={() => setSidebarOpen(false)}
+            onClose={handleCloseSidebar}
             isMobile={true}
           />
         </div>
@@ -181,7 +192,7 @@ export default function LessonPage() {
         {sidebarOpen && (
           <div
             className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
+            onClick={handleCloseSidebar}
           />
         )}
       </div>

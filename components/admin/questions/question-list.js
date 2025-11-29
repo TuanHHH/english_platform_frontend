@@ -1,5 +1,91 @@
+"use client";
+
+import { memo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
+
+const QuestionItem = memo(({ question, idx, onDelete, onEdit }) => {
+  const handleDelete = useCallback(() => onDelete(question), [question, onDelete]);
+  const handleEdit = useCallback(() => onEdit(question), [question, onEdit]);
+
+  return (
+    <div className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors bg-white">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm font-medium">
+            Câu {question.orderIndex ?? idx + 1}
+          </span>
+          {question.type && (
+            <span className="text-xs text-gray-500 capitalize">
+              {question.type}
+            </span>
+          )}
+        </div>
+        <div className="flex gap-1.5">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="h-7 px-2 text-xs"
+            onClick={handleEdit}
+          >
+            Sửa
+          </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={handleDelete}
+            className="h-7 px-2 text-xs"
+          >
+            Xóa
+          </Button>
+        </div>
+      </div>
+
+      {question.content ? (
+        <div
+          className="prose prose-sm max-w-none mt-2 border-l-2 border-gray-300 pl-3"
+          dangerouslySetInnerHTML={{ __html: question.content }}
+        />
+      ) : (
+        <div className="text-sm text-gray-400 mt-2 italic">
+          — Không có nội dung hiển thị —
+        </div>
+      )}
+
+      {question.options && question.options.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-gray-200">
+          <div className="text-xs font-medium text-gray-600 mb-2">
+            Các lựa chọn:
+          </div>
+          <ul className="space-y-1">
+            {question.options
+              .sort((a, b) => (a.orderIndex || 1) - (b.orderIndex || 1))
+              .map((opt, i) => (
+                <li
+                  key={opt.id || i}
+                  className={`text-sm flex items-start gap-2 p-2 rounded ${
+                    opt.correct
+                      ? "font-medium text-green-800 bg-green-50 border-l-2 border-green-500"
+                      : "text-gray-700 bg-gray-50"
+                  }`}
+                >
+                  <span className={`shrink-0 font-medium ${opt.correct ? "text-green-600" : "text-gray-500"}`}>
+                    {String.fromCharCode(65 + i)}.
+                  </span>
+                  <span className="flex-1">{opt.content}</span>
+                  {opt.correct && (
+                    <span className="shrink-0 text-green-600 font-bold">✓</span>
+                  )}
+                </li>
+              ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+});
+
+QuestionItem.displayName = "QuestionItem";
 
 export default function QuestionList({ 
   questions, 
@@ -44,82 +130,13 @@ export default function QuestionList({
   return (
     <div className="space-y-3">
       {questions.map((q, idx) => (
-        <div
+        <QuestionItem
           key={q.id || idx}
-          className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors bg-white"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm font-medium">
-                Câu {q.orderIndex ?? idx + 1}
-              </span>
-              {q.type && (
-                <span className="text-xs text-gray-500 capitalize">
-                  {q.type}
-                </span>
-              )}
-            </div>
-            <div className="flex gap-1.5">
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="h-7 px-2 text-xs"
-                onClick={() => onEdit(q)}
-              >
-                Sửa
-              </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => onDelete(q)}
-                className="h-7 px-2 text-xs"
-              >
-                Xóa
-              </Button>
-            </div>
-          </div>
-
-          {q.content ? (
-            <div
-              className="prose prose-sm max-w-none mt-2 border-l-2 border-gray-300 pl-3"
-              dangerouslySetInnerHTML={{ __html: q.content }}
-            />
-          ) : (
-            <div className="text-sm text-gray-400 mt-2 italic">
-              — Không có nội dung hiển thị —
-            </div>
-          )}
-
-          {q.options && q.options.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-gray-200">
-              <div className="text-xs font-medium text-gray-600 mb-2">
-                Các lựa chọn:
-              </div>
-              <ul className="space-y-1">
-                {q.options
-                  .sort((a, b) => (a.orderIndex || 1) - (b.orderIndex || 1))
-                  .map((opt, i) => (
-                    <li
-                      key={opt.id || i}
-                      className={`text-sm flex items-start gap-2 p-2 rounded ${
-                        opt.correct
-                          ? "font-medium text-green-800 bg-green-50 border-l-2 border-green-500"
-                          : "text-gray-700 bg-gray-50"
-                      }`}
-                    >
-                      <span className={`shrink-0 font-medium ${opt.correct ? "text-green-600" : "text-gray-500"}`}>
-                        {String.fromCharCode(65 + i)}.
-                      </span>
-                      <span className="flex-1">{opt.content}</span>
-                      {opt.correct && (
-                        <span className="shrink-0 text-green-600 font-bold">✓</span>
-                      )}
-                    </li>
-                  ))}
-              </ul>
-            </div>
-          )}
-        </div>
+          question={q}
+          idx={idx}
+          onDelete={onDelete}
+          onEdit={onEdit}
+        />
       ))}
 
       {totalPages > 1 && (

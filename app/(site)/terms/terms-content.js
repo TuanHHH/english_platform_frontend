@@ -1,4 +1,6 @@
-const TermsContent = () => {
+import { memo } from "react";
+
+const TermsContent = memo(() => {
     return (
         <div className="container mx-auto px-4 py-8 max-w-4xl">
             <div className="mb-6">
@@ -101,6 +103,8 @@ const TermsContent = () => {
             </div>
         </div>
     )
-}
+});
+
+TermsContent.displayName = "TermsContent";
 
 export default TermsContent

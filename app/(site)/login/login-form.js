@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
@@ -31,7 +31,11 @@ export default function LoginForm() {
     mode: "onBlur",
   })
 
-  async function onSubmit(values) {
+  const togglePassword = useCallback(() => {
+    setShowPassword(prev => !prev);
+  }, []);
+
+  const onSubmit = useCallback(async (values) => {
     setLoading(true)
     try {
       const res = await loginUser(values.identifier, values.password)
@@ -46,7 +50,7 @@ export default function LoginForm() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [loginUser, router]);
 
   return (
     <>
@@ -86,7 +90,7 @@ export default function LoginForm() {
               variant="ghost"
               size="sm"
               className="absolute right-0 top-0 h-full px-3"
-              onClick={() => setShowPassword(!showPassword)}
+              onClick={togglePassword}
             >
               {showPassword ? (
                 <EyeOff className="h-4 w-4 text-gray-400" />

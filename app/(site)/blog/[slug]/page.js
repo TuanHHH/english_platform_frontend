@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -32,7 +32,6 @@ export default function BlogDetailPage() {
     pageSize: 10
   });
 
-  // ✅ Bỏ dependency page để tránh vòng lặp
   const loadComments = useCallback(async (postId, currentPage) => {
     setCommentsLoading(true);
     try {
@@ -43,8 +42,6 @@ export default function BlogDetailPage() {
       
       if (res.success) {
         const { items, meta: m } = res.data;
-        console.log("Comments loaded:", items?.length || 0);
-        console.log("Meta data:", m);
         
         setComments(items || []);
         setMeta({
@@ -66,9 +63,8 @@ export default function BlogDetailPage() {
     } finally {
       setCommentsLoading(false);
     }
-  }, []); // ✅ Không phụ thuộc vào page
+  }, []);
 
-  // ✅ Khi tạo comment mới → chuyển đến trang cuối
   const handleCreateComment = useCallback(async (payload) => {
     try {
       const res = await appCreateComment(post.id, payload);
@@ -78,7 +74,6 @@ export default function BlogDetailPage() {
         throw new Error(res.error);
       }
       
-      // Reload để lấy meta mới
       const reloadRes = await publicListCommentsByPostPaged(post.id, {
         page: 1,
         size: 10,
@@ -86,8 +81,6 @@ export default function BlogDetailPage() {
       
       if (reloadRes.success) {
         const totalPages = reloadRes.data?.meta?.pages || reloadRes.data?.meta?.totalPages || 1;
-        
-        // Chuyển đến trang cuối
         setPage(totalPages);
         await loadComments(post.id, totalPages);
       }
@@ -104,7 +97,6 @@ export default function BlogDetailPage() {
     }
   }, [post?.id, loadComments]);
 
-  // ✅ Khi xóa comment → giữ nguyên trang hiện tại
   const handleDeleteComment = useCallback(async (commentId) => {
     try {
       await loadComments(post.id, page);
@@ -119,7 +111,26 @@ export default function BlogDetailPage() {
     setPage(newPage);
   }, [page, meta.pages]);
 
-  // ✅ Initial load - CHỈ phụ thuộc vào slug
+  const handleBack = useCallback(() => {
+    router.push("/blog");
+  }, [router]);
+
+  const sanitizedHtml = useMemo(() => {
+    if (!post) return "";
+    return sanitizeHtml(post.bodyMd || post.bodyHtml || post.body || "");
+  }, [post]);
+
+  const authorInfo = useMemo(() => {
+    if (!post) return null;
+    return {
+      avatarUrl: post.authorAvatarUrl,
+      name: post.authorName || "Ẩn danh",
+      createdAt: post.createdAt 
+        ? new Date(post.createdAt).toLocaleString("vi-VN") 
+        : ""
+    };
+  }, [post]);
+
   useEffect(() => {
     async function init() {
       if (!slug) return;
@@ -146,9 +157,8 @@ export default function BlogDetailPage() {
     }
 
     init();
-  }, [slug]); // ✅ CHỈ phụ thuộc vào slug
+  }, [slug, loadComments]);
 
-  // ✅ Load comments khi page thay đổi
   useEffect(() => {
     if (post?.id && page >= 1) {
       loadComments(post.id, page);
@@ -171,19 +181,17 @@ export default function BlogDetailPage() {
       <div className="container mx-auto p-4 flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <p className="text-lg mb-4">Không tìm thấy bài viết.</p>
-          <Button onClick={() => window.history.back()}>Quay lại</Button>
+          <Button onClick={handleBack}>Quay lại</Button>
         </div>
       </div>
     );
   }
 
-  const html = sanitizeHtml(post.bodyMd || post.bodyHtml || post.body || "");
-
   return (
     <div className="container mx-auto p-4 space-y-4">
       <Button
         variant="ghost"
-        onClick={() => router.push("/blog")}
+        onClick={handleBack}
         className="mb-4"
       >
         <ArrowLeft className="w-4 h-4 mr-2" />
@@ -192,28 +200,26 @@ export default function BlogDetailPage() {
 
       <Card>
         <CardHeader>
-          <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-            <UserAvatar
-              src={post.authorAvatarUrl}
-              name={post.authorName}
-              className="w-6 h-6"
-            />
-            <span>{post.authorName || "Ẩn danh"}</span>
-            <span>•</span>
-            <span>
-              {post.createdAt 
-                ? new Date(post.createdAt).toLocaleString("vi-VN") 
-                : ""}
-            </span>
-          </div>
+          {authorInfo && (
+            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+              <UserAvatar
+                src={authorInfo.avatarUrl}
+                name={authorInfo.name}
+                className="w-6 h-6"
+              />
+              <span>{authorInfo.name}</span>
+              <span>•</span>
+              <span>{authorInfo.createdAt}</span>
+            </div>
+          )}
           <CardTitle className="text-3xl font-bold text-center bg-clip-text capitalize">
-            {post.title}
+            {post?.title}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <article
             className="prose max-w-none ql-content"
-            dangerouslySetInnerHTML={{ __html: html }}
+            dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
           />
         </CardContent>
       </Card>
@@ -233,7 +239,7 @@ export default function BlogDetailPage() {
           ) : (
             <>
               <CommentList
-                postId={post.id}
+                postId={post?.id}
                 initial={comments}
                 onCreate={handleCreateComment}
                 onDelete={handleDeleteComment}

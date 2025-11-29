@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -66,7 +66,7 @@ export default function QuizQuestionsWithContextPage() {
     return Math.max(...questions.map((q) => q.orderIndex ?? 1));
   }, [questions]);
 
-  async function loadAll(p = page) {
+  const loadAll = useCallback(async (p = page) => {
     try {
       setLoading(true);
       setError(null);
@@ -89,13 +89,13 @@ export default function QuizQuestionsWithContextPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [quizId, page]);
 
   useEffect(() => {
     if (quizId) loadAll(1);
   }, [quizId]);
 
-  async function saveQuizContent() {
+  const saveQuizContent = useCallback(async () => {
     try {
       setSaving(true);
       // Gọi API updateQuiz với payload gồm cả contextText và explanation
@@ -109,35 +109,36 @@ export default function QuizQuestionsWithContextPage() {
     } finally {
       setSaving(false);
     }
-  }
+  }, [quizId, contextText, explanation]);
 
-  function openDeleteDialog(question) {
+  const openDeleteDialog = useCallback((question) => {
     setQuestionToDelete(question);
     setDeleteDialogOpen(true);
-  }
+  }, []);
 
-  async function handleDeleteQuestion() {
+  const handleDeleteQuestion = useCallback(async () => {
     if (!questionToDelete) return;
     const previousQuestions = [...questions];
     
     setQuestions(questions.filter(q => q.id !== questionToDelete.id));
     setDeleteDialogOpen(false);
+    const deletedQuestion = questionToDelete;
     setQuestionToDelete(null);
     
     try {
-      await deleteQuestion(questionToDelete.id);
+      await deleteQuestion(deletedQuestion.id);
       toast.success("Đã xóa câu hỏi.");
     } catch (e) {
       setQuestions(previousQuestions);
       toast.error(e?.message || "Không xóa được câu hỏi.");
     }
-  }
+  }, [questionToDelete, questions]);
 
-  function openAddDialog() {
+  const openAddDialog = useCallback(() => {
     setAddDialogOpen(true);
-  }
+  }, []);
 
-  async function handleAddQuestion(data) {
+  const handleAddQuestion = useCallback(async (data) => {
     try {
       const existingQuestion = questions.find(q => q.orderIndex === Number(data.orderIndex));
       if (existingQuestion) {
@@ -157,26 +158,31 @@ export default function QuizQuestionsWithContextPage() {
         payload.options = validOptions.map((o, i) => ({
           content: o.content,
           correct: !!o.correct,
-          explanation: o.explanation || "",
           orderIndex: Number(o.orderIndex || i + 1),
         }));
       }
 
-      await createQuestion(payload);
-      toast.success("Đã tạo câu hỏi mới!");
+      const tempId = `temp-${Date.now()}`;
+      const optimisticQuestion = { ...payload, id: tempId };
+      setQuestions([...questions, optimisticQuestion]);
       setAddDialogOpen(false);
-      loadAll(page);
+
+      const result = await createQuestion(payload);
+      const newQuestion = result?.data || result;
+      setQuestions(prev => prev.map(q => q.id === tempId ? newQuestion : q));
+      toast.success("Đã tạo câu hỏi mới!");
     } catch (e) {
+      setQuestions(prev => prev.filter(q => !q.id.toString().startsWith('temp-')));
       toast.error(e?.message || "Không thể tạo câu hỏi.");
     }
-  }
+  }, [questions]);
 
-  function openEditDialog(question) {
+  const openEditDialog = useCallback((question) => {
     setQuestionToEdit(question);
     setEditDialogOpen(true);
-  }
+  }, []);
 
-  async function handleEditQuestion(data) {
+  const handleEditQuestion = useCallback(async (data) => {
     if (!questionToEdit) return;
     try {
       const existingQuestion = questions.find(
@@ -199,20 +205,28 @@ export default function QuizQuestionsWithContextPage() {
         payload.options = validOptions.map((o, i) => ({
           content: o.content,
           correct: !!o.correct,
-          explanation: o.explanation || "",
           orderIndex: Number(o.orderIndex || i + 1),
         }));
       }
 
-      await updateQuestion(questionToEdit.id, payload);
-      toast.success("Đã cập nhật câu hỏi!");
+      const previousQuestions = [...questions];
+      const updatedQuestion = { ...questionToEdit, ...payload };
+      setQuestions(prev => prev.map(q => q.id === questionToEdit.id ? updatedQuestion : q));
       setEditDialogOpen(false);
       setQuestionToEdit(null);
-      loadAll(page);
+
+      await updateQuestion(questionToEdit.id, payload);
+      toast.success("Đã cập nhật câu hỏi!");
     } catch (e) {
+      setQuestions(previousQuestions);
       toast.error(e?.message || "Không thể cập nhật câu hỏi.");
     }
-  }
+  }, [questionToEdit, questions]);
+
+  const handlePageChange = useCallback((p) => {
+    setPage(p);
+    loadAll(p);
+  }, [loadAll]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -262,17 +276,21 @@ export default function QuizQuestionsWithContextPage() {
           <div className="space-y-6">
             
             {/* 1. Context Editor (Editor) */}
-            <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-gray-700">Ngữ cảnh / Bài đọc (Context)</h3>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Ngữ cảnh / Bài đọc (Context)</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <ContextEditor
-                    contextText={contextText}
-                    onContextChange={setContextText}
-                    onSave={saveQuizContent}
-                    saving={saving}
-                    loading={loading}
-                    folderPath={folderPath}
+                  contextText={contextText}
+                  onContextChange={setContextText}
+                  onSave={saveQuizContent}
+                  saving={saving}
+                  loading={loading}
+                  folderPath={folderPath}
                 />
-            </div>
+              </CardContent>
+            </Card>
 
             {/* 2. Explanation (Textarea) */}
             <Card>
@@ -318,10 +336,7 @@ export default function QuizQuestionsWithContextPage() {
                 error={error}
                 page={page}
                 totalPages={totalPages}
-                onPageChange={(p) => {
-                  setPage(p);
-                  loadAll(p);
-                }}
+                onPageChange={handlePageChange}
                 onDelete={openDeleteDialog}
                 onAddNew={openAddDialog}
                 onEdit={openEditDialog}

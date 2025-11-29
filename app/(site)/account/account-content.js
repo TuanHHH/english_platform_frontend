@@ -1,12 +1,12 @@
+import { memo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import ProfileCard from '@/components/account/profile';
 import TestHistory from '@/components/account/test-history';
 import GoogleLinkCard from '@/components/account/google-link-card';
-// import NotificationSettingsWrapper from '@/components/account/notification-setting-wrapper';
 
-export default function AccountContent() {
+const AccountContent = memo(() => {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -99,4 +99,8 @@ export default function AccountContent() {
       </div>
     </div>
   );
-}
+});
+
+AccountContent.displayName = "AccountContent";
+
+export default AccountContent;

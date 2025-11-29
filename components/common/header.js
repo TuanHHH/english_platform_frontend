@@ -1,5 +1,7 @@
 "use client"
 
+import { memo, useEffect, useState } from "react"
+import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { BookOpen, Menu, ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -9,10 +11,9 @@ import SearchContainer from "@/components/common/search/search-container"
 import AuthSection from "@/components/common/auth-section/auth-section"
 import AuthSectionMobile from "@/components/common/auth-section/auth-section-mobile"
 import { useCartStore } from "@/store/cart-store"
-import { useEffect, useState } from "react"
-import NotificationBell from "@/components/notification/notification-bell" // Import mới
+import NotificationBell from "@/components/notification/notification-bell"
 
-function CartBadge({ count }) {
+const CartBadge = memo(({ count }) => {
   const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
@@ -28,7 +29,92 @@ function CartBadge({ count }) {
       {count > 99 ? '99+' : count}
     </span>
   )
-}
+})
+
+CartBadge.displayName = "CartBadge"
+
+const NavLinks = memo(() => {
+  const pathname = usePathname()
+  
+  return (
+    <nav className="hidden md:flex items-center space-x-8">
+      {navItems.map((item) => {
+        const isActive = pathname === item.path || pathname.startsWith(item.path + '/')
+        return (
+          <Link
+            key={item.name}
+            href={item.path}
+            className={`text-sm font-medium transition-colors ${
+              isActive 
+                ? 'text-blue-600 border-b-2 border-blue-600 pb-1' 
+                : 'hover:text-blue-600'
+            }`}
+          >
+            {item.name}
+          </Link>
+        )
+      })}
+    </nav>
+  )
+})
+
+NavLinks.displayName = "NavLinks"
+
+const MobileNav = memo(({ cartItemCount }) => {
+  const pathname = usePathname()
+  
+  return (
+    <nav className="flex flex-col space-y-4 mt-8 p-4">
+      {navItems.map((item) => {
+        const isActive = pathname === item.path || pathname.startsWith(item.path + '/')
+        return (
+          <Link
+            key={item.name}
+            href={item.path}
+            className={`text-lg font-medium transition-colors ${
+              isActive 
+                ? 'text-blue-600 font-bold' 
+                : 'hover:text-blue-600'
+            }`}
+          >
+            {item.name}
+          </Link>
+        )
+      })}
+      
+      <Link
+        href="/account/notifications"
+        className={`text-lg font-medium transition-colors flex items-center gap-2 ${
+          pathname === '/account/notifications' 
+            ? 'text-blue-600 font-bold' 
+            : 'hover:text-blue-600'
+        }`}
+      >
+        Thông báo
+      </Link>
+
+      <Link
+        href="/cart"
+        className={`flex items-center space-x-3 text-lg font-medium transition-colors relative ${
+          pathname === '/cart' 
+            ? 'text-blue-600 font-bold' 
+            : 'hover:text-blue-600'
+        }`}
+      >
+        <div className="relative">
+          <ShoppingCart className="h-5 w-5" />
+          <CartBadge count={cartItemCount} />
+        </div>
+        <span>Giỏ hàng</span>
+      </Link>
+      <div className="pt-4 border-t">
+        <AuthSectionMobile />
+      </div>
+    </nav>
+  )
+})
+
+MobileNav.displayName = "MobileNav"
 
 export default function Header() {
   const { getCartItemCount } = useCartStore()
@@ -43,24 +129,9 @@ export default function Header() {
             <span className="text-xl font-bold text-gray-900">English Pro</span>
           </Link>
 
-          <nav className="hidden md:flex items-center space-x-8">
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.path}
-                className="text-sm font-medium transition-colors hover:text-blue-600"
-              >
-                {item.name}
-              </Link>
-            ))}
-          </nav>
-
-          {/* <div className="hidden lg:flex items-center space-x-4">
-            <SearchContainer />
-          </div> */}
+          <NavLinks />
 
           <div className="hidden md:flex items-center space-x-2">
-
             <NotificationBell />
             
             <Link href="/cart" className="relative p-2 text-gray-600 hover:text-blue-600 transition-colors">
@@ -70,7 +141,7 @@ export default function Header() {
             </Link>
             
             <div className="ml-2">
-                <AuthSection />
+              <AuthSection />
             </div>
           </div>
 
@@ -81,46 +152,10 @@ export default function Header() {
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-              <nav className="flex flex-col space-y-4 mt-8 p-4">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.path}
-                    className="text-lg font-medium transition-colors hover:text-blue-600"
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-                
-
-                <Link
-                    href="/account/notifications"
-                    className="text-lg font-medium transition-colors hover:text-blue-600 flex items-center gap-2"
-                >
-                    Thông báo
-                </Link>
-
-                <Link
-                  href="/cart"
-                  className="flex items-center space-x-3 text-lg font-medium transition-colors hover:text-blue-600 relative"
-                >
-                  <div className="relative">
-                    <ShoppingCart className="h-5 w-5" />
-                    <CartBadge count={cartItemCount} />
-                  </div>
-                  <span>Giỏ hàng</span>
-                </Link>
-                <div className="pt-4 border-t">
-                  <AuthSectionMobile />
-                </div>
-              </nav>
+              <MobileNav cartItemCount={cartItemCount} />
             </SheetContent>
           </Sheet>
         </div>
-
-        {/* <div className="lg:hidden pb-4">
-          <SearchContainer isMobile />
-        </div> */}
       </div>
     </header>
   )

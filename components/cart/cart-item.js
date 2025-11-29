@@ -1,5 +1,6 @@
 "use client"
 
+import { memo, useCallback } from "react"
 import Link from "next/link"
 import { Loader2, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -7,8 +8,13 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { formatCurrency } from "@/lib/utils"
 
-export default function CartItem({ item, onRemove, removingItems }) {
+const CartItem = memo(({ item, onRemove, removingItems }) => {
   const isPurchased = item.course.isPurchased
+  const isRemoving = removingItems.has(item.course.id)
+
+  const handleRemove = useCallback(() => {
+    onRemove(item.course.id, item.course.title)
+  }, [item.course.id, item.course.title, onRemove])
 
   return (
     <div className={`flex flex-col sm:flex-row gap-4 p-4 border rounded-lg transition-colors ${
@@ -72,11 +78,11 @@ export default function CartItem({ item, onRemove, removingItems }) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onRemove(item.course.id, item.course.title)}
-              disabled={removingItems.has(item.course.id)}
+              onClick={handleRemove}
+              disabled={isRemoving}
               className="text-red-600 hover:text-red-700 hover:border-red-300"
             >
-              {removingItems.has(item.course.id) ? (
+              {isRemoving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Trash2 className="h-4 w-4" />
@@ -88,4 +94,8 @@ export default function CartItem({ item, onRemove, removingItems }) {
       </div>
     </div>
   )
-}
+})
+
+CartItem.displayName = "CartItem"
+
+export default CartItem

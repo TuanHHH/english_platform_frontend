@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNotificationStore } from "@/store/notification-store";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,16 +30,28 @@ export default function NotificationsPage() {
     }
   }, []);
 
-  const handlePageChange = (page) => {
+  const handlePageChange = useCallback((page) => {
     fetchNotifications(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  }, [fetchNotifications]);
 
-  const filteredNotifications = notifications.filter(n => {
-    if (filter === "unread") return !n.isRead;
-    if (filter === "read") return n.isRead;
-    return true;
-  });
+  const handleRefresh = useCallback(() => {
+    fetchNotifications(pagination.page);
+  }, [fetchNotifications, pagination.page]);
+
+  const handleRemoveAll = useCallback(() => {
+    if(confirm("Bạn có chắc chắn muốn xóa toàn bộ thông báo?")) {
+      removeAll();
+    }
+  }, [removeAll]);
+
+  const filteredNotifications = useMemo(() => {
+    return notifications.filter(n => {
+      if (filter === "unread") return !n.isRead;
+      if (filter === "read") return n.isRead;
+      return true;
+    });
+  }, [notifications, filter]);
 
   return (
     <div className="container mx-auto max-w-5xl py-6 px-4">
@@ -60,7 +72,7 @@ export default function NotificationsPage() {
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => fetchNotifications(pagination.page)} 
+              onClick={handleRefresh} 
               disabled={loading}
             >
               <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
@@ -69,7 +81,7 @@ export default function NotificationsPage() {
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => markAllAsRead()} 
+              onClick={markAllAsRead} 
               disabled={unreadCount === 0}
               className="hidden sm:flex"
             >
@@ -79,9 +91,7 @@ export default function NotificationsPage() {
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => {
-                if(confirm("Bạn có chắc chắn muốn xóa toàn bộ thông báo?")) removeAll();
-              }} 
+              onClick={handleRemoveAll} 
               disabled={notifications.length === 0}
               className="text-red-600 hover:text-red-700 hover:bg-red-50"
             >

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { BookOpen, Bell, Badge, Plus } from "lucide-react"
@@ -33,19 +33,7 @@ export default function LearningContent() {
     const [editDialogOpen, setEditDialogOpen] = useState(false)
     const [selectedPlan, setSelectedPlan] = useState(null)
 
-    useEffect(() => {
-        // Only fetch if not already loaded (store will handle caching)
-        fetchEnrollments()
-    }, [fetchEnrollments])
-
-    useEffect(() => {
-        // Fetch schedules when reminders tab is active or when sort/page changes
-        if (activeTab === "reminders") {
-            fetchSchedules(schedulesPage, schedulesSort)
-        }
-    }, [activeTab, schedulesPage, schedulesSort])
-
-    const fetchSchedules = async (page, sort) => {
+    const fetchSchedules = useCallback(async (page, sort) => {
         setSchedulesLoading(true)
         try {
             const result = await getMySchedule(page, 5, sort)
@@ -58,48 +46,59 @@ export default function LearningContent() {
         } finally {
             setSchedulesLoading(false)
         }
-    }
+    }, [])
 
-    const handlePageChange = (page) => {
+    useEffect(() => {
+        fetchEnrollments()
+    }, [fetchEnrollments])
+
+    useEffect(() => {
+        if (activeTab === "reminders") {
+            fetchSchedules(schedulesPage, schedulesSort)
+        }
+    }, [activeTab, schedulesPage, schedulesSort, fetchSchedules])
+
+    const handlePageChange = useCallback((page) => {
         setPage(page)
-    }
+    }, [setPage])
 
-    const handleSchedulesPageChange = (page) => {
+    const handleSchedulesPageChange = useCallback((page) => {
         setSchedulesPage(page)
-    }
+    }, [])
 
-    const handleSchedulesSortChange = (sort) => {
+    const handleSchedulesSortChange = useCallback((sort) => {
         setSchedulesSort(sort)
-        setSchedulesPage(1) // Reset to first page when sorting changes
-    }
+        setSchedulesPage(1)
+    }, [])
 
-    const handleCreateSuccess = () => {
-        // Refresh the schedules list after successful creation
+    const handleCreateSuccess = useCallback(() => {
         fetchSchedules(schedulesPage, schedulesSort)
-    }
+    }, [fetchSchedules, schedulesPage, schedulesSort])
 
-    const handleEdit = (plan) => {
+    const handleEdit = useCallback((plan) => {
         setSelectedPlan(plan)
         setEditDialogOpen(true)
-    }
+    }, [])
 
-    const handleEditSuccess = (updatedPlan) => {
-        // Optimistic UI update - update the local state without refetching
+    const handleEditSuccess = useCallback((updatedPlan) => {
         setStudyPlans((prevPlans) =>
             prevPlans.map((plan) =>
                 plan.id === updatedPlan.id ? updatedPlan : plan
             )
         )
-    }
+    }, [])
 
-    const handleDelete = (planId) => {
-        // Optimistic UI update - remove the plan from local state
+    const handleDelete = useCallback((planId) => {
         setStudyPlans((prevPlans) =>
             prevPlans.filter((plan) => plan.id !== planId)
         )
-    }
+    }, [])
 
-    const formatDate = (dateString) => {
+    const handleOpenCreateDialog = useCallback(() => {
+        setCreateDialogOpen(true)
+    }, [])
+
+    const formatDate = useCallback((dateString) => {
         if (!dateString) return "N/A"
         const date = new Date(dateString)
         return date.toLocaleDateString("vi-VN", {
@@ -107,9 +106,9 @@ export default function LearningContent() {
             month: "long",
             day: "numeric",
         })
-    }
+    }, [])
 
-    const getStatusBadge = (status) => {
+    const getStatusBadge = useCallback((status) => {
         const statusConfig = {
             ACTIVE: { label: "Đang học", variant: "default" },
             COMPLETED: { label: "Hoàn thành", variant: "success" },
@@ -121,7 +120,7 @@ export default function LearningContent() {
                 {config.label}
             </Badge>
         )
-    }
+    }, [])
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -149,7 +148,7 @@ export default function LearningContent() {
                     </TabsList>
 
                     {activeTab === "reminders" && (
-                        <Button onClick={() => setCreateDialogOpen(true)} className="w-full sm:w-auto">
+                        <Button onClick={handleOpenCreateDialog} className="w-full sm:w-auto">
                             <Plus className="w-4 h-4 mr-2" />
                             <span className="hidden sm:inline">Tạo nhắc nhở mới</span>
                             <span className="sm:hidden">Tạo nhắc nhở</span>

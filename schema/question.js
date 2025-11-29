@@ -3,7 +3,6 @@ import { z } from "zod";
 export const questionOptionSchema = z.object({
   content: z.string().min(1, "Nội dung không được để trống").max(1000, "Nội dung tối đa 1000 ký tự"),
   correct: z.boolean(),
-  explanation: z.string().max(2000, "Giải thích tối đa 2000 ký tự").optional(),
   orderIndex: z.number().int().optional(),
 });
 

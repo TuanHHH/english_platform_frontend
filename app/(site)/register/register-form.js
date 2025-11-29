@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
@@ -32,7 +32,11 @@ export default function RegisterForm() {
     mode: "onBlur",
   })
 
-  async function onSubmit(values) {
+  const togglePassword = useCallback(() => setShowPassword(prev => !prev), []);
+  const toggleConfirmPassword = useCallback(() => setShowConfirmPassword(prev => !prev), []);
+  const toggleAgree = useCallback(() => setAgree(prev => !prev), []);
+
+  const onSubmit = useCallback(async (values) => {
     if (!agree) {
       toast.error("Bạn cần đồng ý với Điều khoản và Chính sách trước.")
       return
@@ -52,7 +56,7 @@ export default function RegisterForm() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [agree, router]);
 
   return (
     <>

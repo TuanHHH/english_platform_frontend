@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import {
   AlertDialog,
@@ -15,7 +15,7 @@ import {
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Loader2, Clock } from "lucide-react"; // [New] Import Clock icon
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { getPublicQuiz } from "@/lib/api/quiz/quiz";
 import { submitOneShot, submitSpeaking, getSpeakingResults, getWritingResultsByAnswer, getAttemptAnswers } from "@/lib/api/attempt";
 import ContextPassage from "@/components/practice/context-passage";
@@ -36,10 +36,8 @@ export default function PracticePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
-  // [New] State cho thời gian
-  const [startedAt, setStartedAt] = useState(null);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [startTime, setStartTime] = useState(null);
+  const startTimeRef = useRef(null);
 
   // Assessment states
   const [attemptId, setAttemptId] = useState(null);
@@ -57,6 +55,13 @@ export default function PracticePage() {
   // Load đề (PUBLIC)
   useEffect(() => {
     let mounted = true;
+    // Chỉ set startTime một lần duy nhất cho mỗi quiz (tránh bị reset khi rerender)
+    if (!startTimeRef.current || startTimeRef.current.quizId !== id) {
+      const now = Date.now();
+      startTimeRef.current = { quizId: id, time: now };
+      setStartTime(now);
+    }
+    
     setLoading(true);
     (async () => {
       try {
@@ -73,9 +78,6 @@ export default function PracticePage() {
         setIndex(0);
         setAnswers({});
         setError("");
-        
-        // [New] Ghi nhận thời gian bắt đầu khi load xong dữ liệu
-        setStartedAt(new Date().toISOString()); 
       } catch (e) {
         console.error(e);
         if (mounted) setError("Không tải được đề thi.");
@@ -88,80 +90,29 @@ export default function PracticePage() {
     };
   }, [id]);
 
-  // [New] Effect bộ đếm thời gian
-  useEffect(() => {
-    if (!startedAt || submitting || assessmentMode) return;
-
-    const interval = setInterval(() => {
-      const now = new Date();
-      const start = new Date(startedAt);
-      const diffInSeconds = Math.floor((now - start) / 1000);
-      setElapsedSeconds(diffInSeconds);
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [startedAt, submitting, assessmentMode]);
-
-  // [New] Helper format thời gian (MM:SS hoặc HH:MM:SS)
-  const formatTime = (totalSeconds) => {
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-
-    const pad = (num) => num.toString().padStart(2, '0');
-    
-    if (hours > 0) {
-      return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-    }
-    return `${pad(minutes)}:${pad(seconds)}`;
-  };
-
   const total = questions.length;
   const current = useMemo(() => questions?.[index] || null, [questions, index]);
-  const isMCQ = (q) => Array.isArray(q?.options) && q.options.length > 0;
-  const isSpeaking = (q) => quiz?.skill?.toUpperCase() === "SPEAKING" && !isMCQ(q);
+  const isMCQ = useCallback((q) => Array.isArray(q?.options) && q.options.length > 0, []);
+  const isSpeaking = useCallback((q) => quiz?.skill?.toUpperCase() === "SPEAKING" && !isMCQ(q), [quiz?.skill, isMCQ]);
 
-  const go = (step) => {
+  const go = useCallback((step) => {
     setIndex((prev) => {
       const next = prev + step;
       if (next < 0) return 0;
       if (next >= total) return total - 1;
       return next;
     });
-  };
+  }, [total]);
 
-  const onChoose = (qid, value) => {
+  const onChoose = useCallback((qid, value) => {
     setAnswers((prev) => ({ ...prev, [qid]: value }));
-  };
+  }, []);
 
-  const onAudioReady = (qid, blob) => {
+  const onAudioReady = useCallback((qid, blob) => {
     setAudioBlobs((prev) => ({ ...prev, [qid]: blob }));
-  };
+  }, []);
 
-  const onSubmit = async () => {
-    const skill = quiz?.skill?.toUpperCase();
-    const isAssessmentQuiz = skill === 'SPEAKING' || skill === 'WRITING';
-    
-    if (isAssessmentQuiz && answered < total) {
-      setWarningMessage(
-        `Bạn phải hoàn thành tất cả ${total} câu hỏi trước khi nộp bài.`
-      );
-      setWarningDialogOpen(true);
-      return;
-    }
-    
-    if (!isAssessmentQuiz && answered < total) {
-      setWarningMessage(
-        `Bạn mới trả lời ${answered}/${total} câu. Vẫn nộp bài?`
-      );
-      setWarningDialogOpen(true);
-      return;
-    }
-
-    await handleSubmit();
-  };
-
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     try {
       setSubmitting(true);
       setWarningDialogOpen(false);
@@ -170,14 +121,16 @@ export default function PracticePage() {
         questionId: q.id,
         selectedOptionId: isMCQ(q) ? answers[q.id] ?? null : null,
         answerText: !isMCQ(q) && !isSpeaking(q) ? answers[q.id] ?? null : null,
-        timeSpentMs: null,
       }));
 
-      // [New] Thêm startedAt vào payload gửi lên server
+      const completionTimeSeconds = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
+      const startedAt = startTime ? new Date(startTime).toISOString() : undefined;
+
       const res = await submitOneShot({
         quizId: String(id),
         answers: payloadAnswers,
-        startedAt: startedAt // Gửi thời gian bắt đầu
+        completionTimeSeconds,
+        ...(startedAt && { startedAt }),
       });
 
       if (res.success) {
@@ -250,7 +203,30 @@ export default function PracticePage() {
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [id, questions, startTime, quiz, audioBlobs, isMCQ, isSpeaking]);
+
+  const onSubmit = useCallback(async () => {
+    const skill = quiz?.skill?.toUpperCase();
+    const isAssessmentQuiz = skill === 'SPEAKING' || skill === 'WRITING';
+    
+    if (isAssessmentQuiz && answered < total) {
+      setWarningMessage(
+        `Bạn phải hoàn thành tất cả ${total} câu hỏi trước khi nộp bài.`
+      );
+      setWarningDialogOpen(true);
+      return;
+    }
+    
+    if (!isAssessmentQuiz && answered < total) {
+      setWarningMessage(
+        `Bạn mới trả lời ${answered}/${total} câu. Vẫn nộp bài?`
+      );
+      setWarningDialogOpen(true);
+      return;
+    }
+
+    await handleSubmit();
+  }, [quiz, answered, total, handleSubmit]);
 
   const pollSpeakingResult = async (submissionId, question, totalQuestions) => {
     const maxAttempts = 40;
@@ -392,24 +368,14 @@ export default function PracticePage() {
 
   return (
     <div className="container mx-auto max-w-5xl p-4 sm:p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => router.back()}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Quay lại
-        </Button>
-        
-        {/* [New] Hiển thị bộ đếm thời gian */}
-        {!assessmentMode && startedAt && (
-            <div className="flex items-center gap-2 px-4 py-2 bg-muted rounded-full font-mono text-sm font-medium">
-                <Clock className="w-4 h-4" />
-                <span>{formatTime(elapsedSeconds)}</span>
-            </div>
-        )}
-      </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => router.back()}
+      >
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Quay lại
+      </Button>
 
       {/* Assessment Results */}
       {assessmentMode && (
@@ -426,7 +392,7 @@ export default function PracticePage() {
       {!assessmentMode && (
         <>
           {/* Header */}
-          <QuizHeader quiz={quiz} onSubmit={onSubmit} submitting={submitting} />
+          <QuizHeader quiz={quiz} onSubmit={onSubmit} submitting={submitting} startTime={startTime} />
 
           {/* Passage */}
           <ContextPassage contextText={quiz.contextText} />
