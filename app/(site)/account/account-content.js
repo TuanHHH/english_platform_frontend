@@ -70,6 +70,20 @@ const AccountContent = memo(() => {
                   </div>
                 </div>
 
+                <div className="bg-white rounded-lg shadow p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900">Đánh giá của bạn</h3>
+                      <p className="text-sm text-gray-600">Xem và quản lý các đánh giá bạn đã viết</p>
+                    </div>
+                    <Link href="/account/reviews">
+                      <Button variant="outline">
+                        Xem đánh giá
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+
               </div>
             </TabsContent>
 

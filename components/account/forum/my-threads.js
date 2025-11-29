@@ -81,9 +81,14 @@ export default function MyForumThreads() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Bài viết diễn đàn của tôi</h2>
-        <Link href="/forum/new">
-          <Button>Tạo chủ đề</Button>
-        </Link>
+        <div className="flex items-center gap-2">
+            <Link href="/account">
+                <Button variant="outline">Quay lại tài khoản</Button>
+            </Link>
+            <Link href="/forum/new">
+                <Button>Tạo chủ đề</Button>
+            </Link>
+        </div>
       </div>
 
       <Card>

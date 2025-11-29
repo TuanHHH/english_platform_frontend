@@ -1,5 +1,6 @@
 import Link from "next/link"
 import Image from "next/image"
+import { Star } from "lucide-react"
 import { Play, Clock, BookOpen } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -9,6 +10,8 @@ export function CourseCard({ course }) {
   const skills = course.skillFocus || []
   const visibleSkills = skills.slice(0, 2)
   const remainingCount = skills.length - visibleSkills.length
+  const rating = course.averageRating || 0;
+  const reviewCount = course.totalReviews || 0;
 
   return (
     <Link
@@ -61,6 +64,15 @@ export function CourseCard({ course }) {
               ) : (
                 <div className="h-[20px]" />
               )}
+            </div>
+
+            <div className="flex items-center gap-1 mb-2 text-sm">
+              <span className="font-bold text-amber-500 flex items-center">
+                  {rating.toFixed(1)} <Star className="w-3 h-3 ml-0.5 fill-amber-500" />
+              </span>
+              <span className="text-muted-foreground text-xs">
+                  ({reviewCount} đánh giá)
+              </span>
             </div>
 
             {/* Description */}
