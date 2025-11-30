@@ -5,7 +5,7 @@ import { BookOpen } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import { listQuizTypes } from "@/lib/api/quiz/quiz-type";
+import { listPublicQuizTypes } from "@/lib/api/quiz/quiz-type";
 
 const QuizTypeCard = memo(({ quizType }) => (
   <Link href={`/quiz-types/${quizType.id}/sections`} className="h-full">
@@ -48,7 +48,7 @@ export default function QuizTypes() {
 
   const loadQuizTypes = useCallback(async () => {
     try {
-      const r = await listQuizTypes();
+      const r = await listPublicQuizTypes();
       setQuizTypes(r?.data || r || []);
     } finally {
       setLoading(false);
