@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Pagination } from "@/components/ui/pagination";
-import { listQuizTypes } from "@/lib/api/quiz/quiz-type";
+import { listPublicQuizTypes } from "@/lib/api/quiz/quiz-type";
 import { searchPublicQuizzes } from "@/lib/api/quiz/quiz";
 
 const SKILLS = ["", "LISTENING","READING","SPEAKING","WRITING"];
@@ -33,7 +33,7 @@ export default function SiteQuizzesPage(){
     load();
   }, [load]);
 
-  useEffect(() => { (async () => setTypes(await listQuizTypes()))(); }, []);
+  useEffect(() => { (async () => setTypes(await listPublicQuizTypes()))(); }, []);
   useEffect(() => { load(); }, [load]);
 
   return (
