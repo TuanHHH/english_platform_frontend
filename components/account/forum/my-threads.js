@@ -3,10 +3,9 @@ import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
 import ThreadListFilters from "@/components/forum/thread-list-filters";
-import { appForumMyThreads, forumListCategories } from "@/lib/api/forum";
+import { getMyThreads, getForumCategories, deleteOwnThread } from "@/lib/api/forum";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { appDeleteOwnThread } from "@/lib/api/forum";
 import { toast } from "sonner";
 import { Edit } from "lucide-react";
 import {
@@ -32,13 +31,20 @@ export default function MyForumThreads() {
 
   async function load(p = page, f = filters) {
     try {
-      const res = await appForumMyThreads({
+      const result = await getMyThreads({
         ...f,
         page: p + 1,
         pageSize,
       });
-      setItems(res.items ?? []);
-      setMeta(res.meta ?? { page: p + 1, pages: 0 });
+      if (result.success) {
+        const data = result.data;
+        setItems(data?.content || data?.result || []);
+        setMeta(data?.meta || { page: p + 1, pages: data?.totalPages || 0 });
+      } else {
+        toast.error(result.error || "Không tải được chủ đề");
+        setItems([]);
+        setMeta({ page: p + 1, pages: 0 });
+      }
     } catch (err) {
       console.error("Không tải được chủ đề:", err);
       toast.error("Không tải được chủ đề. Vui lòng thử lại.");
@@ -46,7 +52,13 @@ export default function MyForumThreads() {
   }
 
   useEffect(() => {
-    forumListCategories().then(setCats).catch(() => setCats([]));
+    async function loadCategories() {
+      const result = await getForumCategories();
+      if (result.success) {
+        setCats(result.data);
+      }
+    }
+    loadCategories();
   }, []);
 
   useEffect(() => {
@@ -60,13 +72,13 @@ export default function MyForumThreads() {
   const handleDelete = (id) => async () => {
     setDeletingId(id);
     try {
-      const res = await appDeleteOwnThread(id);
+      const result = await deleteOwnThread(id);
   
-      if (res === true || res?.success === true) {
+      if (result.success) {
         toast.success("Đã xóa chủ đề");
         await load(page, filters);
       } else {
-        toast.error("Không thể xóa chủ đề, vui lòng thử lại.");
+        toast.error(result.error || "Không thể xóa chủ đề");
       }
     } catch (err) {
       console.error("Lỗi xóa:", err);

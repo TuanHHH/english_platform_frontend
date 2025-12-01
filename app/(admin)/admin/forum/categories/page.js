@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,39 +17,63 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import {
-  adminForumListCategories,
-  adminForumCreateCategory,
-  adminForumUpdateCategory,
-  adminForumDeleteCategory,
+  adminGetCategories,
+  adminCreateCategory,
+  adminUpdateCategory,
+  adminDeleteCategory,
 } from "@/lib/api/forum";
 
 export default function AdminForumCategoriesPage() {
   const [items, setItems] = useState([]);
   const [form, setForm] = useState({ name: "", slug: "", description: "" });
   const [editingId, setEditingId] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   async function load() {
-    setItems(await adminForumListCategories());
+    const result = await adminGetCategories();
+    if (result.success) {
+      setItems(result.data);
+    } else {
+      toast.error(result.error || "Không thể tải danh sách danh mục");
+    }
   }
   useEffect(() => {
     load();
   }, []);
 
   async function save() {
-    if (editingId) {
-      await adminForumUpdateCategory(editingId, form);
-      setEditingId(null);
-    } else {
-      await adminForumCreateCategory(form);
+    if (!form.name.trim()) {
+      toast.error("Vui lòng nhập tên danh mục");
+      return;
     }
-    setForm({ name: "", slug: "", description: "" });
-    await load();
+    
+    setLoading(true);
+    try {
+      const result = editingId
+        ? await adminUpdateCategory(editingId, form)
+        : await adminCreateCategory(form);
+
+      if (result.success) {
+        toast.success(editingId ? "Cập nhật danh mục thành công" : "Thêm danh mục thành công");
+        setEditingId(null);
+        setForm({ name: "", slug: "", description: "" });
+        await load();
+      } else {
+        toast.error(result.error || "Không thể lưu danh mục");
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
-  // Tách hàm xóa ra cho gọn
   async function handleDelete(id) {
-    await adminForumDeleteCategory(id);
-    await load();
+    const result = await adminDeleteCategory(id);
+    if (result.success) {
+      toast.success("Xóa danh mục thành công");
+      await load();
+    } else {
+      toast.error(result.error || "Không thể xóa danh mục");
+    }
   }
 
   return (
@@ -78,7 +103,9 @@ export default function AdminForumCategoriesPage() {
               onChange={(e) => setForm({ ...form, description: e.target.value })}
             />
             <div className="flex gap-2">
-              <Button onClick={save}>{editingId ? "Cập nhật" : "Thêm"}</Button>
+              <Button onClick={save} disabled={loading}>
+                {loading ? "Đang lưu..." : editingId ? "Cập nhật" : "Thêm"}
+              </Button>
               {editingId && (
                 <Button
                   variant="secondary"
@@ -86,6 +113,7 @@ export default function AdminForumCategoriesPage() {
                     setEditingId(null);
                     setForm({ name: "", slug: "", description: "" });
                   }}
+                  disabled={loading}
                 >
                   Hủy
                 </Button>

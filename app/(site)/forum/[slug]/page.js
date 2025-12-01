@@ -22,18 +22,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { forumGetThreadBySlug, forumListThreadPosts } from "@/lib/api/forum";
+import { getForumThreadBySlug, getThreadPosts, reportPost, reportThread, lockThread, unlockThread, deleteOwnPost } from "@/lib/api/forum";
 import { Pagination } from "@/components/ui/pagination";
 import ReplyForm from "@/components/forum/reply-form";
 import ReplyToPostForm from "@/components/forum/reply-to-post-form";
 import ReportDialog from "@/components/forum/report-dialog";
-import {
-  appReportPost,
-  appReportThread,
-  appLockThread,
-  appUnlockThread,
-  appDeleteOwnPost,
-} from "@/lib/api/forum";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth-store";
 
@@ -77,17 +70,29 @@ export default function ThreadDetailPage() {
   const load = useCallback(async () => {
     if (!slug) return;
     setLoadingThread(true);
-    const t = await forumGetThreadBySlug(slug);
-    setThread(t);
+    const result = await getForumThreadBySlug(slug);
+    if (result.success) {
+      setThread(result.data);
+    } else {
+      toast.error(result.error || "Không thể tải thông tin chủ đề");
+      setThread(null);
+    }
     setLoadingThread(false);
   }, [slug]);
 
   const loadPosts = useCallback(async (p = page) => {
     if (!thread?.id) return;
     setLoadingPosts(true);
-    const { items, meta } = await forumListThreadPosts(thread.id, { page: p, pageSize });
-    setPosts(items || []);
-    setMeta(meta || { page: p, pages: 0 });
+    const result = await getThreadPosts(thread.id, { page: p, pageSize });
+    if (result.success) {
+      const data = result.data;
+      setPosts(data?.content || data?.result || []);
+      setMeta(data?.meta || { page: p, pages: data?.totalPages || 0 });
+    } else {
+      toast.error(result.error || "Không thể tải danh sách bài viết");
+      setPosts([]);
+      setMeta({ page: p, pages: 0 });
+    }
     setLoadingPosts(false);
   }, [thread?.id, page]);
 
@@ -109,10 +114,15 @@ export default function ThreadDetailPage() {
     setDeleting(true);
 
     try {
-      await appDeleteOwnPost(postToDelete);
-      toast.success("Đã xóa phản hồi");
-      setDeleteDialogOpen(false);
-      setPostToDelete(null);
+      const result = await deleteOwnPost(postToDelete);
+      if (result.success) {
+        toast.success("Đã xóa phản hồi");
+        setDeleteDialogOpen(false);
+        setPostToDelete(null);
+      } else {
+        setPosts(previousPosts);
+        toast.error(result.error || "Không thể xóa phản hồi");
+      }
     } catch (error) {
       setPosts(previousPosts);
       toast.error("Không thể xóa phản hồi. Vui lòng thử lại.");
@@ -136,10 +146,16 @@ export default function ThreadDetailPage() {
     if (!reportTarget?.id) return;
     setReportLoading(true);
     try {
-      if (reportTarget.type === "post") await appReportPost(reportTarget.id, { reason });
-      else await appReportThread(reportTarget.id, { reason });
-      setReportOpen(false);
-      toast.success("Đã gửi báo cáo. Cảm ơn bạn!");
+      const result = reportTarget.type === "post" 
+        ? await reportPost(reportTarget.id, reason)
+        : await reportThread(reportTarget.id, reason);
+      
+      if (result.success) {
+        setReportOpen(false);
+        toast.success("Đã gửi báo cáo. Cảm ơn bạn!");
+      } else {
+        toast.error(result.error || "Gửi báo cáo thất bại");
+      }
     } catch (e) {
       console.error(e);
       toast.error("Gửi báo cáo thất bại. Vui lòng thử lại.");
@@ -151,15 +167,17 @@ export default function ThreadDetailPage() {
   const handleReplyDone = useCallback(async () => {
     if (!thread?.id) return;
     
-    const { meta: newMeta } = await forumListThreadPosts(thread.id, { 
+    const result = await getThreadPosts(thread.id, { 
       page: 1, 
       pageSize 
     });
     
-    const lastPage = newMeta?.pages || 1;
-    
-    setPage(lastPage);
-    await loadPosts(lastPage);
+    if (result.success) {
+      const data = result.data;
+      const lastPage = data?.meta?.pages || data?.totalPages || 1;
+      setPage(lastPage);
+      await loadPosts(lastPage);
+    }
   }, [thread?.id, loadPosts]);
 
   const handleReplyToPostDone = useCallback(async () => {
@@ -168,15 +186,23 @@ export default function ThreadDetailPage() {
   }, [page, loadPosts]);
 
   const handleLockThread = useCallback(async () => {
-    await appLockThread(thread.id);
-    toast.success("Đã khóa bình luận");
-    await load();
+    const result = await lockThread(thread.id);
+    if (result.success) {
+      toast.success("Đã khóa bình luận");
+      await load();
+    } else {
+      toast.error(result.error || "Không thể khóa bình luận");
+    }
   }, [thread?.id, load]);
 
   const handleUnlockThread = useCallback(async () => {
-    await appUnlockThread(thread.id);
-    toast.success("Đã mở bình luận");
-    await load();
+    const result = await unlockThread(thread.id);
+    if (result.success) {
+      toast.success("Đã mở bình luận");
+      await load();
+    } else {
+      toast.error(result.error || "Không thể mở bình luận");
+    }
   }, [thread?.id, load]);
 
   const handleBack = useCallback(() => {

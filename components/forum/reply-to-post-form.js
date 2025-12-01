@@ -1,51 +1,83 @@
 
 "use client";
-import { useState } from "react";
 import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { appReplyToPost } from "@/lib/api/forum";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { replyToPost } from "@/lib/api/forum";
+import { postReplySchema } from "@/schema/forum";
 
 /**
  * Inline form to reply to a top-level comment (level-1) and create a level-2 comment.
  * It intentionally does NOT support deeper nesting.
  */
 export default function ReplyToPostForm({ threadId, parentPostId, onDone }) {
-  const [body, setBody] = useState("");
-  const [loading, setLoading] = useState(false);
+  const form = useForm({
+    resolver: zodResolver(postReplySchema),
+    defaultValues: {
+      bodyMd: ""
+    }
+  });
 
-  async function submit() {
-    const content = (body || "").trim();
-    if (!content) return;
-    setLoading(true);
+  const { control, handleSubmit, reset, formState: { isSubmitting } } = form;
+
+  async function onSubmit(data) {
     try {
-      await appReplyToPost(threadId, parentPostId, { bodyMd: content });
-      setBody("");
-      onDone?.();
+      const result = await replyToPost(threadId, parentPostId, data);
+      if (result.success) {
+        reset();
+        toast.success("Gửi trả lời thành công!");
+        onDone?.();
+      } else {
+        toast.error(result.error || "Không thể gửi trả lời");
+      }
     } catch (e) {
       console.error(e);
       toast.error("Không thể gửi trả lời. Vui lòng thử lại.");
-    } finally {
-      setLoading(false);
     }
   }
 
+  function handleCancel() {
+    reset();
+    onDone?.();
+  }
+
   return (
-    <div className="space-y-2">
-      <Textarea
-        rows={3}
-        placeholder="Viết trả lời..."
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-      />
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={() => { setBody(""); onDone?.(); }} disabled={loading}>
-          Hủy
-        </Button>
-        <Button onClick={submit} disabled={loading}>
-          {loading ? "Đang gửi..." : "Gửi trả lời"}
-        </Button>
-      </div>
-    </div>
+    <Form {...form}>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-2">
+        <FormField
+          control={control}
+          name="bodyMd"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <Textarea
+                  rows={3}
+                  placeholder="Viết trả lời..."
+                  maxLength={10000}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="flex justify-end gap-2">
+          <Button 
+            type="button"
+            variant="outline" 
+            onClick={handleCancel} 
+            disabled={isSubmitting}
+          >
+            Hủy
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Đang gửi..." : "Gửi trả lời"}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }

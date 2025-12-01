@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  adminListReports,
+  adminGetReports,
   adminResolveReport,
   adminHidePost,
   adminUnhidePost,
@@ -47,9 +47,16 @@ export default function AdminForumReportsPage() {
 
   async function load(p = page) {
     const params = { page: p, pageSize, type, onlyOpen: onlyOpen === "true" };
-    const { items, meta } = await adminListReports(params);
-    setItems(items);
-    setMeta(meta);
+    const result = await adminGetReports(params);
+    if (result.success) {
+      const data = result.data;
+      setItems(data?.content || data?.result || []);
+      setMeta(data?.meta || { page: p, pages: data?.totalPages || 0 });
+    } else {
+      toast.error(result.error || "Không thể tải danh sách báo cáo");
+      setItems([]);
+      setMeta({ page: p, pages: 0 });
+    }
   }
 
   const openDeleteConfirm = (deleteType, id) => {
@@ -62,22 +69,19 @@ export default function AdminForumReportsPage() {
 
     setIsDeleting(true);
     try {
-      if (type === "THREAD") {
-        await adminDeleteThread(id);
-        toast.success("Đã xóa chủ đề");
-      } else {
-        await adminDeletePost(id);
-        toast.success("Đã xóa bài viết");
-      }
-      await load(page);
-    } catch (e) {
-      console.error(e);
-      if (type === "THREAD" && (e?.response?.status === 404 || e?.response?.status === 500)) {
-        toast.warning("Chủ đề không tồn tại hoặc đã bị xóa. Đang làm mới...");
+      const result = type === "THREAD" 
+        ? await adminDeleteThread(id)
+        : await adminDeletePost(id);
+      
+      if (result.success) {
+        toast.success(type === "THREAD" ? "Đã xóa chủ đề" : "Đã xóa bài viết");
         await load(page);
       } else {
-        toast.error(`Lỗi khi xóa ${type === "THREAD" ? "chủ đề" : "bài viết"}`);
+        toast.error(result.error || `Lỗi khi xóa ${type === "THREAD" ? "chủ đề" : "bài viết"}`);
       }
+    } catch (e) {
+      console.error(e);
+      toast.error(`Lỗi khi xóa ${type === "THREAD" ? "chủ đề" : "bài viết"}`);
     } finally {
       setIsDeleting(false);
       setDeleteConfirm({ open: false, type: null, id: null });
@@ -93,8 +97,13 @@ export default function AdminForumReportsPage() {
   }, [page, type, onlyOpen]);
 
   async function resolve(id) {
-    await adminResolveReport(id);
-    await load(page);
+    const result = await adminResolveReport(id);
+    if (result.success) {
+      toast.success("Đã đánh dấu báo cáo là đã xử lý");
+      await load(page);
+    } else {
+      toast.error(result.error || "Không thể xử lý báo cáo");
+    }
   }
 
   return (
@@ -209,9 +218,13 @@ export default function AdminForumReportsPage() {
                           size="sm"
                           variant="secondary"
                           onClick={async () => {
-                            await adminHidePost(r.targetId);
-                            toast.success("Đã ẩn bài");
-                            await load(page);
+                            const result = await adminHidePost(r.targetId);
+                            if (result.success) {
+                              toast.success("Đã ẩn bài");
+                              await load(page);
+                            } else {
+                              toast.error(result.error || "Không thể ẩn bài");
+                            }
                           }}
                         >
                           Ẩn
@@ -223,9 +236,13 @@ export default function AdminForumReportsPage() {
                           size="sm"
                           variant="secondary"
                           onClick={async () => {
-                            await adminUnhidePost(r.targetId);
-                            toast.success("Đã hiện bài");
-                            await load(page);
+                            const result = await adminUnhidePost(r.targetId);
+                            if (result.success) {
+                              toast.success("Đã hiện bài");
+                              await load(page);
+                            } else {
+                              toast.error(result.error || "Không thể hiện bài");
+                            }
                           }}
                         >
                           Hiện
@@ -238,9 +255,13 @@ export default function AdminForumReportsPage() {
                             size="sm"
                             variant="secondary"
                             onClick={async () => {
-                              await adminHidePost(r.targetId);
-                              toast.success("Đã ẩn bài");
-                              await load(page);
+                              const result = await adminHidePost(r.targetId);
+                              if (result.success) {
+                                toast.success("Đã ẩn bài");
+                                await load(page);
+                              } else {
+                                toast.error(result.error || "Không thể ẩn bài");
+                              }
                             }}
                           >
                             Ẩn
@@ -250,9 +271,13 @@ export default function AdminForumReportsPage() {
                             size="sm"
                             variant="secondary"
                             onClick={async () => {
-                              await adminUnhidePost(r.targetId);
-                              toast.success("Đã hiện bài");
-                              await load(page);
+                              const result = await adminUnhidePost(r.targetId);
+                              if (result.success) {
+                                toast.success("Đã hiện bài");
+                                await load(page);
+                              } else {
+                                toast.error(result.error || "Không thể hiện bài");
+                              }
                             }}
                           >
                             Hiện

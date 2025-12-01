@@ -2,40 +2,58 @@
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { forumListCategories, appUpdateThread, forumGetThreadBySlug } from "@/lib/api/forum";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { getForumCategories, updateThread, getForumThreadBySlug } from "@/lib/api/forum";
 import Editor from "@/components/content/editor";
 import { useAuthStore } from "@/store/auth-store";
+import { threadUpdateSchema } from "@/schema/forum";
 
 export default function ThreadEditForm({ slug }) {
   const router = useRouter();
 
   const [cats, setCats] = useState([]);
-  const [title, setTitle] = useState("");
-  const [bodyMd, setBodyMd] = useState("");
-  const [categoryIds, setCategoryIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [threadId, setThreadId] = useState(null);
-
   const [noPermission, setNoPermission] = useState(false);
 
   const user = useAuthStore((state) => state.user);
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
+
+  const form = useForm({
+    resolver: zodResolver(threadUpdateSchema),
+    defaultValues: {
+      title: "",
+      bodyMd: "",
+      categoryIds: []
+    }
+  });
+
+  const { control, handleSubmit, setValue, watch, reset } = form;
+  const categoryIds = watch("categoryIds");
+  const title = watch("title");
 
   useEffect(() => {
     if (!hasHydrated) return;
 
     async function init() {
       try {
-        const [catsData, threadData] = await Promise.all([
-          forumListCategories(),
-          forumGetThreadBySlug(slug),
+        const [catsResult, threadResult] = await Promise.all([
+          getForumCategories(),
+          getForumThreadBySlug(slug),
         ]);
 
-        if (threadData) {
+        if (catsResult.success) {
+          setCats(catsResult.data);
+        }
+
+        if (threadResult.success && threadResult.data) {
+          const threadData = threadResult.data;
           if (!user) {
             setNoPermission(true);
             return;
@@ -47,12 +65,16 @@ export default function ThreadEditForm({ slug }) {
           }
 
           setThreadId(threadData.id);
-          setTitle(threadData.title);
-          setBodyMd(threadData.bodyMd);
-          setCategoryIds(threadData.categories?.map((c) => c.id) || []);
+          
+          // Reset form with loaded data
+          reset({
+            title: threadData.title || "",
+            bodyMd: threadData.bodyMd || "",
+            categoryIds: threadData.categories?.map((c) => c.id) || []
+          });
+        } else {
+          toast.error(threadResult.error || "Không thể tải thông tin bài viết");
         }
-
-        setCats(catsData);
       } catch (e) {
         console.error(e);
         toast.error("Không thể tải thông tin bài viết");
@@ -62,28 +84,26 @@ export default function ThreadEditForm({ slug }) {
     }
 
     init();
-  }, [slug, user, hasHydrated]);
+  }, [slug, user, hasHydrated, reset]);
 
   function toggleCat(id) {
-    setCategoryIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+    const current = categoryIds || [];
+    const newValue = current.includes(id) 
+      ? current.filter((x) => x !== id) 
+      : [...current, id];
+    setValue("categoryIds", newValue, { shouldValidate: true });
   }
 
-  async function submit() {
-    if (!title.trim() || !bodyMd.trim()) {
-      toast.error("Vui lòng nhập tiêu đề và nội dung.");
-      return;
-    }
+  async function onSubmit(data) {
     setSubmitting(true);
     try {
-      const data = await appUpdateThread(threadId, {
-        title,
-        bodyMd,
-        categoryIds,
-      });
-      toast.success("Cập nhật bài viết thành công!");
-      router.push(`/forum/${data.slug}`);
+      const result = await updateThread(threadId, data);
+      if (result.success) {
+        toast.success("Cập nhật bài viết thành công!");
+        router.push(`/forum/${result.data.slug}`);
+      } else {
+        toast.error(result.error || "Cập nhật thất bại");
+      }
     } catch (e) {
       console.error(e);
       toast.error("Cập nhật thất bại.");
@@ -119,62 +139,107 @@ export default function ThreadEditForm({ slug }) {
       <CardHeader>
         <CardTitle>Chỉnh sửa chủ đề</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Tiêu đề <span className="text-destructive">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Nhập tiêu đề chủ đề..."
+                      {...field}
+                      maxLength={255}
+                    />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    {(title || "").length}/255 ký tự
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Tiêu đề <span className="text-destructive">*</span>
-          </label>
-          <Input
-            placeholder="Nhập tiêu đề chủ đề..."
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            maxLength={200}
-          />
-        </div>
+            <FormField
+              control={control}
+              name="categoryIds"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Danh mục <span className="text-destructive">*</span>
+                  </FormLabel>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {cats.map((c) => (
+                      <label
+                        key={c.id}
+                        className="flex items-center gap-2 text-sm cursor-pointer hover:text-primary transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                          checked={(categoryIds || []).includes(c.id)}
+                          onChange={() => toggleCat(c.id)}
+                        />
+                        <span>{c.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {(categoryIds || []).length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Đã chọn {categoryIds.length} danh mục
+                    </p>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Danh mục</label>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {cats.map((c) => (
-              <label
-                key={c.id}
-                className="flex items-center gap-2 text-sm cursor-pointer hover:text-primary transition-colors"
+            <FormField
+              control={control}
+              name="bodyMd"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Nội dung <span className="text-destructive">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Controller
+                      control={control}
+                      name="bodyMd"
+                      render={({ field }) => (
+                        <Editor
+                          key={loading ? "loading" : "loaded"}
+                          initialContent={field.value}
+                          onContentChange={(content) => field.onChange(content)}
+                        />
+                      )}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button 
+                type="button"
+                variant="outline" 
+                onClick={() => router.back()} 
+                disabled={submitting}
               >
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                  checked={categoryIds.includes(c.id)}
-                  onChange={() => toggleCat(c.id)}
-                />
-                <span>{c.name}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Nội dung <span className="text-destructive">*</span>
-          </label>
-          <Editor
-            key={loading ? "loading" : "loaded"}
-            initialContent={bodyMd}
-            onContentChange={setBodyMd}
-          />
-        </div>
-
-        <div className="flex justify-end gap-2 pt-4">
-          <Button variant="outline" onClick={() => router.back()} disabled={submitting}>
-            Hủy
-          </Button>
-          <Button
-            onClick={submit}
-            disabled={submitting || !title.trim() || !bodyMd.trim()}
-          >
-            {submitting ? "Đang lưu..." : "Lưu thay đổi"}
-          </Button>
-        </div>
+                Hủy
+              </Button>
+              <Button type="submit" disabled={submitting}>
+                {submitting ? "Đang lưu..." : "Lưu thay đổi"}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );

@@ -3,7 +3,6 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThreadCreateForm from "@/components/forum/thread-create-form";
-// --- Mới thêm ---
 import { useEffect } from "react";
 import { useAuthStore } from "@/store/auth-store";
 import { toast } from "sonner";

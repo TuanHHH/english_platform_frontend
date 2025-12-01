@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import ThreadListFilters from "@/components/forum/thread-list-filters";
 import {
-  adminListThreads,
+  adminGetThreads,
   adminLockThread,
   adminUnlockThread,
   adminDeleteThread,
-  forumListCategories,
+  getForumCategories,
 } from "@/lib/api/forum";
 import { toast } from "sonner";
 
@@ -32,15 +32,26 @@ export default function AdminForumThreadsPage() {
 
   async function load(p = page, f = filters) {
     const params = { ...f, page: p, pageSize };
-    const { items, meta } = await adminListThreads(params);
-    setItems(items);
-    setMeta(meta);
+    const result = await adminGetThreads(params);
+    if (result.success) {
+      const data = result.data;
+      setItems(data?.content || data?.result || []);
+      setMeta(data?.meta || { page: p, pages: data?.totalPages || 0 });
+    } else {
+      toast.error(result.error || "Không thể tải danh sách chủ đề");
+      setItems([]);
+      setMeta({ page: p, pages: 0 });
+    }
   }
 
   useEffect(() => {
-    forumListCategories()
-      .then(setCats)
-      .catch(() => {});
+    async function loadCategories() {
+      const result = await getForumCategories();
+      if (result.success) {
+        setCats(result.data);
+      }
+    }
+    loadCategories();
   }, []);
 
   useEffect(() => {
@@ -59,33 +70,36 @@ export default function AdminForumThreadsPage() {
 
   async function confirmDelete() {
     if (!deleteId) return;
-    await toast.promise(adminDeleteThread(deleteId), {
-      loading: "Đang xóa chủ đề...",
-      success: "Đã xóa chủ đề",
-      error: "Xóa thất bại, vui lòng thử lại",
-    });
-    setOpenDelete(false);
-    setDeleteId(null);
-    setDeleteTitle("");
-    await load();
+    const result = await adminDeleteThread(deleteId);
+    if (result.success) {
+      toast.success("Đã xóa chủ đề");
+      setOpenDelete(false);
+      setDeleteId(null);
+      setDeleteTitle("");
+      await load();
+    } else {
+      toast.error(result.error || "Xóa thất bại, vui lòng thử lại");
+    }
   }
 
   async function handleLock(id, title) {
-    await toast.promise(adminLockThread(id), {
-      loading: "Đang khóa chủ đề...",
-      success: `Đã khóa: "${title || "chủ đề"}"`,
-      error: "Khóa thất bại",
-    });
-    await load();
+    const result = await adminLockThread(id);
+    if (result.success) {
+      toast.success(`Đã khóa: "${title || "chủ đề"}"`);
+      await load();
+    } else {
+      toast.error(result.error || "Khóa thất bại");
+    }
   }
 
   async function handleUnlock(id, title) {
-    await toast.promise(adminUnlockThread(id), {
-      loading: "Đang mở khóa...",
-      success: `Đã mở khóa: "${title || "chủ đề"}"`,
-      error: "Mở khóa thất bại",
-    });
-    await load();
+    const result = await adminUnlockThread(id);
+    if (result.success) {
+      toast.success(`Đã mở khóa: "${title || "chủ đề"}"`);
+      await load();
+    } else {
+      toast.error(result.error || "Mở khóa thất bại");
+    }
   }
 
   return (

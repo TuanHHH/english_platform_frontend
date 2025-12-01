@@ -1,32 +1,65 @@
 "use client";
-import { useState } from "react";
+import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { appReplyThread } from "@/lib/api/forum";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { replyToThread } from "@/lib/api/forum";
+import { postCreateSchema } from "@/schema/forum";
 
 export default function ReplyForm({ threadId, onDone }) {
-  const [body, setBody] = useState("");
-  const [loading, setLoading] = useState(false);
+  const form = useForm({
+    resolver: zodResolver(postCreateSchema),
+    defaultValues: {
+      bodyMd: ""
+    }
+  });
 
-  async function submit() {
-    if (!body.trim()) return;
-    setLoading(true);
+  const { control, handleSubmit, reset, formState: { isSubmitting } } = form;
+
+  async function onSubmit(data) {
     try {
-      const userId = typeof window !== "undefined" ? localStorage.getItem("x-user-id") : undefined;
-      await appReplyThread(threadId, { bodyMd: body }, { userId });
-      setBody("");
-      onDone?.();
-    } finally {
-      setLoading(false);
+      const result = await replyToThread(threadId, data);
+      if (result.success) {
+        reset();
+        toast.success("Gửi phản hồi thành công!");
+        onDone?.();
+      } else {
+        toast.error(result.error || "Không thể gửi phản hồi");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Không thể gửi phản hồi");
     }
   }
 
   return (
-    <div className="space-y-2">
-      <Textarea rows={4} placeholder="Viết phản hồi..." value={body} onChange={(e) => setBody(e.target.value)} />
-      <div className="flex justify-end">
-        <Button onClick={submit} disabled={loading}>{loading ? "Đang gửi..." : "Gửi phản hồi"}</Button>
-      </div>
-    </div>
+    <Form {...form}>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-2">
+        <FormField
+          control={control}
+          name="bodyMd"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <Textarea 
+                  rows={4} 
+                  placeholder="Viết phản hồi..." 
+                  maxLength={10000}
+                  {...field} 
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="flex justify-end">
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Đang gửi..." : "Gửi phản hồi"}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }

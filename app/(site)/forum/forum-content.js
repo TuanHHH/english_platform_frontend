@@ -5,7 +5,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import ThreadListFilters from "@/components/forum/thread-list-filters";
-import { forumListThreads, forumListCategories } from "@/lib/api/forum";
+import { getForumThreads, getForumCategories } from "@/lib/api/forum";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/auth-store"; 
@@ -16,43 +16,57 @@ export default function ForumContent() {
   const [items, setItems] = useState([]);
   const [meta, setMeta] = useState({ page: 1, pages: 0 });
   const [page, setPage] = useState(0);
-  const [filters, setFilters] = useState({});
+  const [filters, setFilters] = useState(null); // null = chưa nhận filters từ ThreadListFilters
   const [cats, setCats] = useState([]);
-  const [isInitialMount, setIsInitialMount] = useState(true);
   const [loading, setLoading] = useState(true);
   const pageSize = 20;
 
   const user = useAuthStore((state) => state.user);
   const router = useRouter();
 
-  const load = useCallback(async (p = page, f = filters) => {
+  // Không sử dụng useCallback với dependencies - gây re-render không cần thiết
+  const load = useCallback(async (p, f) => {
     setLoading(true);
-    const { items, meta } = await forumListThreads({ ...f, page: p + 1, pageSize });
-    setItems(items);
-    setMeta(meta);
+    const result = await getForumThreads({ ...f, page: p + 1, pageSize });
+    if (result.success) {
+      const data = result.data;
+      setItems(data?.content || data?.result || []);
+      setMeta(data?.meta || { page: p + 1, pages: data?.totalPages || 0 });
+    } else {
+      toast.error(result.error || "Không thể tải danh sách chủ đề");
+      setItems([]);
+      setMeta({ page: 1, pages: 0 });
+    }
     setLoading(false);
-  }, [page, filters]);
+  }, []); // Empty dependencies - function never changes
 
   const filtersKey = useMemo(() => JSON.stringify(filters), [filters]);
 
+  // Load categories chỉ 1 lần khi mount
   useEffect(() => {
-    forumListCategories().then(setCats);
-    load(0, filters);
-    setIsInitialMount(false);
+    async function init() {
+      const result = await getForumCategories();
+      if (result.success) {
+        setCats(result.data);
+      }
+    }
+    init();
   }, []);
 
+  // Khi filters thay đổi (từ ThreadListFilters), load data
   useEffect(() => {
-    if (!isInitialMount) {
+    if (filters !== null) {
       setPage(0);
       load(0, filters);
     }
-  }, [filtersKey]);
+  }, [filtersKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Khi page thay đổi (không phải page 0)
   useEffect(() => {
-    if (!isInitialMount && page !== 0) {
+    if (filters !== null && page !== 0) {
       load(page, filters);
     }
-  }, [page]);
+  }, [page]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handlePageChange = useCallback((newPage) => {
     setPage(newPage);
