@@ -40,7 +40,7 @@ const QuickLinks = memo(() => (
         </Link>
       </li>
       <li>
-        <Link href="/practice-tests" className="text-gray-300 hover:text-white transition-colors">
+        <Link href="/quiz-types" className="text-gray-300 hover:text-white transition-colors">
           Bài luyện tập
         </Link>
       </li>
