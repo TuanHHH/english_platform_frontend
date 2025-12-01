@@ -1,11 +1,11 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { FullPageLoader } from "@/components/ui/full-page-loader"
 import { toast } from "sonner"
 
-export default function CallbackSuccess() {
+function CallbackContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -39,4 +39,12 @@ export default function CallbackSuccess() {
   }, [router, searchParams])
 
   return <FullPageLoader />
+}
+
+export default function CallbackSuccess() {
+  return (
+    <Suspense fallback={<FullPageLoader />}>
+      <CallbackContent />
+    </Suspense>
+  )
 }
