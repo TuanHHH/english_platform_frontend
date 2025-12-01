@@ -92,6 +92,11 @@ export default function EditCoursePage() {
           // Set detailed description
           setDetailedDescription(courseData.detailedDescription || "")
 
+          // Set existing thumbnail preview
+          if (courseData.thumbnail) {
+            setThumbnailPreview(courseData.thumbnail)
+          }
+
           // Parse skills into preset and custom
           const initial = Array.isArray(courseData.skillFocus) ? courseData.skillFocus : []
           const lowerSet = new Set(initial.map((s) => s.trim().toLocaleLowerCase()))
