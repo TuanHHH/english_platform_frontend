@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken"
 const rules = [
   {
     // Public routes
-    routes: ["/login", "/register", "/forgot-password", "/auth/callback/error"],
+    routes: ["/login", "/register", "/forgot-password", "/auth/callback/error", "/auth/callback/success"],
     requireAuth: false,
     redirectIfAuth: "/", // logged-in user should not visit again
   },
@@ -30,7 +30,6 @@ const rules = [
     // Private routes
     routes: [
       "/cart",
-      "/auth/callback/success",
       "/payment",
       "/account",
       "/become-instructor",
