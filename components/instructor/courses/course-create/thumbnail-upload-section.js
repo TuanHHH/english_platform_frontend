@@ -21,7 +21,7 @@ export default function ThumbnailUploadSection({
 
       {/* Image preview */}
       {thumbnailPreview && (
-        <div className="relative w-full h-48 mb-3 rounded-lg overflow-hidden border-2 border-muted">
+        <div className="relative w-full mb-3 rounded-lg overflow-hidden border-2 border-muted" style={{ aspectRatio: '16/9' }}>
           <img
             src={thumbnailPreview}
             alt="Thumbnail preview"
@@ -70,7 +70,7 @@ export default function ThumbnailUploadSection({
       </div>
 
       <p className="text-xs text-muted-foreground mt-1">
-        Chọn ảnh và nhấn "Tải lên" để upload. Tối đa 5MB
+        Chọn ảnh và nhấn "Tải lên" để upload. Tối đa 5MB. Nên chọn ảnh có tỉ lệ 16:9 để tối ưu hiển thị.
       </p>
 
       {errors.thumbnail && <p className="text-red-500 text-sm mt-1">{errors.thumbnail.message}</p>}

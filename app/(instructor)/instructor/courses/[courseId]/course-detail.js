@@ -137,80 +137,70 @@ export default function CourseDetailPage() {
       </Link>
 
       {/* --- Header --- */}
-      <div className="relative rounded-lg overflow-hidden h-64 mb-6">
-        {/* Thumbnail */}
-        <img
-          src={course.thumbnail || "/course-placeholder.jpeg"}
-          alt={course.title}
-          className="w-full h-full object-cover"
-        />
-
-        {/* Overlay gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-
-        {/* Nội dung overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-          {/* Trạng thái + thống kê */}
-          <div className="flex flex-wrap items-center gap-3 mb-3">
-            <Badge
-              className={
-                course.published ? "bg-green-500 hover:bg-green-600" : "bg-gray-500"
-              }
-            >
-              {course.published ? "Đã xuất bản" : "Chưa xuất bản"}
-            </Badge>
-            <span className="text-sm opacity-90">
-              {course.lessonCount ?? 0} bài học
-            </span>
-            <span className="text-sm opacity-90">
-              {course.moduleCount ?? 0} module
-            </span>
+      <div className="mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+          {/* Thumbnail */}
+          <div className="lg:col-span-1">
+            <div className="aspect-video bg-muted rounded-lg overflow-hidden relative">
+              <img
+                src={course.thumbnail || "/course-placeholder.jpeg"}
+                alt={course.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
           </div>
 
-          {/* Tiêu đề + mô tả */}
-          <h1 className="text-3xl md:text-4xl font-bold mb-1">{course.title}</h1>
-          <p className="text-white/90 text-sm md:text-base mb-3">
-            {course.description}
-          </p>
+          {/* Course Info */}
+          <div className="lg:col-span-2 flex flex-col justify-center">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4">{course.title}</h1>
 
-          {/* Hàng thông tin phụ */}
-          <div className="flex flex-wrap items-center gap-2 text-sm md:text-base">
-            {/* Giá tiền */}
-            <Badge
-              variant="outline"
-              className="bg-white/10 border-white/30 text-white"
-            >
-              💵{" "}
-              {course.priceCents
-                ? new Intl.NumberFormat("vi-VN", {
-                  style: "currency",
-                  currency: course.currency || "VND",
-                  minimumFractionDigits: 0,
-                }).format(course.priceCents)
-                : "Miễn phí"}
-            </Badge>
-
-            {/* Ngôn ngữ */}
-            {course.language && (
+            {/* Trạng thái + thống kê */}
+            <div className="flex flex-wrap items-center gap-3 mb-3">
               <Badge
-                variant="outline"
-                className="bg-white/10 border-white/30 text-white capitalize"
+                className={
+                  course.published ? "bg-green-500 hover:bg-green-600" : "bg-gray-500"
+                }
               >
-                🌐 {course.language}
+                {course.published ? "Đã xuất bản" : "Chưa xuất bản"}
               </Badge>
-            )}
+              <span className="text-sm text-muted-foreground">
+                {course.lessonCount ?? 0} bài học
+              </span>
+              <span className="text-sm text-muted-foreground">
+                {course.moduleCount ?? 0} module
+              </span>
+            </div>
 
-            {/* Skill focus */}
-            {Array.isArray(course.skillFocus) &&
-              course.skillFocus.map((skill) => (
-                <Badge
-                  key={skill}
-                  variant="secondary"
-                  className="bg-white/10 border-white/30 text-white capitalize"
-                >
-                  {skill}
+            <p className="text-base sm:text-lg text-muted-foreground mb-4 sm:mb-6">
+              {course.description}
+            </p>
+
+            {/* Thông tin phụ */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline">
+                💵{" "}
+                {course.priceCents
+                  ? new Intl.NumberFormat("vi-VN", {
+                    style: "currency",
+                    currency: course.currency || "VND",
+                    minimumFractionDigits: 0,
+                  }).format(course.priceCents)
+                  : "Miễn phí"}
+              </Badge>
+
+              {course.language && (
+                <Badge variant="outline" className="capitalize">
+                  🌐 {course.language}
                 </Badge>
-              ))}
+              )}
+
+              {Array.isArray(course.skillFocus) &&
+                course.skillFocus.map((skill) => (
+                  <Badge key={skill} variant="secondary" className="capitalize">
+                    {skill}
+                  </Badge>
+                ))}
+            </div>
           </div>
         </div>
       </div>
