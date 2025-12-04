@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, RotateCcw } from "lucide-react";
+import { Loader2, RotateCcw, Clock } from "lucide-react";
 import AssessmentResults from "./assessment-results";
 import AttemptAnswersView from "@/components/assessment/attempt-answers-view";
 import Link from "next/link";
@@ -11,8 +11,13 @@ export default function AssessmentPolling({
   assessmentError,
   attemptId,
   onViewDetails,
-  quizId
+  quizId,
+  onRetrySuccess
 }) {
+  const timeoutResults = allResults.filter(r => r?.timeout);
+  const successResults = allResults.filter(r => r && !r.timeout);
+  const hasTimeout = timeoutResults.length > 0;
+
   return (
     <>
       {isPolling && (
@@ -34,11 +39,28 @@ export default function AssessmentPolling({
         </Card>
       )}
 
-      {allResults.length > 0 && allResults.map((result, idx) => {
+      {hasTimeout && !isPolling && (
+        <Card className="shadow-lg border-yellow-500">
+          <CardContent className="p-6">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <Clock className="h-12 w-12 text-yellow-600" />
+              <div>
+                <h3 className="text-lg font-semibold">Chấm điểm đang xử lý</h3>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Quá trình chấm điểm mất nhiều thời gian hơn dự kiến. 
+                  Kết quả sẽ được cập nhật sau vài phút.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {successResults.length > 0 && successResults.map((result, idx) => {
         if (result.type === 'mcq') {
           return <AttemptAnswersView key={idx} data={result.data} />;
         }
-        return <AssessmentResults key={idx} results={result} type={result.type} />;
+        return <AssessmentResults key={idx} results={result} type={result.type} onRetrySuccess={onRetrySuccess} />;
       })}
 
       {assessmentError && (
@@ -61,7 +83,7 @@ export default function AssessmentPolling({
         </Card>
       )}
 
-      {allResults.length > 0 && !isPolling && (
+      {(allResults.length > 0 || hasTimeout) && !isPolling && (
         <div className="flex justify-center gap-3">
           {allResults[0]?.type === 'mcq' ? (
             <Button size="lg" asChild>
@@ -70,11 +92,10 @@ export default function AssessmentPolling({
               </Link>
             </Button>
           ) : (
-            <Button
-              size="lg"
-              onClick={() => onViewDetails(attemptId)}
-            >
-              Xem chi tiết kết quả
+            <Button size="lg" asChild>
+              <Link href="/account?history-tests">
+                {hasTimeout ? 'Xem kết quả sau' : 'Xem danh sách kết quả'}
+              </Link>
             </Button>
           )}
           {quizId && (

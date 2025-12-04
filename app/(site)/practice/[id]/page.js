@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { getPublicQuiz } from "@/lib/api/quiz/quiz";
-import { submitOneShot, submitSpeaking, getSpeakingResults, getWritingResultsByAnswer, getAttemptAnswers } from "@/lib/api/attempt";
+import { submitOneShot, submitSpeaking, getSpeakingResults, submitWriting, getWritingResults, getAttemptAnswers } from "@/lib/api/attempt";
 import ContextPassage from "@/components/practice/context-passage";
 import QuizHeader from "@/components/practice/quiz-header";
 import QuestionCard from "@/components/practice/question-card";
@@ -176,9 +176,22 @@ export default function PracticePage() {
                 );
               }
             } else if (skill === 'WRITING' && !isMCQ(q)) {
-              assessmentPromises.push(
-                pollWritingResult(newAttemptId, answerId, q, totalAssessments)
-              );
+              const answerText = answers[q.id];
+              if (answerText && answerText.trim()) {
+                assessmentPromises.push(
+                  (async () => {
+                    try {
+                      const writingRes = await submitWriting(newAttemptId, answerId);
+                      if (writingRes.success && writingRes.data?.id) {
+                        return pollWritingResult(writingRes.data.id, q, totalAssessments);
+                      }
+                    } catch (err) {
+                      console.error('Writing assessment error:', err);
+                      return null;
+                    }
+                  })()
+                );
+              }
             }
           }
           
@@ -203,7 +216,7 @@ export default function PracticePage() {
     } finally {
       setSubmitting(false);
     }
-  }, [id, questions, startTime, quiz, audioBlobs, isMCQ, isSpeaking]);
+  }, [id, questions, startTime, quiz, answers, audioBlobs, isMCQ, isSpeaking]);
 
   const onSubmit = useCallback(async () => {
     const skill = quiz?.skill?.toUpperCase();
@@ -243,16 +256,16 @@ export default function PracticePage() {
         console.error('Poll speaking error:', err);
       }
     }
-    return null;
+    return { timeout: true, questionId: question.id, questionContent: question.content, type: 'speaking' };
   };
 
-  const pollWritingResult = async (attemptId, answerId, question, totalQuestions) => {
+  const pollWritingResult = async (submissionId, question, totalQuestions) => {
     const maxAttempts = 40;
     const pollInterval = Math.min(3000 + (totalQuestions - 1) * 1000, 10000);
     
     for (let i = 0; i < maxAttempts; i++) {
       try {
-        const res = await getWritingResultsByAnswer(attemptId, answerId);
+        const res = await getWritingResults(submissionId);
         if (res?.success && res.data?.aiScore !== null) {
           return { ...res.data, questionId: question.id, questionContent: question.content, type: 'writing' };
         }
@@ -261,7 +274,7 @@ export default function PracticePage() {
         console.error('Poll writing error:', err);
       }
     }
-    return null;
+    return { timeout: true, questionId: question.id, questionContent: question.content, type: 'writing' };
   };
 
   if (loading) {

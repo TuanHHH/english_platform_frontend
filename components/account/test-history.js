@@ -65,6 +65,7 @@ export default function TestHistory() {
   const [assessmentResults, setAssessmentResults] = useState([])
   const [assessmentMetadata, setAssessmentMetadata] = useState(null)
   const [isPolling, setIsPolling] = useState(false)
+  const [currentAttemptInfo, setCurrentAttemptInfo] = useState(null)
 
   useEffect(() => {
     let mounted = true
@@ -104,6 +105,7 @@ export default function TestHistory() {
     setAttemptData(null)
     setAssessmentResults([])
     setAssessmentMetadata(null)
+    setCurrentAttemptInfo({ attemptId, skill })
     
     try {
       const skillUpper = skill?.toUpperCase()
@@ -124,6 +126,21 @@ export default function TestHistory() {
       console.error('Load attempt failed', e)
     } finally {
       setAttemptLoading(false)
+    }
+  }
+
+  const handleRetrySuccess = async () => {
+    if (!currentAttemptInfo) return
+    
+    const { attemptId, skill } = currentAttemptInfo
+    const skillUpper = skill?.toUpperCase()
+    
+    if (skillUpper === 'WRITING' || skillUpper === 'SPEAKING') {
+      setIsPolling(true)
+      const { results, metadata } = await fetchAssessmentResults(attemptId, skillUpper)
+      setAssessmentResults(results)
+      setAssessmentMetadata(metadata)
+      setIsPolling(false)
     }
   }
 
@@ -386,6 +403,7 @@ export default function TestHistory() {
                 assessmentError={null}
                 attemptId={null}
                 onViewDetails={() => {}}
+                onRetrySuccess={handleRetrySuccess}
               />
             </div>
           ) : attemptData ? (

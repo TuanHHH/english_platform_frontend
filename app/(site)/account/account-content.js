@@ -1,4 +1,7 @@
-import { memo } from 'react';
+'use client';
+
+import { memo, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -7,6 +10,19 @@ import TestHistory from '@/components/account/test-history';
 import GoogleLinkCard from '@/components/account/google-link-card';
 
 const AccountContent = memo(() => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const hasHistoryParam = searchParams.has('history-tests');
+  const defaultTab = hasHistoryParam ? 'history' : 'profile';
+
+  const handleTabChange = useCallback((value) => {
+    if (value === 'history') {
+      router.push('/account?history-tests', { scroll: false });
+    } else {
+      router.push('/account', { scroll: false });
+    }
+  }, [router]);
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -16,7 +32,7 @@ const AccountContent = memo(() => {
             <p className="text-gray-600 mt-2">Quản lý hồ sơ, lịch sử học tập và cài đặt cá nhân</p>
           </div>
 
-          <Tabs defaultValue="profile" className="space-y-6">
+          <Tabs defaultValue={defaultTab} onValueChange={handleTabChange} className="space-y-6">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="profile">Hồ sơ</TabsTrigger>
               <TabsTrigger value="history">Lịch sử</TabsTrigger>

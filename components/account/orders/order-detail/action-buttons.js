@@ -1,56 +1,58 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { memo } from "react"
 import { Button } from "@/components/ui/button"
-import { Receipt, XCircle, CreditCard } from "lucide-react"
+import { Receipt, XCircle, CreditCard, Loader2 } from "lucide-react"
 
-export function ActionButtons({
+export const ActionButtons = memo(function ActionButtons({
   orderDetails,
   isProcessing,
   onViewInvoice,
   onCancelOrder,
   onPayAgain
 }) {
-  // Hide entire action section for free orders
-  if (orderDetails.totalCents === 0) {
-    return null
-  }
+  if (orderDetails.totalCents === 0) return null
+
+  const isPending = orderDetails.status === "PENDING"
+  const isPaid = orderDetails.status === "PAID"
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Thao tác</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={onViewInvoice}
-        >
-          <Receipt className="w-4 h-4 mr-2" />
-          Xem hóa đơn
-        </Button>
-
-        {orderDetails.status === "PENDING" && (
+    <div className="bg-background rounded-lg shadow-sm p-4">
+      <div className="flex flex-col sm:flex-row gap-3">
+        {isPending && (
           <>
             <Button
-              className="w-full"
+              className="flex-1 h-11"
               onClick={onPayAgain}
               disabled={isProcessing}
             >
-              <CreditCard className="w-4 h-4 mr-2" />
-              {isProcessing ? "Đang xử lý..." : "Thanh toán ngay"}
+              {isProcessing ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <CreditCard className="w-4 h-4 mr-2" />
+              )}
+              Thanh toán ngay
             </Button>
             <Button
-              variant="destructive"
-              className="w-full"
+              variant="outline"
+              className="flex-1 h-11 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
               onClick={onCancelOrder}
               disabled={isProcessing}
             >
               <XCircle className="w-4 h-4 mr-2" />
-              {isProcessing ? "Đang xử lý..." : "Hủy đơn hàng"}
+              Hủy đơn hàng
             </Button>
           </>
         )}
-      </CardContent>
-    </Card>
+        {isPaid && (
+          <Button
+            variant="outline"
+            className="flex-1 h-11"
+            onClick={onViewInvoice}
+          >
+            <Receipt className="w-4 h-4 mr-2" />
+            Xem hóa đơn
+          </Button>
+        )}
+      </div>
+    </div>
   )
-}
+})

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, memo } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -13,7 +13,101 @@ import { PaymentHistory } from "@/components/account/orders/order-detail/payment
 import { CustomerInfo } from "@/components/account/orders/order-detail/customer-info"
 import { ActionButtons } from "@/components/account/orders/order-detail/action-buttons"
 import { CancelOrderDialog } from "@/components/account/orders/order-detail/cancel-order-dialog"
-import { ArrowLeft, CheckCircle, Clock, RefreshCw, XCircle } from "lucide-react"
+import { ArrowLeft, CheckCircle, Clock, RefreshCw, XCircle, Loader2 } from "lucide-react"
+
+const formatDate = (dateString) => {
+  return new Date(dateString).toLocaleDateString('vi-VN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+const getStatusConfig = (status) => {
+  const configs = {
+    PAID: { text: "Đã thanh toán", variant: "default", step: 3 },
+    PENDING: { text: "Chờ thanh toán", variant: "secondary", step: 1 },
+    CANCELLED: { text: "Đã hủy", variant: "destructive", step: -1 },
+    REFUNDED: { text: "Đã hoàn tiền", variant: "outline", step: -1 }
+  }
+  return configs[status] || { text: "Không xác định", variant: "outline", step: 0 }
+}
+
+const getPaymentStatusIcon = (status) => {
+  const icons = {
+    SUCCESS: <CheckCircle className="w-4 h-4 text-green-500" />,
+    FAILED: <XCircle className="w-4 h-4 text-red-500" />,
+    INITIATED: <Clock className="w-4 h-4 text-primary" />,
+    PROCESSING: <RefreshCw className="w-4 h-4 text-primary animate-spin" />,
+    REFUNDED: <RefreshCw className="w-4 h-4 text-orange-500" />
+  }
+  return icons[status] || <Clock className="w-4 h-4 text-gray-500" />
+}
+
+const LoadingState = memo(function LoadingState() {
+  return (
+    <div className="min-h-screen bg-muted/30 py-4 sm:py-6">
+      <div className="container mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+            <span className="text-muted-foreground">Đang tải thông tin đơn hàng...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+})
+
+const ErrorState = memo(function ErrorState({ error }) {
+  return (
+    <div className="min-h-screen bg-muted/30 py-4 sm:py-6">
+      <div className="container mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-background rounded-lg shadow-sm p-8 text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <XCircle className="w-8 h-8 text-red-600" />
+            </div>
+            <h2 className="text-xl font-semibold mb-2">Có lỗi xảy ra</h2>
+            <p className="text-muted-foreground mb-6">{error}</p>
+            <Link href="/account/orders">
+              <Button>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Quay lại danh sách đơn hàng
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+})
+
+const NotFoundState = memo(function NotFoundState() {
+  return (
+    <div className="min-h-screen bg-muted/30 py-4 sm:py-6">
+      <div className="container mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-background rounded-lg shadow-sm p-8 text-center">
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+              <Clock className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h2 className="text-xl font-semibold mb-2">Không tìm thấy đơn hàng</h2>
+            <p className="text-muted-foreground mb-6">Đơn hàng bạn đang tìm không tồn tại hoặc bạn không có quyền xem.</p>
+            <Link href="/account/orders">
+              <Button>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Quay lại danh sách đơn hàng
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+})
 
 export default function OrderDetailContent({ orderId }) {
   const router = useRouter()
@@ -23,14 +117,11 @@ export default function OrderDetailContent({ orderId }) {
   const [orderDetails, setOrderDetails] = useState(null)
   const [showCancelDialog, setShowCancelDialog] = useState(false)
 
-  // Fetch order details from API
   useEffect(() => {
     const fetchOrderDetails = async () => {
       if (!orderId) return
-
       setIsLoading(true)
       setError(null)
-
       try {
         const result = await getMyOrderById(orderId)
         if (result.success) {
@@ -45,68 +136,10 @@ export default function OrderDetailContent({ orderId }) {
         setIsLoading(false)
       }
     }
-
     fetchOrderDetails()
   }, [orderId])
 
-  const getStatusVariant = (status) => {
-    switch (status) {
-      case "PAID":
-        return "default"
-      case "PENDING":
-        return "secondary"
-      case "CANCELLED":
-        return "destructive"
-      case "REFUNDED":
-        return "outline"
-      default:
-        return "outline"
-    }
-  }
-
-  const getStatusText = (status) => {
-    switch (status) {
-      case "PAID":
-        return "Đã thanh toán"
-      case "PENDING":
-        return "Chờ thanh toán"
-      case "CANCELLED":
-        return "Đã hủy"
-      // case "REFUNDED":
-      //   return "Đã hoàn tiền"
-      default:
-        return "Không xác định"
-    }
-  }
-
-  const getPaymentStatusIcon = (status) => {
-    switch (status) {
-      case "SUCCESS":
-        return <CheckCircle className="w-4 h-4 text-green-500" />
-      case "FAILED":
-        return <XCircle className="w-4 h-4 text-red-500" />
-      case "INITIATED":
-        return <Clock className="w-4 h-4 text-blue-500" />
-      case "PROCESSING":
-        return <RefreshCw className="w-4 h-4 text-blue-500" />
-      case "REFUNDED":
-        return <RefreshCw className="w-4 h-4 text-orange-500" />
-      default:
-        return <Clock className="w-4 h-4 text-gray-500" />
-    }
-  }
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('vi-VN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
-
-  const handleViewInvoice = async () => {
+  const handleViewInvoice = useCallback(async () => {
     try {
       const result = await getOrderInvoice(orderDetails.id)
       if (result.success && result.data?.fileUrl) {
@@ -118,44 +151,36 @@ export default function OrderDetailContent({ orderId }) {
       console.error("Error fetching invoice:", error)
       toast.error("Có lỗi xảy ra khi tải hóa đơn")
     }
-  }
+  }, [orderDetails?.id])
 
-  const handleRequestRefund = () => {
-    // Find the first successful payment to use for refund request
-    const successfulPayment = orderDetails.payments?.find(payment => payment.status === "SUCCESS")
-
-    if (successfulPayment && successfulPayment.id) {
-      // Navigate to refund page with payment ID
+  const handleRequestRefund = useCallback(() => {
+    const successfulPayment = orderDetails?.payments?.find(p => p.status === "SUCCESS")
+    if (successfulPayment?.id) {
       router.push(`/account/refunds/new?paymentId=${successfulPayment.id}`)
     } else {
       toast.error("Không tìm thấy thông tin thanh toán hợp lệ để yêu cầu hoàn tiền.")
     }
-  }
+  }, [orderDetails?.payments, router])
 
-  const handlePayAgain = () => {
-    // Navigate to payment page for this order
+  const handlePayAgain = useCallback(() => {
     router.push(`/payment/order/${orderDetails.id}`)
-  }
+  }, [orderDetails?.id, router])
 
-  const handleCancelOrder = () => {
+  const handleCancelOrder = useCallback(() => {
     setShowCancelDialog(true)
-  }
+  }, [])
 
-  const handleConfirmCancel = async (cancelReason) => {
+  const handleConfirmCancel = useCallback(async (cancelReason) => {
     setIsProcessing(true)
     try {
       const result = await cancelOrder(orderDetails.id, cancelReason)
-
       if (result.success) {
         toast.success("Đơn hàng đã được hủy thành công!")
         setShowCancelDialog(false)
-
-        // Refresh order details to show updated status
         const updatedOrder = await getMyOrderById(orderId)
         if (updatedOrder.success) {
           setOrderDetails(updatedOrder.data)
         } else {
-          // If refresh fails, redirect to orders list
           router.push('/account/orders')
         }
       } else {
@@ -167,152 +192,60 @@ export default function OrderDetailContent({ orderId }) {
     } finally {
       setIsProcessing(false)
     }
-  }
+  }, [orderDetails?.id, orderId, router])
 
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-center justify-center py-16">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-3 text-gray-600">Đang tải thông tin đơn hàng...</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  if (isLoading) return <LoadingState />
+  if (error) return <ErrorState error={error} />
+  if (!orderDetails) return <NotFoundState />
 
-  // Error state
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center py-16">
-              <div className="text-red-600 mb-4">
-                <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Có lỗi xảy ra</h2>
-              <p className="text-gray-600 mb-6">{error}</p>
-              <Link href="/account/orders">
-                <Button>
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Quay lại danh sách đơn hàng
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // No order data
-  if (!orderDetails) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center py-16">
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Không tìm thấy đơn hàng</h2>
-              <p className="text-gray-600 mb-6">Đơn hàng bạn đang tìm không tồn tại hoặc bạn không có quyền xem nó.</p>
-              <Link href="/account/orders">
-                <Button>
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Quay lại danh sách đơn hàng
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const statusConfig = getStatusConfig(orderDetails.status)
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
+    <div className="min-h-screen bg-muted/30 py-4 sm:py-6">
+      <div className="container mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto space-y-3 sm:space-y-4">
+          {/* Back Button */}
+          <Link href="/account/orders" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            <span>Quay lại đơn hàng</span>
+          </Link>
+
+          {/* Order Header with Status */}
           <OrderHeader
             orderDetails={orderDetails}
-            getStatusVariant={getStatusVariant}
-            getStatusText={getStatusText}
+            statusConfig={statusConfig}
           />
 
-          <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
-            {/* Main Content */}
-            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-              {/* Order Information */}
-              <OrderInfo
-                orderDetails={orderDetails}
-                formatDate={formatDate}
-              />
-
-              {/* Order Items */}
-              <OrderItems
-                orderDetails={orderDetails}
-              />
-
-              {/* Payment History - Hide for free orders */}
-              {orderDetails.totalCents > 0 && (
-                <PaymentHistory
-                  orderDetails={orderDetails}
-                  getPaymentStatusIcon={getPaymentStatusIcon}
-                  formatDate={formatDate}
-                />
-              )}
-            </div>
-
-            {/* Sidebar - Mobile: Bottom, Desktop: Right */}
-            <div className="lg:col-span-3 space-y-4 sm:space-y-6">
-              <div className="lg:hidden">
-                {/* Mobile Customer Info */}
-                <CustomerInfo
-                  orderDetails={orderDetails}
-                  isMobile={true}
-                />
-              </div>
-
-              {/* Desktop Sidebar */}
-              <div className="hidden lg:block space-y-6">
-                {/* Customer Info */}
-                <CustomerInfo
-                  orderDetails={orderDetails}
-                  isMobile={false}
-                />
-
-                {/* Action Buttons */}
-                <ActionButtons
-                  orderDetails={orderDetails}
-                  isProcessing={isProcessing}
-                  onViewInvoice={handleViewInvoice}
-                  onRequestRefund={handleRequestRefund}
-                  onPayAgain={handlePayAgain}
-                  onCancelOrder={handleCancelOrder}
-                />
-              </div>
-            </div>
-
-            {/* Mobile Action Buttons */}
-            <div className="lg:hidden">
-              <ActionButtons
-                orderDetails={orderDetails}
-                isProcessing={isProcessing}
-                onViewInvoice={handleViewInvoice}
-                onRequestRefund={handleRequestRefund}
-                onPayAgain={handlePayAgain}
-                onCancelOrder={handleCancelOrder}
-              />
-            </div>
+          {/* Customer & Order Info */}
+          <div className="bg-background rounded-lg shadow-sm overflow-hidden">
+            <CustomerInfo orderDetails={orderDetails} />
+            <div className="border-t" />
+            <OrderInfo orderDetails={orderDetails} formatDate={formatDate} />
           </div>
 
-          {/* Cancel Order Dialog */}
+          {/* Order Items */}
+          <OrderItems orderDetails={orderDetails} />
+
+          {/* Payment History */}
+          {orderDetails.totalCents > 0 && orderDetails.payments?.length > 0 && (
+            <PaymentHistory
+              orderDetails={orderDetails}
+              getPaymentStatusIcon={getPaymentStatusIcon}
+              formatDate={formatDate}
+            />
+          )}
+
+          {/* Action Buttons */}
+          <ActionButtons
+            orderDetails={orderDetails}
+            isProcessing={isProcessing}
+            onViewInvoice={handleViewInvoice}
+            onRequestRefund={handleRequestRefund}
+            onPayAgain={handlePayAgain}
+            onCancelOrder={handleCancelOrder}
+          />
+
+          {/* Cancel Dialog */}
           <CancelOrderDialog
             open={showCancelDialog}
             onOpenChange={setShowCancelDialog}

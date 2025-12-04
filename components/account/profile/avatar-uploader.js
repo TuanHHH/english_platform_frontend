@@ -104,9 +104,8 @@ export default function AvatarUploader({
           </Button>
         )}
 
-        <p className="text-[11px] text-muted-foreground italic mt-1">
-          Ảnh dưới <span className="font-semibold">2MB</span> • Định dạng{" "}
-          <span className="font-semibold">JPG, PNG</span>
+        <p className="text-[11px] text-muted-foreground mt-1">
+          Ảnh dưới 2MB • Định dạng JPG, PNG
         </p>
       </div>
     </div>
