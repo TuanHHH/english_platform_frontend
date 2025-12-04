@@ -1,4 +1,5 @@
-import { Search } from "lucide-react";
+import { memo } from "react";
+import { Search, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,9 +11,14 @@ import {
 } from "@/components/ui/select";
 
 const SKILLS = ["LISTENING", "READING", "SPEAKING", "WRITING"];
-const STATUSES = ["DRAFT", "PUBLISHED", "ARCHIVED"];
 
-export default function QuizFilters({
+const STATUS_OPTIONS = [
+  { value: "DRAFT", label: "Bản nháp" },
+  { value: "PUBLISHED", label: "Đã xuất bản" },
+  { value: "ARCHIVED", label: "Đã lưu trữ" },
+];
+
+const QuizFilters = memo(function QuizFilters({
   keyword,
   setKeyword,
   quizTypeId,
@@ -31,17 +37,19 @@ export default function QuizFilters({
   return (
     <form
       onSubmit={onSubmit}
-      className="rounded-xl border p-4 space-y-4 bg-background"
+      className="rounded-xl border p-3 sm:p-4 space-y-3 bg-background"
     >
-      <div className="grid grid-cols-1 md:grid-cols-8 gap-3">
-        <Input
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          placeholder="Từ khóa"
-          className="md:col-span-2"
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-3">
+        <div className="relative sm:col-span-2">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="Tìm kiếm..."
+            className="pl-9"
+          />
+        </div>
 
-        {/* Quiz Type */}
         <Select
           value={quizTypeId}
           onValueChange={(v) => {
@@ -50,7 +58,8 @@ export default function QuizFilters({
           }}
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Quiz Type" />
+            <Filter className="w-4 h-4 mr-2 flex-shrink-0" />
+            <SelectValue placeholder="Loại đề" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tất cả</SelectItem>
@@ -62,22 +71,20 @@ export default function QuizFilters({
           </SelectContent>
         </Select>
 
-        {/* Status */}
         <Select value={status} onValueChange={(v) => setStatus(v)}>
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Status" />
+            <SelectValue placeholder="Trạng thái" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tất cả</SelectItem>
-            {STATUSES.map((s) => (
-              <SelectItem key={s} value={s}>
-                {s}
+            {STATUS_OPTIONS.map((s) => (
+              <SelectItem key={s.value} value={s.value}>
+                {s.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        {/* Skill */}
         <Select
           value={skill}
           onValueChange={(v) => {
@@ -85,7 +92,7 @@ export default function QuizFilters({
           }}
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Skill" />
+            <SelectValue placeholder="Kỹ năng" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tất cả</SelectItem>
@@ -97,14 +104,13 @@ export default function QuizFilters({
           </SelectContent>
         </Select>
 
-        {/* Quiz Section */}
         <Select
           value={quizSectionId}
           onValueChange={onChangeSection}
           disabled={!quizTypeId || quizTypeId === "all" || sections.length === 0}
         >
-          <SelectTrigger className="w-full md:col-span-2">
-            <SelectValue placeholder="Section (theo Type)" />
+          <SelectTrigger className="w-full xl:col-span-2">
+            <SelectValue placeholder="Phần thi" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tất cả</SelectItem>
@@ -116,13 +122,13 @@ export default function QuizFilters({
           </SelectContent>
         </Select>
 
-        <div>
-          <Button type="submit" className="w-full md:w-auto">
-            <Search className="mr-2 h-4 w-4" />
-            Tìm kiếm
-          </Button>
-        </div>
+        <Button type="submit" className="w-full sm:w-auto">
+          <Search className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">Tìm kiếm</span>
+        </Button>
       </div>
     </form>
   );
-}
+});
+
+export default QuizFilters;

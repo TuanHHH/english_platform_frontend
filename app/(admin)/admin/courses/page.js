@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { getAllCourses, changeCourseStatus } from "@/lib/api/course"
 import { Pagination } from "@/components/ui/pagination"
 import { toast } from "sonner"
@@ -8,12 +8,14 @@ import CoursesHeader from "@/components/admin/courses/courses-header"
 import CourseFilters from "@/components/admin/courses/course-filters"
 import CourseTable from "@/components/admin/courses/course-table"
 
+const PAGE_SIZE = 10
+
 export default function AdminCoursesPage() {
   const [courses, setCourses] = useState([])
   const [loading, setLoading] = useState(true)
   const [pagination, setPagination] = useState({
     page: 1,
-    pageSize: 10,
+    pageSize: PAGE_SIZE,
     pages: 0,
     total: 0,
   })
@@ -24,14 +26,17 @@ export default function AdminCoursesPage() {
     sort: "createdAt,desc",
   })
   const [searchInput, setSearchInput] = useState("")
+  
+  const filtersRef = useRef(filters)
+  filtersRef.current = filters
 
-  const fetchCourses = async (page = 1, overrideFilters = null) => {
+  const fetchCourses = useCallback(async (page = 1, overrideFilters = null) => {
     setLoading(true)
     try {
-      const currentFilters = overrideFilters || filters
+      const currentFilters = overrideFilters || filtersRef.current
       const params = {
         page,
-        size: pagination.pageSize,
+        size: PAGE_SIZE,
         sort: currentFilters.sort || "createdAt,desc",
       }
 
@@ -39,16 +44,14 @@ export default function AdminCoursesPage() {
       if (currentFilters.status) params.status = currentFilters.status
       if (currentFilters.skills && currentFilters.skills !== "ALL")
         params.skills = [currentFilters.skills]
-      if (currentFilters.sort) params.sort = currentFilters.sort
 
       const response = await getAllCourses(params)
 
       if (response.success) {
-        const coursesData = response.data.result || []
-        setCourses(coursesData)
+        setCourses(response.data.result || [])
         setPagination({
           page: response.data.meta?.page || 1,
-          pageSize: response.data.meta?.pageSize || 10,
+          pageSize: response.data.meta?.pageSize || PAGE_SIZE,
           pages: response.data.meta?.pages || 0,
           total: response.data.meta?.total || 0,
         })
@@ -58,44 +61,55 @@ export default function AdminCoursesPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchCourses()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchCourses])
+
+  const handleSearchInputChange = useCallback((value) => {
+    setSearchInput(value)
   }, [])
 
-  const handleSearch = () => {
-    const newFilters = { ...filters, keyword: searchInput }
-    setFilters(newFilters)
-    fetchCourses(1, newFilters)
-  }
+  const handleSearch = useCallback(() => {
+    setFilters(prev => {
+      const newFilters = { ...prev, keyword: searchInput }
+      fetchCourses(1, newFilters)
+      return newFilters
+    })
+  }, [searchInput, fetchCourses])
 
-  const handleStatusFilter = (status) => {
+  const handleStatusFilter = useCallback((status) => {
     const actualStatus = status === "ALL" ? "" : status
-    const newFilters = { ...filters, status: actualStatus }
-    setFilters(newFilters)
-    fetchCourses(1, newFilters)
-  }
+    setFilters(prev => {
+      const newFilters = { ...prev, status: actualStatus }
+      fetchCourses(1, newFilters)
+      return newFilters
+    })
+  }, [fetchCourses])
 
-  const handleSkillsFilter = (skills) => {
+  const handleSkillsFilter = useCallback((skills) => {
     const actualSkills = skills === "ALL" ? "" : skills
-    const newFilters = { ...filters, skills: actualSkills }
-    setFilters(newFilters)
-    fetchCourses(1, newFilters)
-  }
+    setFilters(prev => {
+      const newFilters = { ...prev, skills: actualSkills }
+      fetchCourses(1, newFilters)
+      return newFilters
+    })
+  }, [fetchCourses])
 
-  const handleSortChange = (sort) => {
-    const newFilters = { ...filters, sort }
-    setFilters(newFilters)
-    fetchCourses(1, newFilters)
-  }
+  const handleSortChange = useCallback((sort) => {
+    setFilters(prev => {
+      const newFilters = { ...prev, sort }
+      fetchCourses(1, newFilters)
+      return newFilters
+    })
+  }, [fetchCourses])
 
-  const handlePageChange = (page) => {
+  const handlePageChange = useCallback((page) => {
     fetchCourses(page)
-  }
+  }, [fetchCourses])
 
-  const handleStatusUpdate = async (courseId, newStatus) => {
+  const handleStatusUpdate = useCallback(async (courseId, newStatus) => {
     try {
       const response = await changeCourseStatus(courseId, newStatus)
       if (response.success) {
@@ -108,17 +122,15 @@ export default function AdminCoursesPage() {
       console.error("Failed to update course status:", error)
       toast.error("Không thể cập nhật trạng thái khóa học")
     }
-  }
+  }, [fetchCourses, pagination.page])
 
   return (
-    <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 lg:p-6">
-      {/* Header */}
+    <div className="p-6 space-y-6">
       <CoursesHeader />
 
-      {/* Filters */}
       <CourseFilters
         searchInput={searchInput}
-        setSearchInput={setSearchInput}
+        onSearchInputChange={handleSearchInputChange}
         statusFilter={filters.status || "ALL"}
         onStatusFilterChange={handleStatusFilter}
         skillsFilter={filters.skills || "ALL"}
@@ -128,22 +140,12 @@ export default function AdminCoursesPage() {
         onSearch={handleSearch}
       />
 
-      {/* Results Summary */}
-      <div className="flex justify-between items-center">
-        <p className="text-xs sm:text-sm text-muted-foreground">
-          Hiển thị <span className="font-medium">{courses.length}</span> trên{" "}
-          <span className="font-medium">{pagination.total}</span> khóa học
-        </p>
-      </div>
-
-      {/* Courses Table */}
       <CourseTable
         courses={courses}
         loading={loading}
         onStatusUpdate={handleStatusUpdate}
       />
 
-      {/* Pagination */}
       {pagination.pages > 1 && (
         <div className="flex justify-center">
           <Pagination

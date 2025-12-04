@@ -1,58 +1,41 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { getAdminInstructorRequests, getInstructorList } from "@/lib/api/instructor";
 import { toast } from "sonner";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { GraduationCap, Clock, Users } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// Import subcomponents
 import InstructorRequestList from "@/components/admin/instructor-management/instructor-request-list";
 import InstructorFilters from "@/components/admin/instructor-management/instructor-filters";
 import InstructorListSection from "@/components/admin/instructor-management/instructor-list-section";
 import InstructorListFilters from "@/components/admin/instructor-management/instructor-list-filters";
 
+const PAGE_SIZE = 10;
+
 const InstructorManagement = () => {
+  const [activeTab, setActiveTab] = useState("requests");
+  
+  // Request states
   const [instructorRequests, setInstructorRequests] = useState([]);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [sortDir, setSortDir] = useState("desc");
-  const [page, setPageInternal] = useState(1);
-
-  const setPage = (newPage) => {
-    if (newPage < 1) {
-      return;
-    }
-    setPageInternal(newPage);
-  };
-
-  const [pageSize] = useState(10);
+  const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
 
   // Instructor list states
   const [instructors, setInstructors] = useState([]);
-  const [instructorPage, setInstructorPageInternal] = useState(1);
-
-  const setInstructorPage = (newPage) => {
-    if (newPage < 1) {
-      console.error("[BLOCKED] Attempted to set instructor page to", newPage);
-      return;
-    }
-    setInstructorPageInternal(newPage);
-  };
-
+  const [instructorPage, setInstructorPage] = useState(1);
   const [instructorTotalPages, setInstructorTotalPages] = useState(1);
   const [instructorSortField, setInstructorSortField] = useState("createdAt");
   const [instructorSortDir, setInstructorSortDir] = useState("asc");
   const [instructorSearch, setInstructorSearch] = useState("");
   const [instructorDebouncedSearch, setInstructorDebouncedSearch] = useState("");
   const [instructorLoading, setInstructorLoading] = useState(true);
-  const [showInstructorList, setShowInstructorList] = useState(false);
-
-  const isMounted = useRef(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 1000);
@@ -64,15 +47,13 @@ const InstructorManagement = () => {
     return () => clearTimeout(timer);
   }, [instructorSearch]);
 
-  // === Fetch API ===
-  const fetchInstructorRequests = async () => {
+  const fetchInstructorRequests = useCallback(async () => {
     setLoading(true);
-
     try {
       const { success, data } = await getAdminInstructorRequests(
         status === "all" ? null : status,
         page,
-        pageSize,
+        PAGE_SIZE,
         sortDir
       );
 
@@ -86,16 +67,14 @@ const InstructorManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [status, page, sortDir]);
 
-  // === Fetch Instructor List ===
-  const fetchInstructors = async () => {
+  const fetchInstructors = useCallback(async () => {
     setInstructorLoading(true);
-
     try {
       const { success, data } = await getInstructorList(
         instructorPage,
-        pageSize,
+        PAGE_SIZE,
         instructorSortField,
         instructorSortDir,
         instructorDebouncedSearch || null
@@ -111,24 +90,17 @@ const InstructorManagement = () => {
     } finally {
       setInstructorLoading(false);
     }
-  };
+  }, [instructorPage, instructorSortField, instructorSortDir, instructorDebouncedSearch]);
 
-  // Only fetch when dependencies change
   useEffect(() => {
     fetchInstructorRequests();
-  }, [page, status, sortDir]);
+  }, [fetchInstructorRequests]);
 
   useEffect(() => {
-    if (showInstructorList) {
+    if (activeTab === "instructors") {
       fetchInstructors();
     }
-  }, [instructorPage, instructorSortField, instructorSortDir, instructorDebouncedSearch, showInstructorList]);
-
-  useEffect(() => {
-    if (!isMounted.current) {
-      isMounted.current = true;
-    }
-  }, [page]);
+  }, [activeTab, fetchInstructors]);
 
   // Filter client-side for search
   const filteredRequests = useMemo(() => {
@@ -142,121 +114,130 @@ const InstructorManagement = () => {
     );
   }, [instructorRequests, debouncedSearch]);
 
-  // Handle search change
-  const handleSearchChange = (value) => {
+  const handleSearchChange = useCallback((value) => {
     setSearch(value);
     setPage(1);
-  };
+  }, []);
 
-  // Handle status change
-  const handleStatusChange = (value) => {
+  const handleStatusChange = useCallback((value) => {
     setStatus(value);
     setPage(1);
-  };
+  }, []);
 
-  // Handle sort toggle
-  const handleSortToggle = () => {
+  const handleSortToggle = useCallback(() => {
     setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     setPage(1);
-  };
+  }, []);
 
-  // Instructor list handlers
-  const handleInstructorSearchChange = (value) => {
+  const handleInstructorSearchChange = useCallback((value) => {
     setInstructorSearch(value);
     setInstructorPage(1);
-  };
+  }, []);
 
-  const handleInstructorSortFieldChange = (value) => {
+  const handleInstructorSortFieldChange = useCallback((value) => {
     setInstructorSortField(value);
     setInstructorPage(1);
-  };
+  }, []);
 
-  const handleInstructorSortDirToggle = () => {
+  const handleInstructorSortDirToggle = useCallback(() => {
     setInstructorSortDir((d) => (d === "asc" ? "desc" : "asc"));
     setInstructorPage(1);
-  };
+  }, []);
 
-  const handleToggleInstructorList = () => {
-    setShowInstructorList((prev) => !prev);
-  };
+  const handleInstructorPageChange = useCallback((newPage) => {
+    setInstructorPage(newPage);
+  }, []);
+
+  const handlePageChange = useCallback((newPage) => {
+    setPage(newPage);
+  }, []);
 
   return (
-    <div className="w-full">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold mb-4">Quản lí Giảng viên</h1>
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+            <GraduationCap className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Quản lý Giảng viên</h1>
+            <p className="text-sm text-muted-foreground">
+              Xét duyệt yêu cầu và quản lý danh sách giảng viên
+            </p>
+          </div>
         </div>
       </div>
 
-      <InstructorFilters
-        search={search}
-        onSearchChange={handleSearchChange}
-        status={status}
-        onStatusChange={handleStatusChange}
-        sortDir={sortDir}
-        onSortToggle={handleSortToggle}
-      />
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="requests" className="gap-2">
+            <Clock className="h-4 w-4" />
+            Yêu cầu đăng ký
+          </TabsTrigger>
+          <TabsTrigger value="instructors" className="gap-2">
+            <Users className="h-4 w-4" />
+            Danh sách giảng viên
+          </TabsTrigger>
+        </TabsList>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Danh sách yêu cầu ({filteredRequests.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <InstructorRequestList
-            requests={filteredRequests}
-            loading={loading}
-            currentPage={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
+        <TabsContent value="requests" className="space-y-4">
+          <InstructorFilters
+            search={search}
+            onSearchChange={handleSearchChange}
+            status={status}
+            onStatusChange={handleStatusChange}
+            sortDir={sortDir}
+            onSortToggle={handleSortToggle}
           />
-        </CardContent>
-      </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Danh sách yêu cầu</CardTitle>
+              <CardDescription>
+                {filteredRequests.length} yêu cầu được tìm thấy
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <InstructorRequestList
+                requests={filteredRequests}
+                loading={loading}
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      <Card className="mt-8">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Danh sách Giảng viên</CardTitle>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleToggleInstructorList}
-            className="flex items-center gap-2"
-          >
-            {showInstructorList ? (
-              <>
-                <ChevronUp className="h-4 w-4" />
-                Ẩn
-              </>
-            ) : (
-              <>
-                <ChevronDown className="h-4 w-4" />
-                Hiển thị
-              </>
-            )}
-          </Button>
-        </CardHeader>
-        {showInstructorList && (
-          <CardContent>
-            <InstructorListFilters
-              search={instructorSearch}
-              onSearchChange={handleInstructorSearchChange}
-              sortField={instructorSortField}
-              onSortFieldChange={handleInstructorSortFieldChange}
-              sortDir={instructorSortDir}
-              onSortDirToggle={handleInstructorSortDirToggle}
-            />
-            <InstructorListSection
-              instructors={instructors}
-              loading={instructorLoading}
-              currentPage={instructorPage}
-              totalPages={instructorTotalPages}
-              onPageChange={(page) => {
-                setInstructorPage(page);
-                fetchInstructors();
-              }}
-            />
-          </CardContent>
-        )}
-      </Card>
+        <TabsContent value="instructors" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Danh sách giảng viên</CardTitle>
+              <CardDescription>
+                Quản lý tất cả giảng viên trong hệ thống
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <InstructorListFilters
+                search={instructorSearch}
+                onSearchChange={handleInstructorSearchChange}
+                sortField={instructorSortField}
+                onSortFieldChange={handleInstructorSortFieldChange}
+                sortDir={instructorSortDir}
+                onSortDirToggle={handleInstructorSortDirToggle}
+              />
+              <InstructorListSection
+                instructors={instructors}
+                loading={instructorLoading}
+                currentPage={instructorPage}
+                totalPages={instructorTotalPages}
+                onPageChange={handleInstructorPageChange}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

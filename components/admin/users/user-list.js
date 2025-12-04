@@ -1,7 +1,8 @@
+import { memo } from "react";
 import UserCard from "./user-card";
 
-const UserList = ({ users, onToggle }) => {
-  if (!users?.length) return <p className="text-center">Không có người dùng nào.</p>;
+const UserList = memo(function UserList({ users, onToggle }) {
+  if (!users?.length) return null;
   return (
     <div className="space-y-4">
       {users.map((u) => (
@@ -9,6 +10,6 @@ const UserList = ({ users, onToggle }) => {
       ))}
     </div>
   );
-};
+});
 
 export default UserList;
