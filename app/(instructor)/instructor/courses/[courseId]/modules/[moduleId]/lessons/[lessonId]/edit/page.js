@@ -1,20 +1,77 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { useRouter, useParams } from "next/navigation"
+import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, FileEdit } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { FullPageLoader } from "@/components/ui/full-page-loader"
+import { Skeleton } from "@/components/ui/skeleton"
 import { updateLesson, getLessonDetail } from "@/lib/api/lesson"
 import { lessonSchema } from "@/schema/course"
 import LessonBasicInfo from "@/components/instructor/courses/lesson-create/lesson-basic-info"
 import ContentSection from "@/components/instructor/courses/lesson-create/content-section"
 import QuizSection from "@/components/instructor/courses/lesson-create/quiz-section"
+
+function PageHeader({ courseId, moduleId, lessonId }) {
+    return (
+        <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" asChild>
+                <Link href={`/instructor/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`}>
+                    <ArrowLeft className="h-5 w-5" />
+                </Link>
+            </Button>
+            <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 flex-shrink-0">
+                    <FileEdit className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                    <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Chỉnh sửa bài học</h1>
+                    <p className="text-sm text-muted-foreground hidden sm:block">
+                        Cập nhật thông tin cho bài học
+                    </p>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function LoadingSkeleton() {
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center gap-4">
+                <Skeleton className="h-10 w-10 rounded-lg" />
+                <div className="space-y-2">
+                    <Skeleton className="h-6 w-48" />
+                    <Skeleton className="h-4 w-64" />
+                </div>
+            </div>
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-6 w-40" />
+                    <Skeleton className="h-4 w-56" />
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-3">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                    <Skeleton className="h-48 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                </CardContent>
+            </Card>
+        </div>
+    )
+}
 
 export default function LessonEditPage() {
     const router = useRouter()
@@ -176,29 +233,24 @@ export default function LessonEditPage() {
         }
     }
 
-    if (initialLoading) return <FullPageLoader />
+    if (initialLoading) {
+        return (
+            <div className="p-4 sm:p-6 min-h-full bg-background">
+                <div className="max-w-5xl mx-auto">
+                    <LoadingSkeleton />
+                </div>
+            </div>
+        )
+    }
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-            <div className="max-w-3xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-                {/* Header */}
-                <div className="mb-8">
-                    <Button
-                        variant="ghost"
-                        onClick={() => router.push(`/instructor/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`)}
-                        className="mb-4 hover:bg-muted/50 transition-colors"
-                    >
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Quay lại chi tiết bài học
-                    </Button>
-                    <h1 className="text-3xl font-bold tracking-tight">Chỉnh sửa bài học</h1>
-                    <p className="text-muted-foreground mt-2">Cập nhật thông tin cho bài học của bạn</p>
-                </div>
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 min-h-full bg-background">
+            <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6">
+                <PageHeader courseId={courseId} moduleId={moduleId} lessonId={lessonId} />
 
-                {/* Form Card */}
-                <Card className="shadow-lg border-muted/40">
-                    <CardHeader className="space-y-1 pb-6">
-                        <CardTitle className="text-xl">Thông tin bài học</CardTitle>
+                <Card>
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-lg">Thông tin bài học</CardTitle>
                         <CardDescription>Các trường đánh dấu * là bắt buộc</CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -213,7 +265,6 @@ export default function LessonEditPage() {
                                 errors={errors}
                             />
 
-                            {/* Content Section - Conditional rendering */}
                             {lessonKind === "QUIZ" ? (
                                 <QuizSection
                                     questions={questions}
@@ -231,13 +282,19 @@ export default function LessonEditPage() {
                                 />
                             )}
 
-                            {/* Submit Button */}
-                            <div className="pt-4">
+                            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="sm:flex-1"
+                                    onClick={() => router.push(`/instructor/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`)}
+                                >
+                                    Hủy
+                                </Button>
                                 <Button
                                     type="submit"
-                                    className="w-full bg-gradient-primary hover:opacity-90 transition-opacity shadow-md"
+                                    className="sm:flex-1"
                                     disabled={loading}
-                                    size="lg"
                                 >
                                     {loading ? "Đang cập nhật..." : "Cập nhật bài học"}
                                 </Button>

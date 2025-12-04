@@ -1,11 +1,13 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState, useCallback } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { ArrowLeft, BookPlus } from "lucide-react"
 import { toast } from "sonner"
 import { courseSchema } from "@/schema/course"
 import { createCourse, uploadMedia } from "@/lib/api/course"
@@ -15,24 +17,42 @@ import ThumbnailUploadSection from "@/components/instructor/courses/course-creat
 import SkillFocusSection from "@/components/instructor/courses/course-create/skill-focus-section"
 import PricingSection from "@/components/instructor/courses/course-create/pricing-section"
 
+function PageHeader() {
+  return (
+    <div className="flex items-center gap-4">
+      <Button variant="ghost" size="icon" asChild>
+        <Link href="/instructor/courses">
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
+      </Button>
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 flex-shrink-0">
+          <BookPlus className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Tạo khóa học mới</h1>
+          <p className="text-sm text-muted-foreground hidden sm:block">
+            Điền thông tin để tạo khóa học
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function CreateCoursePage() {
   const router = useRouter()
 
-  // skills chọn từ preset và skills tự nhập
   const [selectedSkills, setSelectedSkills] = useState([])
   const [customSkills, setCustomSkills] = useState([])
-
-  // input tạm cho custom
   const [customInput, setCustomInput] = useState("")
   const customInputRef = useRef(null)
 
-  // Image upload states
   const [thumbnailFile, setThumbnailFile] = useState(null)
   const [thumbnailPreview, setThumbnailPreview] = useState("")
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef(null)
 
-  // Detailed description state
   const [detailedDescription, setDetailedDescription] = useState("")
 
   const form = useForm({
@@ -51,22 +71,18 @@ export default function CreateCoursePage() {
   const { register, handleSubmit, setValue, formState, setError, clearErrors } = form
   const { errors, isSubmitting } = formState
 
-  // Tổng các skill đã chọn (preset trước, custom sau)
   const allSkills = useMemo(() => [...selectedSkills, ...customSkills], [selectedSkills, customSkills])
 
-  // Chuyển về mảng chữ thường để so sánh không phân biệt hoa/thường
-  const toKey = (s) => s.toLocaleLowerCase()
-  const selectedLower = useMemo(() => selectedSkills.map(toKey), [selectedSkills])
-  const customLower = useMemo(() => customSkills.map(toKey), [customSkills])
-  const allLower = useMemo(() => allSkills.map(toKey), [allSkills])
+  const toKey = useCallback((s) => s.toLocaleLowerCase(), [])
+  const selectedLower = useMemo(() => selectedSkills.map(toKey), [selectedSkills, toKey])
+  const customLower = useMemo(() => customSkills.map(toKey), [customSkills, toKey])
+  const allLower = useMemo(() => allSkills.map(toKey), [allSkills, toKey])
 
-  const existsInSelected = (name) => selectedLower.includes(toKey(name))
-  const existsInCustom = (name) => customLower.includes(toKey(name))
-  const existsInAll = (name) => existsInSelected(name) || existsInCustom(name)
+  const existsInSelected = useCallback((name) => selectedLower.includes(toKey(name)), [selectedLower, toKey])
+  const existsInCustom = useCallback((name) => customLower.includes(toKey(name)), [customLower, toKey])
+  const existsInAll = useCallback((name) => existsInSelected(name) || existsInCustom(name), [existsInSelected, existsInCustom])
 
-  // Toggle skill preset
-  const toggleSkill = (skill) => {
-    // Nếu custom đang có skill trùng (case-insensitive) → chặn
+  const toggleSkill = useCallback((skill) => {
     if (existsInCustom(skill)) {
       toast.error(`"${skill}" đã tồn tại trong danh sách kỹ năng tự nhập`)
       return
@@ -75,10 +91,9 @@ export default function CreateCoursePage() {
       prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]
     )
     clearErrors("skillFocus")
-  }
+  }, [existsInCustom, clearErrors])
 
-  // Thêm custom skill
-  const addCustomSkill = () => {
+  const addCustomSkill = useCallback(() => {
     const raw = customInput.trim()
     if (!raw) return
     if (existsInAll(raw)) {
@@ -89,38 +104,33 @@ export default function CreateCoursePage() {
     setCustomInput("")
     customInputRef.current?.focus()
     clearErrors("skillFocus")
-  }
+  }, [customInput, existsInAll, clearErrors])
 
-  // Enter để thêm custom, không submit form chính
-  const handleCustomKeyDown = (e) => {
+  const handleCustomKeyDown = useCallback((e) => {
     if (e.key === "Enter") {
       e.preventDefault()
       addCustomSkill()
     }
-  }
+  }, [addCustomSkill])
 
-  // Xóa skill (ưu tiên xóa custom, nếu không có thì xóa ở selected)
-  const removeSkill = (skill) => {
+  const removeSkill = useCallback((skill) => {
     const key = toKey(skill)
     if (customLower.includes(key)) {
       setCustomSkills((prev) => prev.filter((s) => toKey(s) !== key))
     } else if (selectedLower.includes(key)) {
       setSelectedSkills((prev) => prev.filter((s) => toKey(s) !== key))
     }
-  }
+  }, [toKey, customLower, selectedLower])
 
-  // Handle file selection
-  const handleFileSelect = (e) => {
+  const handleFileSelect = useCallback((e) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       toast.error("Vui lòng chọn file ảnh")
       return
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Kích thước ảnh không được vượt quá 5MB")
       return
@@ -128,26 +138,23 @@ export default function CreateCoursePage() {
 
     setThumbnailFile(file)
 
-    // Create preview
     const reader = new FileReader()
     reader.onloadend = () => {
       setThumbnailPreview(reader.result)
     }
     reader.readAsDataURL(file)
-  }
+  }, [])
 
-  // Handle remove image
-  const handleRemoveImage = () => {
+  const handleRemoveImage = useCallback(() => {
     setThumbnailFile(null)
     setThumbnailPreview("")
     setValue("thumbnail", "")
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
-  }
+  }, [setValue])
 
-  // Handle upload image
-  const handleUploadImage = async () => {
+  const handleUploadImage = useCallback(async () => {
     if (!thumbnailFile) return
 
     setUploading(true)
@@ -168,15 +175,13 @@ export default function CreateCoursePage() {
     } finally {
       setUploading(false)
     }
-  }
+  }, [thumbnailFile, setValue])
 
-  // Đồng bộ skillFocus (mảng) vào RHF để schema có thể validate
   useEffect(() => {
     setValue("skillFocus", allSkills, { shouldValidate: false })
     if (allSkills.length > 0) clearErrors("skillFocus")
   }, [allSkills, setValue, clearErrors])
 
-  // Sync detailed description with form
   useEffect(() => {
     setValue("detailedDescription", detailedDescription, { shouldValidate: false })
   }, [detailedDescription, setValue])
@@ -188,15 +193,14 @@ export default function CreateCoursePage() {
         toast.error("Cần ít nhất 1 kỹ năng")
         return
       }
-      // Double-check (case-insensitive)
+
       const uniqueCount = new Set(allLower).size
       if (uniqueCount !== allSkills.length) {
-        setError("skillFocus", { type: "manual", message: "Danh sách kỹ năng đang bị trùng (không phân biệt hoa/thường)" })
+        setError("skillFocus", { type: "manual", message: "Danh sách kỹ năng đang bị trùng" })
         toast.error("Danh sách kỹ năng đang bị trùng")
         return
       }
 
-      // Upload image if file is selected
       let thumbnailUrl = data.thumbnail
       if (thumbnailFile && !uploading) {
         const uploadedUrl = await handleUploadImage()
@@ -222,7 +226,6 @@ export default function CreateCoursePage() {
 
       toast.success("Đã tạo khóa học mới!")
 
-      // Navigate to courses list or course detail
       if (newCourse?.id) {
         router.push(`/instructor/courses/${newCourse.id}`)
       } else {
@@ -235,77 +238,100 @@ export default function CreateCoursePage() {
   }
 
   return (
-    <div className="container mx-auto py-8 max-w-4xl">
-      <div className="mb-6">
-        <Button
-          variant="ghost"
-          onClick={() => router.back()}
-          className="mb-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Quay lại
-        </Button>
-        <h1 className="text-3xl font-bold">Tạo khóa học mới</h1>
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 min-h-full bg-background">
+      <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6">
+        <PageHeader />
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg">Thông tin cơ bản</CardTitle>
+              <CardDescription>Các trường đánh dấu * là bắt buộc</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <BasicInfoSection
+                register={register}
+                errors={errors}
+                detailedDescription={detailedDescription}
+                setDetailedDescription={setDetailedDescription}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg">Hình ảnh đại diện</CardTitle>
+              <CardDescription>Tải lên ảnh thumbnail cho khóa học (tối đa 5MB)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ThumbnailUploadSection
+                thumbnailPreview={thumbnailPreview}
+                thumbnailFile={thumbnailFile}
+                uploading={uploading}
+                fileInputRef={fileInputRef}
+                handleFileSelect={handleFileSelect}
+                handleRemoveImage={handleRemoveImage}
+                handleUploadImage={handleUploadImage}
+                errors={errors}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg">Kỹ năng tập trung</CardTitle>
+              <CardDescription>Chọn hoặc nhập kỹ năng mà khóa học hướng đến</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SkillFocusSection
+                selectedSkills={selectedSkills}
+                customSkills={customSkills}
+                customInput={customInput}
+                customInputRef={customInputRef}
+                setCustomInput={setCustomInput}
+                toggleSkill={toggleSkill}
+                addCustomSkill={addCustomSkill}
+                handleCustomKeyDown={handleCustomKeyDown}
+                removeSkill={removeSkill}
+                toKey={toKey}
+                register={register}
+                errors={errors}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg">Giá khóa học</CardTitle>
+              <CardDescription>Thiết lập giá và đơn vị tiền tệ</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PricingSection
+                register={register}
+                errors={errors}
+              />
+            </CardContent>
+          </Card>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push("/instructor/courses")}
+              className="sm:flex-1"
+            >
+              Hủy
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="sm:flex-1"
+            >
+              {isSubmitting ? "Đang tạo..." : "Tạo khóa học"}
+            </Button>
+          </div>
+        </form>
       </div>
-
-      {/* FORM CHÍNH */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <BasicInfoSection
-          register={register}
-          errors={errors}
-          detailedDescription={detailedDescription}
-          setDetailedDescription={setDetailedDescription}
-        />
-
-        <ThumbnailUploadSection
-          thumbnailPreview={thumbnailPreview}
-          thumbnailFile={thumbnailFile}
-          uploading={uploading}
-          fileInputRef={fileInputRef}
-          handleFileSelect={handleFileSelect}
-          handleRemoveImage={handleRemoveImage}
-          handleUploadImage={handleUploadImage}
-          errors={errors}
-        />
-
-        <SkillFocusSection
-          selectedSkills={selectedSkills}
-          customSkills={customSkills}
-          customInput={customInput}
-          customInputRef={customInputRef}
-          setCustomInput={setCustomInput}
-          toggleSkill={toggleSkill}
-          addCustomSkill={addCustomSkill}
-          handleCustomKeyDown={handleCustomKeyDown}
-          removeSkill={removeSkill}
-          toKey={toKey}
-          register={register}
-          errors={errors}
-        />
-
-        <PricingSection
-          register={register}
-          errors={errors}
-        />
-
-        <div className="flex gap-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.back()}
-            className="flex-1"
-          >
-            Hủy
-          </Button>
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="flex-1 bg-gradient-primary"
-          >
-            {isSubmitting ? "Đang tạo..." : "Tạo khóa học"}
-          </Button>
-        </div>
-      </form>
     </div>
   )
 }

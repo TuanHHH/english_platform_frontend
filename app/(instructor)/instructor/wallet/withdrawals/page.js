@@ -1,8 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ArrowLeft, Download, ChevronLeft, ChevronRight, CheckCircle, Clock, XCircle, AlertCircle, X } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
+import {
+  ArrowLeft,
+  Download,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle,
+  Clock,
+  XCircle,
+  AlertCircle,
+  X,
+  Wallet,
+  Inbox,
+  RotateCcw,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,15 +35,218 @@ import {
 import { createWithdrawal, getWithdrawalHistory, getInstructorWalletBalance, cancelWithdrawal } from "@/lib/api/instructor";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import Link from "next/link";
 
 const STATUS_CONFIG = {
-  PENDING: { label: "Đang chờ", color: "bg-yellow-100 text-yellow-800 border-yellow-200", icon: Clock },
-  PROCESSING: { label: "Đang xử lý", color: "bg-blue-100 text-blue-800 border-blue-200", icon: AlertCircle },
-  COMPLETED: { label: "Hoàn thành", color: "bg-green-100 text-green-800 border-green-200", icon: CheckCircle },
-  REJECTED: { label: "Từ chối", color: "bg-red-100 text-red-800 border-red-200", icon: XCircle },
-  FAILED: { label: "Thất bại", color: "bg-red-100 text-red-800 border-red-200", icon: XCircle },
+  PENDING: {
+    label: "Đang chờ",
+    color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+    iconColor: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400",
+    icon: Clock,
+  },
+  PROCESSING: {
+    label: "Đang xử lý",
+    color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+    iconColor: "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
+    icon: AlertCircle,
+  },
+  COMPLETED: {
+    label: "Hoàn thành",
+    color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+    iconColor: "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400",
+    icon: CheckCircle,
+  },
+  REJECTED: {
+    label: "Từ chối",
+    color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+    iconColor: "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400",
+    icon: XCircle,
+  },
+  FAILED: {
+    label: "Thất bại",
+    color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+    iconColor: "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400",
+    icon: XCircle,
+  },
 };
+
+function PageHeader() {
+  return (
+    <div className="flex items-center gap-4">
+      <Button variant="ghost" size="icon" asChild>
+        <Link href="/instructor/wallet">
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
+      </Button>
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 flex-shrink-0">
+          <Download className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Rút tiền</h1>
+          <p className="text-sm text-muted-foreground hidden sm:block">
+            Tạo yêu cầu và theo dõi lịch sử
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BalanceCard({ balance, loading }) {
+  const formatAmount = (amount) => (amount || 0).toLocaleString();
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-7 w-32" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 flex-shrink-0">
+            <Wallet className="h-5 w-5 text-green-600 dark:text-green-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs sm:text-sm text-muted-foreground">Số dư khả dụng</p>
+            <p className="text-lg sm:text-xl font-bold">
+              {formatAmount(balance?.availableBalanceCents)}{" "}
+              <span className="text-sm font-normal">VND</span>
+            </p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function WithdrawForm({ balance, loading, creating, onSubmit, amountVND, setAmountVND }) {
+  const formatAmount = (amount) => (amount || 0).toLocaleString();
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Tạo yêu cầu rút tiền</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="amount" className="text-sm">Số tiền (VND)</Label>
+            <Input
+              id="amount"
+              type="number"
+              placeholder="Nhập số tiền muốn rút"
+              value={amountVND}
+              onChange={(e) => setAmountVND(e.target.value)}
+              disabled={creating || loading}
+              min="1"
+              step="1"
+              className="text-base"
+            />
+            <p className="text-xs text-muted-foreground">
+              Khả dụng: {formatAmount(balance?.availableBalanceCents)} VND
+            </p>
+          </div>
+          <Button type="submit" disabled={creating || loading} className="w-full">
+            <Download className="h-4 w-4 mr-2" />
+            {creating ? "Đang xử lý..." : "Tạo yêu cầu"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+function WithdrawalItem({ withdrawal, onCancel }) {
+  const statusConfig = STATUS_CONFIG[withdrawal.status] || STATUS_CONFIG.PENDING;
+  const StatusIcon = statusConfig.icon;
+  const formatAmount = (amount) => (amount || 0).toLocaleString();
+
+  return (
+    <div className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+      <div className={`h-8 w-8 sm:h-9 sm:w-9 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${statusConfig.iconColor}`}>
+        <StatusIcon className="h-4 w-4" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-medium text-sm">
+                {formatAmount(withdrawal.originalAmountCents)} VND
+              </p>
+              <Badge variant="outline" className={`text-[10px] sm:text-xs ${statusConfig.color}`}>
+                {statusConfig.label}
+              </Badge>
+            </div>
+            <p className="text-[11px] sm:text-xs text-muted-foreground mt-1">
+              {format(new Date(withdrawal.createdAt), "dd/MM/yyyy HH:mm")}
+            </p>
+            {withdrawal.adminNote && (
+              <p className="text-[11px] sm:text-xs text-muted-foreground mt-1 line-clamp-2">
+                Ghi chú: {withdrawal.adminNote}
+              </p>
+            )}
+          </div>
+          {withdrawal.status === "PENDING" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onCancel(withdrawal)}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 h-7 px-2 text-xs"
+            >
+              <X className="h-3 w-3 sm:mr-1" />
+              <span className="hidden sm:inline">Hủy</span>
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WithdrawalsSkeleton() {
+  return (
+    <div className="space-y-3">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <div key={i} className="flex items-start gap-3 p-3 border rounded-lg">
+          <Skeleton className="h-8 w-8 rounded-full flex-shrink-0" />
+          <div className="flex-1 space-y-2">
+            <div className="flex justify-between gap-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-5 w-16" />
+            </div>
+            <Skeleton className="h-3 w-32" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-12">
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted mb-4">
+        <Inbox className="h-7 w-7 text-muted-foreground" />
+      </div>
+      <h3 className="font-semibold mb-1 text-sm">Chưa có yêu cầu rút tiền</h3>
+      <p className="text-xs text-muted-foreground text-center max-w-xs">
+        Tạo yêu cầu rút tiền ở form bên trên
+      </p>
+    </div>
+  );
+}
 
 export default function WithdrawalsPage() {
   const [balance, setBalance] = useState(null);
@@ -45,12 +262,7 @@ export default function WithdrawalsPage() {
   const [cancelling, setCancelling] = useState(false);
   const pageSize = 20;
 
-  useEffect(() => {
-    fetchBalance();
-    fetchWithdrawals(1);
-  }, []);
-
-  const fetchBalance = async () => {
+  const fetchBalance = useCallback(async () => {
     setLoading(true);
     try {
       const result = await getInstructorWalletBalance();
@@ -65,9 +277,9 @@ export default function WithdrawalsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchWithdrawals = async (pageNum) => {
+  const fetchWithdrawals = useCallback(async (pageNum) => {
     setWithdrawalsLoading(true);
     try {
       const result = await getWithdrawalHistory(pageNum, pageSize);
@@ -84,9 +296,14 @@ export default function WithdrawalsPage() {
     } finally {
       setWithdrawalsLoading(false);
     }
-  };
+  }, []);
 
-  const handleCreateWithdrawal = async (e) => {
+  useEffect(() => {
+    fetchBalance();
+    fetchWithdrawals(1);
+  }, [fetchBalance, fetchWithdrawals]);
+
+  const handleCreateWithdrawal = useCallback(async (e) => {
     e.preventDefault();
 
     const amount = parseInt(amountVND);
@@ -117,25 +334,26 @@ export default function WithdrawalsPage() {
     } finally {
       setCreating(false);
     }
-  };
+  }, [amountVND, balance, fetchBalance, fetchWithdrawals]);
 
-  const handlePreviousPage = () => {
+  const handlePreviousPage = useCallback(() => {
     if (page > 1) {
       fetchWithdrawals(page - 1);
     }
-  };
+  }, [page, fetchWithdrawals]);
 
-  const handleNextPage = () => {
+  const handleNextPage = useCallback(() => {
     if (meta && page < meta.pages) {
       fetchWithdrawals(page + 1);
     }
-  };
+  }, [page, meta, fetchWithdrawals]);
 
-  const formatAmount = (amountCents) => {
-    return amountCents ? amountCents.toLocaleString() : "0";
-  };
+  const handleOpenCancelDialog = useCallback((withdrawal) => {
+    setSelectedWithdrawal(withdrawal);
+    setCancelDialogOpen(true);
+  }, []);
 
-  const handleCancelWithdrawal = async () => {
+  const handleCancelWithdrawal = useCallback(async () => {
     if (!selectedWithdrawal) return;
 
     setCancelling(true);
@@ -156,229 +374,111 @@ export default function WithdrawalsPage() {
     } finally {
       setCancelling(false);
     }
-  };
+  }, [selectedWithdrawal, fetchBalance, fetchWithdrawals, page]);
+
+  const formatAmount = (amount) => (amount || 0).toLocaleString();
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/instructor/wallet">
-          <Button variant="outline" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Quay lại
-          </Button>
-        </Link>
-        <div>
-          <h2 className="text-3xl font-bold text-foreground">Rút tiền</h2>
-          <p className="text-muted-foreground mt-1">
-            Tạo yêu cầu rút tiền và theo dõi lịch sử
-          </p>
-        </div>
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 min-h-full bg-background">
+      <PageHeader />
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <BalanceCard balance={balance} loading={loading} />
+        <WithdrawForm
+          balance={balance}
+          loading={loading}
+          creating={creating}
+          onSubmit={handleCreateWithdrawal}
+          amountVND={amountVND}
+          setAmountVND={setAmountVND}
+        />
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card className="shadow-elegant">
-          <CardHeader>
-            <CardTitle>Số dư khả dụng</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-12 w-48" />
-            ) : (
-              <div className="space-y-2">
-                <div className="text-4xl font-bold text-foreground">
-                  {formatAmount(balance?.availableBalanceCents)} VND
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {formatAmount(balance?.availableBalanceCents)} cents
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-elegant">
-          <CardHeader>
-            <CardTitle>Tạo yêu cầu rút tiền</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleCreateWithdrawal} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="amount">Số tiền (VND cents)</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  placeholder="Nhập số tiền muốn rút"
-                  value={amountVND}
-                  onChange={(e) => setAmountVND(e.target.value)}
-                  disabled={creating || loading}
-                  min="1"
-                  step="1"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Số dư khả dụng: {formatAmount(balance?.availableBalanceCents)} VND
-                </p>
-              </div>
-              <Button type="submit" disabled={creating || loading} className="w-full">
-                <Download className="h-4 w-4 mr-2" />
-                {creating ? "Đang xử lý..." : "Tạo yêu cầu"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card className="shadow-elegant">
-        <CardHeader>
-          <CardTitle>Lịch sử rút tiền</CardTitle>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            Lịch sử rút tiền
+          </CardTitle>
+          <CardDescription>
+            {meta ? `${meta.total} yêu cầu` : "Các yêu cầu gần đây"}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {withdrawalsLoading ? (
-              <>
-                {[...Array(5)].map((_, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3 flex-1">
-                      <Skeleton className="h-10 w-10 rounded-full" />
-                      <div className="flex-1 space-y-2">
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-3 w-1/2" />
-                      </div>
-                    </div>
-                    <Skeleton className="h-6 w-24" />
-                  </div>
-                ))}
-              </>
-            ) : withdrawals.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Chưa có yêu cầu rút tiền nào
-              </div>
-            ) : (
-              <>
-                {withdrawals.map((withdrawal) => {
-                  const statusConfig = STATUS_CONFIG[withdrawal.status] || STATUS_CONFIG.PENDING;
-                  const StatusIcon = statusConfig.icon;
+          {withdrawalsLoading ? (
+            <WithdrawalsSkeleton />
+          ) : withdrawals.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <div className="space-y-3">
+              {withdrawals.map((withdrawal) => (
+                <WithdrawalItem
+                  key={withdrawal.id}
+                  withdrawal={withdrawal}
+                  onCancel={handleOpenCancelDialog}
+                />
+              ))}
 
-                  return (
-                    <div
-                      key={withdrawal.id}
-                      className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="flex items-start gap-3 flex-1">
-                        <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                          withdrawal.status === "COMPLETED" ? "bg-green-100" : 
-                          withdrawal.status === "REJECTED" || withdrawal.status === "FAILED" ? "bg-red-100" : 
-                          "bg-yellow-100"
-                        }`}>
-                          <StatusIcon className={`h-5 w-5 ${
-                            withdrawal.status === "COMPLETED" ? "text-green-600" : 
-                            withdrawal.status === "REJECTED" || withdrawal.status === "FAILED" ? "text-red-600" : 
-                            "text-yellow-600"
-                          }`} />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium text-sm">
-                              Rút {withdrawal.amountFormatted} ({formatAmount(withdrawal.originalAmountCents)} VND)
-                            </p>
-                            <Badge variant="outline" className={`${statusConfig.color} border`}>
-                              {statusConfig.label}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {format(new Date(withdrawal.createdAt), "dd/MM/yyyy HH:mm")}
-                            {withdrawal.completedAt && ` • Hoàn thành: ${format(new Date(withdrawal.completedAt), "dd/MM/yyyy HH:mm")}`}
-                          </p>
-                          {withdrawal.exchangeRate && (
-                            <p className="text-xs text-muted-foreground">
-                              Tỷ giá: 1 VND = {withdrawal.exchangeRate} USD
-                            </p>
-                          )}
-                          {withdrawal.adminNote && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Ghi chú: {withdrawal.adminNote}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      {withdrawal.status === "PENDING" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedWithdrawal(withdrawal);
-                            setCancelDialogOpen(true);
-                          }}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <X className="h-4 w-4 mr-1" />
-                          Hủy
-                        </Button>
-                      )}
-                    </div>
-                  );
-                })}
-
-                {meta && meta.pages > 1 && (
-                  <div className="flex items-center justify-between pt-4 border-t">
-                    <p className="text-sm text-muted-foreground">
-                      Trang {page} / {meta.pages} • Tổng {meta.total} yêu cầu
-                    </p>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handlePreviousPage}
-                        disabled={page === 1}
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                        Trước
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleNextPage}
-                        disabled={page === meta.pages}
-                      >
-                        Sau
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+              {meta && meta.pages > 1 && (
+                <div className="flex items-center justify-between gap-2 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePreviousPage}
+                    disabled={page === 1}
+                    className="flex-1 sm:flex-none"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-1">Trước</span>
+                  </Button>
+                  <p className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+                    {page}/{meta.pages}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleNextPage}
+                    disabled={page === meta.pages}
+                    className="flex-1 sm:flex-none"
+                  >
+                    <span className="hidden sm:inline mr-1">Sau</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
       <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-sm">
           <AlertDialogHeader>
-            <AlertDialogTitle>Xác nhận hủy yêu cầu rút tiền</AlertDialogTitle>
-            <AlertDialogDescription>
-              <div className="space-y-4">
-                <div>
-                  Bạn có chắc chắn muốn hủy yêu cầu rút tiền này?
-                </div>
+            <AlertDialogTitle>Hủy yêu cầu rút tiền?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>Bạn có chắc chắn muốn hủy yêu cầu này?</p>
                 {selectedWithdrawal && (
-                  <div className="p-3 bg-gray-50 rounded-lg border">
-                    <p className="text-sm">
-                      <strong>Số tiền:</strong> {selectedWithdrawal.amountFormatted} ({formatAmount(selectedWithdrawal.originalAmountCents)} VND)
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="text-sm font-medium">
+                      {formatAmount(selectedWithdrawal.originalAmountCents)} VND
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Tạo lúc: {format(new Date(selectedWithdrawal.createdAt), "dd/MM/yyyy HH:mm")}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {format(new Date(selectedWithdrawal.createdAt), "dd/MM/yyyy HH:mm")}
                     </p>
                   </div>
                 )}
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={cancelling}>Không</AlertDialogCancel>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel disabled={cancelling} className="mt-0">
+              Không
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleCancelWithdrawal}
               disabled={cancelling}
-              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              className="bg-red-600 hover:bg-red-700"
             >
               {cancelling ? "Đang hủy..." : "Xác nhận hủy"}
             </AlertDialogAction>

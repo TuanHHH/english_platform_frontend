@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useCallback } from "react"
 import { useRouter, useParams } from "next/navigation"
+import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, FilePlus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,6 +15,29 @@ import { lessonSchema } from "@/schema/course"
 import LessonBasicInfo from "@/components/instructor/courses/lesson-create/lesson-basic-info"
 import ContentSection from "@/components/instructor/courses/lesson-create/content-section"
 import QuizSection from "@/components/instructor/courses/lesson-create/quiz-section"
+
+function PageHeader({ courseId, moduleId }) {
+    return (
+        <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" asChild>
+                <Link href={`/instructor/courses/${courseId}/modules/${moduleId}`}>
+                    <ArrowLeft className="h-5 w-5" />
+                </Link>
+            </Button>
+            <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 flex-shrink-0">
+                    <FilePlus className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                    <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Tạo bài học mới</h1>
+                    <p className="text-sm text-muted-foreground hidden sm:block">
+                        Thêm bài học vào module
+                    </p>
+                </div>
+            </div>
+        </div>
+    )
+}
 
 export default function LessonCreatePage() {
     const router = useRouter()
@@ -55,13 +79,13 @@ export default function LessonCreatePage() {
 
     const lessonKind = watch("kind")
 
-    const handleContentChange = (newContent) => {
+    const handleContentChange = useCallback((newContent) => {
         contentRef.current = newContent
-    }
+    }, [])
 
-    const handleQuizIntroChange = (newContent) => {
+    const handleQuizIntroChange = useCallback((newContent) => {
         quizIntroRef.current = newContent
-    }
+    }, [])
 
     const onSubmit = async (data) => {
         setLoading(true)
@@ -105,25 +129,13 @@ export default function LessonCreatePage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-            <div className="max-w-3xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-                {/* Header */}
-                <div className="mb-8">
-                    <Button
-                        variant="ghost"
-                        onClick={() => router.push(`/instructor/courses/${courseId}/modules/${moduleId}`)}
-                        className="mb-4 hover:bg-muted/50 transition-colors"
-                    >
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Quay lại module
-                    </Button>
-                    <h1 className="text-3xl font-bold tracking-tight">Tạo bài học mới</h1>
-                </div>
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 min-h-full bg-background">
+            <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6">
+                <PageHeader courseId={courseId} moduleId={moduleId} />
 
-                {/* Form Card */}
-                <Card className="shadow-lg border-muted/40">
-                    <CardHeader className="space-y-1 pb-6">
-                        <CardTitle className="text-xl">Thông tin bài học</CardTitle>
+                <Card>
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-lg">Thông tin bài học</CardTitle>
                         <CardDescription>Các trường đánh dấu * là bắt buộc</CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -135,7 +147,6 @@ export default function LessonCreatePage() {
                                 errors={errors}
                             />
 
-                            {/* Content Section - Conditional rendering */}
                             {lessonKind === "QUIZ" ? (
                                 <QuizSection
                                     questions={questions}
@@ -152,15 +163,21 @@ export default function LessonCreatePage() {
                                 />
                             )}
 
-                            {/* Submit Button */}
-                            <div className="pt-4">
+                            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="sm:flex-1"
+                                    onClick={() => router.push(`/instructor/courses/${courseId}/modules/${moduleId}`)}
+                                >
+                                    Hủy
+                                </Button>
                                 <Button
                                     type="submit"
-                                    className="w-full bg-gradient-primary hover:opacity-90 transition-opacity shadow-md"
+                                    className="sm:flex-1"
                                     disabled={loading}
-                                    size="lg"
                                 >
-                                    {loading ? "Đang tạo..." : lessonKind === "VIDEO" ? "Upload video ở bước tiếp theo" : "Tạo bài học"}
+                                    {loading ? "Đang tạo..." : lessonKind === "VIDEO" ? "Tạo và upload video" : "Tạo bài học"}
                                 </Button>
                             </div>
                         </form>
