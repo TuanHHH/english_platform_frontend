@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback, useMemo, memo } from "react"
 import { ChevronDown, ChevronRight, FileText, CheckCircle2, Clock, PlayCircle, HelpCircle } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -11,7 +11,68 @@ import { CourseModulesSkeleton } from "./course-modules-skeleton"
 import { LessonPreviewDialog } from "./lesson-preview-dialog"
 import { useAuthStore } from "@/store/auth-store"
 
-export function CourseModules({ courseId }) {
+// Memoize lesson icon component
+const LessonIcon = memo(({ kind }) => {
+  switch (kind) {
+    case "VIDEO":
+      return <PlayCircle className="w-4 h-4" />
+    case "QUIZ":
+      return <HelpCircle className="w-4 h-4" />
+    default:
+      return <FileText className="w-4 h-4" />
+  }
+})
+LessonIcon.displayName = "LessonIcon"
+
+// Memoize lesson kind label
+const getLessonKindLabel = (kind) => {
+  switch (kind) {
+    case "VIDEO":
+      return "Video"
+    case "QUIZ":
+      return "Quiz"
+    default:
+      return "Bài học"
+  }
+}
+
+// Memoize individual lesson item
+const LessonItem = memo(({ lesson, moduleId, onLessonClick }) => (
+  <div
+    onClick={() => onLessonClick(lesson, moduleId)}
+    className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
+      lesson.isFree
+        ? "hover:bg-background/50 cursor-pointer"
+        : "opacity-75"
+    }`}
+  >
+    <div className="text-muted-foreground">
+      <LessonIcon kind={lesson.kind} />
+    </div>
+    <div className="flex-1">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium">
+          {lesson.title}
+        </span>
+        {lesson.isFree && (
+          <Badge variant="secondary" className="text-xs">
+            Miễn phí
+          </Badge>
+        )}
+      </div>
+      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+        <span className="flex items-center gap-1">
+          <Clock className="w-3 h-3" />
+          {lesson.estimatedMin} phút
+        </span>
+        <span>{getLessonKindLabel(lesson.kind)}</span>
+      </div>
+    </div>
+  </div>
+))
+LessonItem.displayName = "LessonItem"
+
+export const CourseModules = memo(({ courseId }) => {
   const [modules, setModules] = useState([])
   const [loading, setLoading] = useState(true)
   const [expandedModules, setExpandedModules] = useState(new Set())
@@ -20,16 +81,11 @@ export function CourseModules({ courseId }) {
   const [previewLesson, setPreviewLesson] = useState(null)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
 
+  // Only select isAuthenticated from store to minimize re-renders
   const user = useAuthStore((s) => s.user)
-  const isAuthenticated = !!user
+  const isAuthenticated = useMemo(() => !!user, [user])
 
-  useEffect(() => {
-    if (courseId) {
-      fetchModules()
-    }
-  }, [courseId])
-
-  const fetchModules = async () => {
+  const fetchModules = useCallback(async () => {
     setLoading(true)
     const result = await getPublishedModules(courseId)
 
@@ -38,9 +94,15 @@ export function CourseModules({ courseId }) {
     }
 
     setLoading(false)
-  }
+  }, [courseId])
 
-  const toggleModule = async (moduleId) => {
+  useEffect(() => {
+    if (courseId) {
+      fetchModules()
+    }
+  }, [courseId, fetchModules])
+
+  const toggleModule = useCallback(async (moduleId) => {
     const isCurrentlyExpanded = expandedModules.has(moduleId)
 
     setExpandedModules((prev) => {
@@ -72,36 +134,14 @@ export function CourseModules({ courseId }) {
         return newSet
       })
     }
-  }
+  }, [expandedModules, moduleLessons])
 
-  const getLessonIcon = (kind) => {
-    switch (kind) {
-      case "VIDEO":
-        return <PlayCircle className="w-4 h-4" />
-      case "QUIZ":
-        return <HelpCircle className="w-4 h-4" />
-      default:
-        return <FileText className="w-4 h-4" />
-    }
-  }
-
-  const getLessonKindLabel = (kind) => {
-    switch (kind) {
-      case "VIDEO":
-        return "Video"
-      case "QUIZ":
-        return "Quiz"
-      default:
-        return "Bài học"
-    }
-  }
-
-  const handleLessonClick = (lesson, moduleId) => {
+  const handleLessonClick = useCallback((lesson, moduleId) => {
     if (lesson.isFree) {
       setPreviewLesson({ ...lesson, moduleId })
       setIsPreviewOpen(true)
     }
-  }
+  }, [])
 
   if (loading) {
     return <CourseModulesSkeleton />
@@ -177,37 +217,12 @@ export function CourseModules({ courseId }) {
                     ) : moduleLessons[module.id] && moduleLessons[module.id].length > 0 ? (
                       <div className="space-y-2">
                         {moduleLessons[module.id].map((lesson) => (
-                          <div
+                          <LessonItem
                             key={lesson.id}
-                            onClick={() => handleLessonClick(lesson, module.id)}
-                            className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${lesson.isFree
-                              ? "hover:bg-background/50 cursor-pointer"
-                              : "opacity-75"
-                              }`}
-                          >
-                            <div className="text-muted-foreground">
-                              {getLessonIcon(lesson.kind)}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium">
-                                  {lesson.title}
-                                </span>
-                                {lesson.isFree && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    Miễn phí
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                                <span className="flex items-center gap-1">
-                                  <Clock className="w-3 h-3" />
-                                  {lesson.estimatedMin} phút
-                                </span>
-                                <span>{getLessonKindLabel(lesson.kind)}</span>
-                              </div>
-                            </div>
-                          </div>
+                            lesson={lesson}
+                            moduleId={module.id}
+                            onLessonClick={handleLessonClick}
+                          />
                         ))}
                       </div>
                     ) : (
@@ -231,4 +246,6 @@ export function CourseModules({ courseId }) {
       />
     </Card>
   )
-}
+})
+
+CourseModules.displayName = "CourseModules"

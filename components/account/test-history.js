@@ -240,7 +240,7 @@ export default function TestHistory() {
           <CardContent className="p-6 text-center">
             <p className="text-sm text-muted-foreground">Chưa có lịch sử làm bài.</p>
             <Button variant="link" asChild className="mt-4">
-              <Link href="/quiz-types">
+              <Link href="/practice-tests">
                 Bắt đầu làm bài →
               </Link>
             </Button>

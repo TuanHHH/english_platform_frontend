@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useEffect, useState, useMemo, useCallback } from "react"
+import { useParams } from "next/navigation"
+import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FullPageLoader } from "@/components/ui/full-page-loader"
@@ -19,35 +20,23 @@ import {
 
 export default function CourseDetailPage() {
   const params = useParams()
-  const router = useRouter()
   const [course, setCourse] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  // Auth and enrollment stores
+  // Auth and enrollment stores - use selectors to avoid unnecessary re-renders
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn)
   const enrollments = useEnrollmentStore((state) => state.enrollments)
   const fetchEnrollments = useEnrollmentStore((state) => state.fetchEnrollments)
 
-  // Check if user is enrolled in this course
-  const isEnrolled = enrollments.some(
-    (enrollment) => enrollment.courseId === course?.id
-  )
+  // Memoize enrollment check to prevent recalculation on every render
+  const isEnrolled = useMemo(() => {
+    if (!course?.id) return false
+    return enrollments.some((enrollment) => enrollment.courseId === course.id)
+  }, [enrollments, course?.id])
 
-  useEffect(() => {
-    if (params.slug) {
-      fetchCourse()
-    }
-  }, [params.slug])
-
-  useEffect(() => {
-    // Fetch enrollments when user is logged in
-    if (isLoggedIn && enrollments.length === 0) {
-      fetchEnrollments()
-    }
-  }, [isLoggedIn, fetchEnrollments, enrollments.length])
-
-  const fetchCourse = async () => {
+  // Memoize fetchCourse to prevent recreation on every render
+  const fetchCourse = useCallback(async () => {
     setLoading(true)
     setError(null)
 
@@ -60,7 +49,20 @@ export default function CourseDetailPage() {
     }
 
     setLoading(false)
-  }
+  }, [params.slug])
+
+  useEffect(() => {
+    if (params.slug) {
+      fetchCourse()
+    }
+  }, [params.slug, fetchCourse])
+
+  useEffect(() => {
+    // Fetch enrollments when user is logged in and not already fetched
+    if (isLoggedIn && enrollments.length === 0) {
+      fetchEnrollments()
+    }
+  }, [isLoggedIn, fetchEnrollments, enrollments.length])
 
   if (loading) {
     return <FullPageLoader />
@@ -74,9 +76,11 @@ export default function CourseDetailPage() {
             <p className="text-lg text-muted-foreground mb-4">
               {error || "Không tìm thấy khóa học"}
             </p>
-            <Button onClick={() => router.push("/courses")}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Quay lại danh sách khóa học
+            <Button asChild>
+              <Link href="/courses">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Quay lại danh sách khóa học
+              </Link>
             </Button>
           </div>
         </div>
@@ -88,13 +92,11 @@ export default function CourseDetailPage() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Back Button */}
-        <Button
-          variant="ghost"
-          className="mb-6"
-          onClick={() => router.push("/courses")}
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Quay lại
+        <Button variant="ghost" className="mb-6" asChild>
+          <Link href="/courses">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Quay lại
+          </Link>
         </Button>
 
         {/* Course Header */}

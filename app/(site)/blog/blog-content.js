@@ -23,26 +23,34 @@ export default function BlogContent() {
   const pageSize = 10;
   const [totalPages, setTotalPages] = useState(0);
 
+  // Load categories một lần duy nhất khi component mount
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const catsRes = await listPublicCategories();
+        if (catsRes.success) {
+          const data = catsRes.data;
+          const categories = Array.isArray(data?.result) 
+            ? data.result 
+            : Array.isArray(data?.content) 
+            ? data.content 
+            : Array.isArray(data) 
+            ? data 
+            : [];
+          setCats(categories);
+        }
+      } catch (error) {
+        console.error('Error loading categories:', error);
+      }
+    };
+    loadCategories();
+  }, []);
+
   const load = useCallback(async (p = page, key = debouncedFilterKey) => {
     setLoading(true);
     try {
       const parsedFilters = key ? JSON.parse(key) : {};
-      const [catsRes, postsRes] = await Promise.all([
-        listPublicCategories(),
-        publicListPostsPaged({ ...parsedFilters, page: p, size: pageSize }),
-      ]);
-      
-      if (catsRes.success) {
-        const data = catsRes.data;
-        const categories = Array.isArray(data?.result) 
-          ? data.result 
-          : Array.isArray(data?.content) 
-          ? data.content 
-          : Array.isArray(data) 
-          ? data 
-          : [];
-        setCats(categories);
-      }
+      const postsRes = await publicListPostsPaged({ ...parsedFilters, page: p, size: pageSize });
       
       if (postsRes.success) {
         const { items, meta } = postsRes.data;

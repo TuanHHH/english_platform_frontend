@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { MoreVertical, ArrowLeft } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,7 @@ export default function ThreadDetailPage() {
   const pageSize = 20;
 
   const user = useAuthStore((s) => s.user);
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const hydrateFromMe = useAuthStore((s) => s.hydrateFromMe);
   const fetchMe = useAuthStore((s) => s.fetchMe);
   
@@ -421,7 +423,7 @@ export default function ThreadDetailPage() {
                             </button>
                           )}
 
-                          {!thread?.locked && (
+                          {!thread?.locked && isLoggedIn && (
                             <button
                               className="hover:underline"
                               onClick={() => toggleReply(p.id)}
@@ -511,7 +513,20 @@ export default function ThreadDetailPage() {
               <CardTitle>Trả lời</CardTitle>
             </CardHeader>
             <CardContent>
-              <ReplyForm threadId={thread.id} onDone={handleReplyDone} />
+              {isLoggedIn ? (
+                <ReplyForm threadId={thread.id} onDone={handleReplyDone} />
+              ) : (
+                <div className="text-sm text-muted-foreground text-center py-6 border rounded-lg bg-muted/30">
+                  <p className="mb-3">Bạn cần đăng nhập để trả lời.</p>
+                  <Button
+                    asChild
+                    variant="default"
+                    size="sm"
+                  >
+                    <Link href="/login">Đăng nhập</Link>
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

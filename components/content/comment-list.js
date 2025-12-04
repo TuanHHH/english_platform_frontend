@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -92,22 +93,36 @@ function CommentItem({ c, isOwner, onDelete, children, onReplyClick, canReply })
 // ---- Inline reply form (only level-1 can be replied to) ----
 function InlineReplyForm({ onSubmit, onCancel, loading }) {
   const [body, setBody] = useState("");
+  const [error, setError] = useState("");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setError("");
+    
+    const trimmed = body.trim();
+    if (!trimmed) {
+      setError("Nội dung bình luận không được để trống");
+      return;
+    }
+    
+    onSubmit?.(body);
+    setBody("");
+  };
+
   return (
-    <form
-      className="mt-2 flex flex-col gap-2"
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (!body.trim()) return;
-        onSubmit?.(body);
-        setBody("");
-      }}
-    >
+    <form className="mt-2 flex flex-col gap-2" onSubmit={handleSubmit}>
       <Textarea
         value={body}
-        onChange={(e) => setBody(e.target.value)}
+        onChange={(e) => {
+          setBody(e.target.value);
+          if (error) setError("");
+        }}
         placeholder="Viết phản hồi..."
         rows={3}
       />
+      {error && (
+        <p className="text-sm text-destructive">{error}</p>
+      )}
       <div className="flex gap-2">
         <Button type="submit" disabled={loading} size="sm">
           Gửi
@@ -304,9 +319,7 @@ export default function CommentList({ postId, initial = [], onCreate }) {
         {isLoggedIn ? (
           <TopLevelCreateForm onSubmit={handleCreateTop} creating={creatingTop} />
         ) : (
-          <div className="text-sm text-muted-foreground text-center py-4 border rounded-lg bg-muted/30">
-            Bạn cần đăng nhập để bình luận.
-          </div>
+          <LoginPrompt />
         )}
       </div>
 
@@ -340,20 +353,57 @@ export default function CommentList({ postId, initial = [], onCreate }) {
 // Extracted top-level create form for clarity
 function TopLevelCreateForm({ onSubmit, creating }) {
   const [body, setBody] = useState("");
+  const [error, setError] = useState("");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setError("");
+    
+    const trimmed = body.trim();
+    if (!trimmed) {
+      setError("Nội dung bình luận không được để trống");
+      return;
+    }
+    
+    onSubmit(e, body, setBody);
+  };
+
   return (
-    <form className="mt-4 flex flex-col gap-2" onSubmit={(e) => onSubmit(e, body, setBody)}>
+    <form className="mt-4 flex flex-col gap-2" onSubmit={handleSubmit}>
       <Textarea
         value={body}
-        onChange={(e) => setBody(e.target.value)}
+        onChange={(e) => {
+          setBody(e.target.value);
+          if (error) setError("");
+        }}
         placeholder="Viết bình luận của bạn..."
         rows={3}
         className="resize-none"
       />
+      {error && (
+        <p className="text-sm text-destructive">{error}</p>
+      )}
       <div className="flex justify-end">
         <Button type="submit" disabled={creating || !body.trim()}>
           {creating ? "Đang gửi..." : "Gửi bình luận"}
         </Button>
       </div>
     </form>
+  );
+}
+
+// Login prompt component
+function LoginPrompt() {
+  return (
+    <div className="text-sm text-muted-foreground text-center py-6 border rounded-lg bg-muted/30">
+      <p className="mb-3">Bạn cần đăng nhập để bình luận.</p>
+      <Button
+        asChild
+        variant="default"
+        size="sm"
+      >
+        <Link href="/login">Đăng nhập</Link>
+      </Button>
+    </div>
   );
 }

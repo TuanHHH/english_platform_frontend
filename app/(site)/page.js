@@ -16,7 +16,7 @@ export default function HomePage() {
                 </p>
               </div>
               <button className="flex self-center md:self-start min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-blue-600 hover:bg-blue-500 text-white text-base font-bold leading-normal tracking-[0.015em] transition-colors">
-                <a href="/quiz-types" className="truncate">Bắt đầu</a>
+                <a href="/practice-tests" className="truncate">Bắt đầu</a>
               </button>
             </div>
             <div className="w-full md:w-1/2">

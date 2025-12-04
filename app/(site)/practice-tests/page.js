@@ -8,7 +8,7 @@ import Link from "next/link";
 import { listPublicQuizTypes } from "@/lib/api/quiz/quiz-type";
 
 const QuizTypeCard = memo(({ quizType }) => (
-  <Link href={`/quiz-types/${quizType.id}/sections`} className="h-full">
+  <Link href={`/practice-tests/${quizType.id}/sections`} className="h-full">
     <Card className="h-full cursor-pointer hover:shadow-lg transition-all border border-muted/50">
       <CardHeader>
         <div className="w-12 h-12 bg-primary text-white rounded-lg flex items-center justify-center mb-4">
