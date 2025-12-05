@@ -1,17 +1,14 @@
 import { NextResponse } from "next/server"
-import jwt from "jsonwebtoken"
+import { decodeJwt } from "jose"
 
 // DEFINE ACCESS RULES
-
 const rules = [
   {
-    // Public routes
     routes: ["/login", "/register", "/forgot-password", "/auth/callback/error", "/auth/callback/success"],
     requireAuth: false,
-    redirectIfAuth: "/", // logged-in user should not visit again
+    redirectIfAuth: "/",
   },
   {
-    // Admin-only routes
     routes: ["/admin"],
     requireAuth: true,
     requireAdmin: true,
@@ -19,7 +16,6 @@ const rules = [
     redirectIfNoAdmin: "/forbidden",
   },
   {
-    // Instructor-only routes
     routes: ["/instructor"],
     requireAuth: true,
     requireInstructor: true,
@@ -27,7 +23,6 @@ const rules = [
     redirectIfNoInstructor: "/forbidden",
   },
   {
-    // Private routes
     routes: [
       "/cart",
       "/payment",
@@ -43,20 +38,21 @@ const rules = [
 ]
 
 // MAIN MIDDLEWARE
-export function middleware(request) {
+export async function middleware(request) {
   const { pathname } = request.nextUrl
-
+  
   if (pathname.startsWith("/api")) {
     return NextResponse.next()
   }
 
   const access = request.cookies.get("access_token")?.value
   const refresh = request.cookies.get("refresh_token")?.value
-
+  
   let decoded = null
   if (access) {
     try {
-      decoded = jwt.decode(access)
+      // Chỉ decode không verify
+      decoded = decodeJwt(access)
     } catch {
       decoded = null
     }
@@ -66,12 +62,12 @@ export function middleware(request) {
   for (const rule of rules) {
     for (const route of rule.routes) {
       if (pathname.startsWith(route)) {
-        // Case 1️: Private route nhưng chưa đăng nhập
+        // Case 1: Private route nhưng chưa đăng nhập
         if (rule.requireAuth && !access && !refresh) {
           return NextResponse.redirect(new URL(rule.redirectIfNoAuth, request.url))
         }
 
-        // Case 2️: Admin route nhưng không có quyền
+        // Case 2: Admin route nhưng không có quyền
         if (rule.requireAdmin) {
           const authorities = decoded?.authorities || []
           const isAdmin = authorities.includes("ROLE_ADMIN")
@@ -80,7 +76,7 @@ export function middleware(request) {
           }
         }
 
-        // Case 2️b: Instructor route nhưng không có quyền
+        // Case 2b: Instructor route nhưng không có quyền
         if (rule.requireInstructor) {
           const authorities = decoded?.authorities || []
           const isInstructor = authorities.includes("ROLE_INSTRUCTOR")
@@ -89,7 +85,7 @@ export function middleware(request) {
           }
         }
 
-        // Case 3️: Public route nhưng đã login
+        // Case 3: Public route nhưng đã login
         if (!rule.requireAuth && access && rule.redirectIfAuth) {
           return NextResponse.redirect(new URL(rule.redirectIfAuth, request.url))
         }
@@ -104,7 +100,6 @@ export function middleware(request) {
     }
   }
 
-  // Mặc định cho phép
   return NextResponse.next()
 }
 
